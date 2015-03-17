@@ -66,20 +66,20 @@
     <script src="engine/src/scene/Transform.js"></script>
     <script src="engine/src/scene/Sprite.js"></script>
 </head>
-<script>
-    function start() {
-        var match = window.location.pathname.match(/\/(.+)/i);
-        var name = 'tint';
-        if (match)
-            name = match[1];
-        var head = document.getElementsByTagName('head')[0];
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = 'tests/' + name + '.js';
-        script.onload = function() { init(); };
-        head.appendChild(script);
-    }
-</script>
 <body onload="start();">
+    <script>
+        function start() {
+            var match = window.location.pathname.match(/\/(.+)/i);
+            var name = 'tint';
+            if (match)
+                name = match[1];
+            var head = document.getElementsByTagName('head')[0];
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'tests/' + name + '.js';
+            script.onload = function() { init(); };
+            head.appendChild(script);
+        }
+    </script>
 </body>
 </html>

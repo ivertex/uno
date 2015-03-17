@@ -111,9 +111,22 @@ uno.time = function() {
  * @returns {Boolean} - <code>true</code> for using with <code>return</code>
  */
 uno.log = function() {
-    if (console) {
+    if (uno.Browser.any && window.console) {
         console.log('%cUno: ' + Array.prototype.slice.call(arguments).join(' '), 'color: blue');
     }
+    return true;
+};
+
+/**
+ * Print warning message
+ * @param {...String} message - Message strings that will be concatenated
+ * @returns {Boolean} - <code>false</code> for using with <code>return</code>
+ */
+uno.warn = function() {
+    if (uno.Browser.any && window.console) {
+        console.warn('%cUno: ' + Array.prototype.slice.call(arguments).join(' '), 'color: orange');
+    }
+    return false;
 };
 
 /**
@@ -122,59 +135,10 @@ uno.log = function() {
  * @returns {Boolean} - <code>false</code> for using with <code>return</code>
  */
 uno.error = function() {
-    if (console) {
+    if (uno.Browser.any && window.console) {
         console.error('Uno: ' + Array.prototype.slice.call(arguments).join(' '));
     }
-    return true;
-};
-/**
- * Math helpers
- * @namespace
- */
-uno.Math = {
-    /**
-     * @memberof uno.Math
-     * @member {Number} RAD_TO_DEG - Radians to degrees multiplier
-     * @const
-     */
-    RAD_TO_DEG: 180 / Math.PI,
-
-    /**
-     * @memberof uno.Math
-     * @member {Number} DEG_TO_RAD - Degrees to radians multiplier
-     * @const
-     */
-    DEG_TO_RAD: Math.PI / 180,
-
-    /**
-     * @memberof uno.Math
-     * @member {Number} PI - PI value
-     * @const
-     */
-    PI: Math.PI,
-
-    /**
-     * @memberof uno.Math
-     * @member {Number} TWO_PI - PI * 2 value
-     * @const
-     */
-    TWO_PI: 2 * Math.PI,
-
-    /**
-     * @memberof uno.Math
-     * @member {Number} HALF_PI - PI * 0.5 value
-     * @const
-     */
-    HALF_PI: 0.5 * Math.PI
-};
-
-/**
- * Is number power of two
- * @param {Number} x - Number to check
- * @returns {Boolean}
- */
-uno.Math.isPOT = function(x) {
-    return (x & (x - 1)) === 0;
+    return false;
 };
 /**
  * Utilites helpers
@@ -3969,6 +3933,7 @@ uno.CanvasRender.prototype.destroy = function() {
     this._frameBind = null;
     this._graphics.destroy();
     this._graphics = null;
+    this.root = null;
 };
 
 /**
@@ -4397,7 +4362,6 @@ uno.CanvasRender._blendModesSupported = function() {
 
 /**
  * Initialize Canvas blend modes
- * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @private
  */
 uno.CanvasRender._initBlendModes = function() {
@@ -6749,10 +6713,24 @@ uno.WebglRender.prototype.destroy = function() {
     this._contextRestoredHandle = null;
     this._context = null;
     this._canvas = null;
+    this._displayCanvas = null;
+    this._displayContext = null;
     this._projection = null;
     this._bounds = null;
     this._boundsScroll = null;
-    this._root = null;
+    this.root = null;
+};
+
+/**
+ * Set or reset render target texture
+ * @param {uno.WebglTexture} texture - Texture for render buffer
+ */
+uno.WebglRender.prototype.target = function(texture) {
+    if (!texture) {
+        this._canvas = this._displayCanvas;
+        this._context = this._displayContext;
+        return;
+    }
 };
 
 /**
@@ -7010,7 +6988,7 @@ uno.WebglRender.prototype._setupSettings = function(settings) {
     this.clearColor = settings.clearColor ? settings.clearColor.clone() : def.clearColor.clone();
     this.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
     this.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
-    this._canvas = settings.canvas;
+    this._displayCanvas = this._canvas = settings.canvas;
     this._transparent = settings.transparent !== undefined ? !!settings.transparent : def.transparent;
     this._autoClear = settings.autoClear !== undefined ? !!settings.autoClear : def.autoClear;
     this._antialias = settings.antialias !== undefined ? !!settings.antialias : def.antialias;
@@ -7151,7 +7129,7 @@ uno.WebglRender.prototype._createContext = function() {
     };
     var error = 'This browser does not support webGL. Try using the canvas render';
     try {
-        this._context = this._canvas.getContext('experimental-webgl', options) ||
+        this._displayContext = this._context = this._canvas.getContext('experimental-webgl', options) ||
             this._canvas.getContext('webgl', options);
     } catch (e) {
         return uno.error(error);
