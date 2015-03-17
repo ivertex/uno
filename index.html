@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+
+    <!-- No scale -->
+    <meta name="viewport"  content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <!-- Full screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title></title>
+
+    <style>
+        html, body, canvas {
+            margin: 0;
+            padding: 0;
+            line-height: 0;
+        }
+    </style>
+    
+    <script src="engine/src/Engine.js"></script>
+    <script src="engine/src/math/Math.js"></script>
+    <script src="engine/src/utils/Utils.js"></script>
+    <script src="engine/src/utils/Polyfill.js"></script>
+    <script src="engine/src/math/Point.js"></script>
+    <script src="engine/src/math/Line.js"></script>
+    <script src="engine/src/math/Rect.js"></script>
+    <script src="engine/src/math/Circle.js"></script>
+    <script src="engine/src/math/Ellipse.js"></script>
+    <script src="engine/src/math/Arc.js"></script>
+    <script src="engine/src/math/Poly.js"></script>
+    <script src="engine/src/math/Matrix.js"></script>
+    <script src="engine/src/system/Device.js"></script>
+    <script src="engine/src/system/Os.js"></script>
+    <script src="engine/src/system/Browser.js"></script>
+    <script src="engine/src/system/Screen.js"></script>
+    <script src="engine/src/system/Capabilities.js"></script>
+    <script src="engine/src/render/common/Color.js"></script>
+    <script src="engine/src/render/common/Frame.js"></script>
+    <script src="engine/src/render/common/UV.js"></script>
+    <script src="engine/src/render/common/Shape.js"></script>
+    <script src="engine/src/render/common/Texture.js"></script>
+    <script src="engine/src/render/canvas/CanvasRender.js"></script>
+    <script src="engine/src/render/canvas/CanvasTinter.js"></script>
+    <script src="engine/src/render/canvas/CanvasTexture.js"></script>
+    <script src="engine/src/render/canvas/CanvasGraphics.js"></script>
+    <script src="engine/src/render/webgl/WebglRender.js"></script>
+    <script src="engine/src/render/webgl/WebglTexture.js"></script>
+    <script src="engine/src/render/webgl/WebglShader.js"></script>
+    <script src="engine/src/render/webgl/WebglBatch.js"></script>
+    <script src="engine/src/render/webgl/WebglGraphics.js"></script>
+    <script src="engine/src/render/webgl/shaders/WebglShaderSprite.js"></script>
+    <script src="engine/src/render/webgl/shaders/WebglShaderPrimitive.js"></script>
+    <script src="engine/src/render/Render.js"></script>
+    <script src="engine/src/input/mouse/MouseEvent.js"></script>
+    <script src="engine/src/input/mouse/Mouse.js"></script>
+    <script src="engine/src/input/keyboard/KeyboardEvent.js"></script>
+    <script src="engine/src/input/keyboard/Keyboard.js"></script>
+    <script src="engine/src/input/touch/TouchPoint.js"></script>
+    <script src="engine/src/input/touch/TouchList.js"></script>
+    <script src="engine/src/input/touch/TouchEvent.js"></script>
+    <script src="engine/src/input/touch/Touch.js"></script>
+    <script src="engine/src/scene/Object.js"></script>
+    <script src="engine/src/scene/Transform.js"></script>
+    <script src="engine/src/scene/Sprite.js"></script>
+</head>
+<script>
+    function start() {
+        var match = window.location.pathname.match(/\/(.+)/i);
+        var name = 'tint';
+        if (match)
+            name = match[1];
+        var head = document.getElementsByTagName('head')[0];
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'tests/' + name + '.js';
+        script.onload = function() { init(); };
+        head.appendChild(script);
+    }
+</script>
+<body onload="start();">
+</body>
+</html>
