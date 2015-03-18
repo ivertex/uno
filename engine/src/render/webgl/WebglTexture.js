@@ -12,9 +12,10 @@ uno.WebglTexture = function(texture) {
     this._texture = texture;
 
     /**
-     * Handles for each render
-     * @type {Object[]} - Objects with handles <code>{ texture: TEXTURE_HANDLE, buffer: FRAME_BUFFER_HANDLE }</code>,<br>
+     * Handles for each render<br>
+     *     Objects with handles <code>{ texture: TEXTURE_HANDLE, buffer: FRAME_BUFFER_HANDLE }</code>,<br>
      *     buffer is null for not render textures (with texture._source not null)
+     * @type {Object[]}
      * @private
      */
     this._handles = {};
