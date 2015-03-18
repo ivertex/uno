@@ -1,2 +1,2 @@
 # UnoJS
-UnoJS is 2D cross-platform game engine for javascript
+UnoJS is 2D cross-platform game engine for JavaScript
