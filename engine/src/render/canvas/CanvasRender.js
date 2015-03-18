@@ -185,6 +185,8 @@ uno.CanvasRender.prototype.lineWidth = function(width) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
+    if (!texture.ready)
+        return this;
     var ctx = this._context;
     this._setScaleMode(texture.scaleMode);
     this._setAlpha(alpha || 1);

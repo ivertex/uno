@@ -80,8 +80,6 @@ uno.WebglRender.prototype.destroy = function() {
     this._contextRestoredHandle = null;
     this._context = null;
     this._canvas = null;
-    this._displayCanvas = null;
-    this._displayContext = null;
     this._projection = null;
     this._bounds = null;
     this._boundsScroll = null;
@@ -93,10 +91,14 @@ uno.WebglRender.prototype.destroy = function() {
  * @param {uno.WebglTexture} texture - Texture for render buffer
  */
 uno.WebglRender.prototype.target = function(texture) {
+    this._graphics.flush();
+    this._batch.flush();
     if (!texture) {
-        this._canvas = this._displayCanvas;
-        this._context = this._displayContext;
-        return;
+        this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
+        //this._context.viewport(0, 0, this.width, this.height);
+    } else {
+        this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(texture).handle(this, true));
+        //this._context.viewport(0, 0, texture.width, texture.height);
     }
 };
 
@@ -106,7 +108,12 @@ uno.WebglRender.prototype.target = function(texture) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.clear = function(color) {
+    // TODO: Actually we need reset method for graphics and batch (without rendering)
+    this._graphics.flush();
+    this._batch.flush();
+
     var ctx = this._context;
+
     if (this._transparent) {
         if (!color && this.clearColor === false)
             return;
@@ -114,12 +121,16 @@ uno.WebglRender.prototype.clear = function(color) {
         ctx.clear(ctx.COLOR_BUFFER_BIT);
         return this;
     }
+
     if (!color)
         color = this.clearColor;
+
     if (!color || !color.a)
         return this;
+
     ctx.clearColor(color.r, color.g, color.b, color.a);
     ctx.clear(ctx.COLOR_BUFFER_BIT);
+
     return this;
 };
 
@@ -181,6 +192,8 @@ uno.WebglRender.prototype.lineWidth = function(width) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
+    if (!texture.ready)
+        return this;
     this._graphics.flush();
     this._batch.render(uno.WebglTexture.get(texture).handle(this), frame, tint || uno.Color.WHITE, alpha || 1);
     return this;
@@ -355,7 +368,7 @@ uno.WebglRender.prototype._setupSettings = function(settings) {
     this.clearColor = settings.clearColor ? settings.clearColor.clone() : def.clearColor.clone();
     this.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
     this.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
-    this._displayCanvas = this._canvas = settings.canvas;
+    this._canvas = settings.canvas;
     this._transparent = settings.transparent !== undefined ? !!settings.transparent : def.transparent;
     this._autoClear = settings.autoClear !== undefined ? !!settings.autoClear : def.autoClear;
     this._antialias = settings.antialias !== undefined ? !!settings.antialias : def.antialias;
@@ -496,7 +509,7 @@ uno.WebglRender.prototype._createContext = function() {
     };
     var error = 'This browser does not support webGL. Try using the canvas render';
     try {
-        this._displayContext = this._context = this._canvas.getContext('experimental-webgl', options) ||
+        this._context = this._canvas.getContext('experimental-webgl', options) ||
             this._canvas.getContext('webgl', options);
     } catch (e) {
         return uno.error(error);

@@ -5,8 +5,8 @@ var target = function(object) {
     this.frame = null;
     this.filter = true;
     this.matrix = new uno.Matrix();
-    this.matrix.rotate(uno.Math.HALF_PI);
-    this.matrix.translate(0, 600);
+    //this.matrix.rotate(uno.Math.HALF_PI);
+    this.matrix.translate(300, 300);
 };
 
 target.id = 'target';
@@ -21,6 +21,10 @@ target.prototype.filterTexture = function(texture) {
     tex.putImageData(image, 0, 0);
 };
 
+target.prototype.update = function(render) {
+    //this.matrix.rotate(0.01);
+};
+
 target.prototype.render = function(render) {
     if (!this.texture || !this.texture.ready)
         return;
@@ -30,10 +34,12 @@ target.prototype.render = function(render) {
         this.target = new uno.Texture(this.texture.width, this.texture.height);
     if (this.filter) {
         render.target(this.target);
+        render.clear();
         render.transform(this.matrix);
         render.drawTexture(this.texture, this.frame);
-        if (render.type === uno.Render.RENDER_CANVAS)
-            this.filterTexture(this.target);
+        render.drawRect(100, 100, 100, 100);
+        /*if (render.type === uno.Render.RENDER_CANVAS)
+            this.filterTexture(this.target);*/
         render.target();
     }
     render.transform(this.object.transform.matrix);
@@ -163,7 +169,7 @@ function init() {
         clearColor: new uno.Color(0, 0.5, 0.5),
         fps: 60
     };
-    window.render1 = false;
+    window.render1 = true;
     window.render2 = true;
 
     if (window.render1) {

@@ -4,8 +4,32 @@
  * @constructor
  */
 uno.CanvasTexture = function(texture) {
+    /**
+     * Parent texture for this extension
+     * @type {uno.Texture}
+     * @private
+     */
     this._texture = texture;
+
+    /**
+     * Image or canvas with texture data
+     * @type {Image|canvas}
+     * @private
+     */
+    this._source = null;
+
+    /**
+     * Texture context for manipulation
+     * @type {CanvasRenderingContext2D}
+     * @private
+     */
     this._context = null;
+
+    /**
+     * Cache for texture tinting
+     * @type {Object}
+     * @private
+     */
     this._tintCache = {};
 };
 
@@ -15,6 +39,7 @@ uno.CanvasTexture = function(texture) {
 uno.CanvasTexture.prototype.destroy = function() {
     uno.CanvasTinter.removeCache(this);
     this._texture = null;
+    this._source = null;
     this._context = null;
     this._tintCache = null;
 };
@@ -29,45 +54,29 @@ uno.CanvasTexture.prototype.tint = function(tint) {
 };
 
 /**
- * Return 2d context of the texture for render target
+ * Return 2d context of the texture for render target<br>
+ *     This function called very frequently, try avoid variable creation
  * @returns {CanvasRenderingContext2D}
  */
 uno.CanvasTexture.prototype.context = function() {
     if (!this._context)
-        this._context = this._texture._source.getContext('2d');
+        this._context = this._source.getContext('2d');
     return this._context;
 };
 
 /**
- * Get texture handle for render
- * @returns {canvas} - Texture canvas
+ * Get texture handle for render<br>
+ *     This function called very frequently, try avoid variable creation
+ * @returns {Image|canvas} - Texture canvas
  */
 uno.CanvasTexture.prototype.handle = function() {
-    return this._texture._source;
-};
-
-/**
- * Get texture extension factory
- * @param {uno.Texture} texture
- * @returns {uno.CanvasTexture}
- */
-uno.CanvasTexture.get = function(texture) {
-    if (!texture._extensions.canvas)
-        texture._extensions.canvas = new uno.CanvasTexture(texture);
-    return texture._extensions.canvas;
-};
-
-/**
- * Create texture
- * @param {Number} width - With of the texture
- * @param {Number} height - Height of the texture
- * @returns {canvas}
- */
-uno.CanvasTexture.create = function(width, height) {
-    var texture = document.createElement('canvas');
-    texture.width = width;
-    texture.height = height;
-    return texture;
+    if (this._source === null && this._texture.width && this._texture.height) {
+        var source = document.createElement('canvas');
+        source.width = this._texture.width;
+        source.height = this._texture.height;
+        this._source = source;
+    }
+    return this._source;
 };
 
 /**
@@ -75,22 +84,38 @@ uno.CanvasTexture.create = function(width, height) {
  * @param {String} url - URL of the image
  * @param {Function} complete - Call function after load
  * @param {Boolean} [cache=true] - Should the texture cached
- * @returns {canvas}
  */
-uno.CanvasTexture.load = function(url, complete, cache) {
-    if (uno.CanvasTexture._cache[url])
-        return uno.CanvasTexture._cache[url];
-    var texture = new Image();
-    texture.addEventListener('load', function() {
+uno.CanvasTexture.prototype.load = function(url, complete, cache) {
+    if (uno.CanvasTexture._cache[url]) {
+        this._source = uno.CanvasTexture._cache[url];
+        complete(url, true, this._source.width, this._source.height);
+        return;
+    }
+    var source = new Image();
+    var self = this;
+    source.addEventListener('load', function() {
         if (cache !== false)
             uno.CanvasTexture._cache[url] = cache;
-        complete(texture, url);
+        self._source = source;
+        complete(url, true, source.width, source.height);
     });
-    texture.addEventListener('error', function() {
-        complete(null, url);
+    source.addEventListener('error', function() {
+        complete(url, false);
     });
-    texture.src = url;
-    return texture;
+    source.src = url;
+    return source;
+};
+
+/**
+ * Get texture extension factory<br>
+ *     This function called very frequently, try avoid variable creation
+ * @param {uno.Texture} texture
+ * @returns {uno.CanvasTexture}
+ */
+uno.CanvasTexture.get = function(texture) {
+    if (!texture._extensions.canvas)
+        texture._extensions.canvas = new uno.CanvasTexture(texture);
+    return texture._extensions.canvas;
 };
 
 /**
