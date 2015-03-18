@@ -17,6 +17,13 @@ uno.WebglTexture = function(texture) {
      * @private
      */
     this._handles = {};
+
+    /**
+     * Render textures for each render
+     * @type {WebGLTexture[]}
+     * @private
+     */
+    this._targets = {};
 };
 
 /**
@@ -45,6 +52,23 @@ uno.WebglTexture.prototype.handle = function(render) {
         render._addRestore(this);
     }
     return this._handles[render.id];
+};
+
+/**
+ * Get texture target for render
+ * @param {uno.WebglRender} render - The render needed handle
+ * @returns {WebGLTexture} - Corresponding texture
+ */
+uno.WebglTexture.prototype.target = function(render) {
+    if (!this._targets[render.id]) {
+        var ctx = render._context;
+        var buffer = ctx.createFramebuffer();
+        buffer.width = this._texture.width;
+        buffer.height = this._texture.height;
+        ctx.bindFramebuffer(ctx.FRAMEBUFFER, buffer);
+        this._targets[render.id] = buffer;
+    }
+    return this._targets[render.id];
 };
 
 /**
