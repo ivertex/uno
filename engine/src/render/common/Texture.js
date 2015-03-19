@@ -82,8 +82,7 @@ uno.Texture._uid = 0;
  * @returns {uno.Texture} - <code>this</code>
  */
 uno.Texture.prototype.load = function(url, complete, cache) {
-    if (this._source)
-        this.destroy();
+    this.destroy();
 
     // TODO: This block is platform specific. Should we do anything with it?
     if (uno.Browser.any) {
@@ -103,6 +102,7 @@ uno.Texture.prototype.destroy = function() {
     this.scaleMode = uno.Render.SCALE_DEFAULT;
     this._pot = false;
     this._ready = false;
+    This._url = null;
     this._extensions = null;
 };
 
