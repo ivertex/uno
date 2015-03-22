@@ -2,11 +2,13 @@ var target = function(object) {
     this.object = object;
     this.texture = null;
     this.target = null;
-    this.frame = null;
+    this.frame1 = null;
+    this.frame2 = null;
     this.filter = true;
+    this.m1 = new uno.Matrix();
     this.matrix = new uno.Matrix();
     //this.matrix.rotate(uno.Math.HALF_PI);
-    this.matrix.translate(300, 300);
+    //this.matrix.translate(300, 300);
 };
 
 target.id = 'target';
@@ -22,28 +24,34 @@ target.prototype.filterTexture = function(texture) {
 };
 
 target.prototype.update = function(render) {
-    //this.matrix.rotate(0.01);
+    //this.matrix.rotate(0.005);
+    this.m1.rotate(0.005);
 };
 
 target.prototype.render = function(render) {
     if (!this.texture || !this.texture.ready)
         return;
-    if (!this.frame)
-        this.frame = new uno.Frame(this.texture.width, this.texture.height);
-    if (!this.target)
-        this.target = new uno.Texture(this.texture.width, this.texture.height);
+    if (!this.frame1)
+        this.frame1 = new uno.Frame(this.texture.width, this.texture.height);
+    if (!this.target) {
+        this.target = new uno.Texture(300, 300);
+        this.frame2 = new uno.Frame(this.target.width, this.target.height);
+    }
     if (this.filter) {
         render.target(this.target);
         render.clear();
         render.transform(this.matrix);
-        render.drawTexture(this.texture, this.frame);
+        render.drawTexture(this.texture, this.frame1);
+        render.transform(this.m1);
         render.drawRect(100, 100, 100, 100);
         /*if (render.type === uno.Render.RENDER_CANVAS)
             this.filterTexture(this.target);*/
         render.target();
     }
+    render.transform(uno.Matrix.IDENTITY);
+    render.drawRect(0, 0, render.width, render.height);
     render.transform(this.object.transform.matrix);
-    render.drawTexture(this.filter ? this.target : this.texture, this.frame);
+    render.drawTexture(this.filter ? this.target : this.texture, this.filter ? this.frame2 : this.frame1);
 };
 
 target.prototype.input = function(event) {
@@ -135,7 +143,7 @@ resizer.prototype.update = function() {
 function prefab1(render, texture) {
     var obj = uno.Object.create(uno.Transform, uno.Sprite, target, drag);
     obj.transform.setPosition(render.width / 2, render.height / 2);
-    obj.transform.setScale(0.7, 0.7);
+    //obj.transform.setScale(0.7, 0.7);
     obj.target.texture = texture;
     return obj;
 }

@@ -63,6 +63,7 @@ uno.CanvasRender.prototype.destroy = function() {
     delete uno.Render.renders[this.id];
     this._context = null;
     this._canvas = null;
+    this._target = null;
     this._displayCanvas = null;
     this._displayContext = null;
     this._currentMatrix = null;
@@ -81,10 +82,12 @@ uno.CanvasRender.prototype.destroy = function() {
  */
 uno.CanvasRender.prototype.target = function(texture) {
     if (!texture) {
+        this._target = null;
         this._canvas = this._displayCanvas;
         this._context = this._displayContext;
         return;
     }
+    this._target = texture;
     var extension = uno.CanvasTexture.get(texture);
     this._canvas = extension.handle(this);
     this._context = extension.context();
@@ -335,6 +338,7 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
 uno.CanvasRender.prototype._setupProps = function() {
     this._currentMatrix = new uno.Matrix();
     this._clearColorTemp = new uno.Color();
+    this._target = null;
 };
 
 /**

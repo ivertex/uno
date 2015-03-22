@@ -22,10 +22,10 @@ uno.WebglShader.PRIMITIVE = {
         'attribute vec4 aColor;',
         'uniform vec2 uProjection;',
         'varying vec4 vColor;',
-        'const vec2 center = vec2(-1.0, 1.0);',
+        'const vec2 cOffset = vec2(-1.0, 1.0);',
 
         'void main(void) {',
-        '   gl_Position = vec4(aPosition / uProjection + center, 0.0, 1.0);',
+        '   gl_Position = vec4(aPosition / uProjection + cOffset, 0.0, 1.0);',
         '   vColor = aColor;',
         '}'
     ],
@@ -34,6 +34,7 @@ uno.WebglShader.PRIMITIVE = {
         aColor: [uno.WebglShader.UNSIGNED_BYTE, 4, true]    // Using packing ABGR (alpha and tint color)
     },
     uniforms: {
-        uProjection: [uno.WebglShader.FLOAT, 2]
+        uProjection: [uno.WebglShader.FLOAT, 2],
+        uOffset: [uno.WebglShader.FLOAT, 2]
     }
 };

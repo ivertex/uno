@@ -183,8 +183,9 @@ uno.WebglBatch.prototype._restore = function() {
 uno.WebglBatch.prototype.render = function(texture, frame, tint, alpha) {
     var w = frame.width;
     var h = frame.height;
-    var matrix = this._render._currentMatrix;
-    var blendMode = this._render._currentBlendMode;
+    var render = this._render;
+    var matrix = render._currentMatrix;
+    var blendMode = render._currentBlendMode;
     var a = matrix.a;
     var b = matrix.c;   // TODO: why we flip values?
     var c = matrix.b;
@@ -246,10 +247,10 @@ uno.WebglBatch.prototype.flush = function() {
     var shader = this._currentShader;
     if (!shader)
         shader = this._currentShader = render._getShader(uno.WebglShader.SPRITE);
-    if (shader !== render._getShader()) {
+    if (shader !== render._getShader())
         render._setShader(shader);
-        shader.uProjection.values(render._projection.x, render._projection.y);
-    }
+
+    shader.uProjection.values(render._projection.x, render._projection.y);
 
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)

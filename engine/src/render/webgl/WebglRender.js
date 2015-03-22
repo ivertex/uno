@@ -79,6 +79,7 @@ uno.WebglRender.prototype.destroy = function() {
     this._contextLostHandle = null;
     this._contextRestoredHandle = null;
     this._context = null;
+    this._target = null;
     this._canvas = null;
     this._projection = null;
     this._bounds = null;
@@ -93,12 +94,19 @@ uno.WebglRender.prototype.destroy = function() {
 uno.WebglRender.prototype.target = function(texture) {
     this._graphics.flush();
     this._batch.flush();
+
     if (!texture) {
+        this._target = null;
         this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
-        //this._context.viewport(0, 0, this.width, this.height);
+        this._projection.x = this.width / 2;
+        this._projection.y = -this.height / 2;
+        this._context.viewport(0, 0, this.width, this.height);
     } else {
+        this._target = texture;
         this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(texture).handle(this, true));
-        //this._context.viewport(0, 0, texture.width, texture.height);
+        this._projection.x = texture.width / 2;
+        this._projection.y = -texture.height / 2;
+        this._context.viewport(0, 0, texture.width, texture.height);
     }
 };
 
@@ -142,7 +150,12 @@ uno.WebglRender.prototype.clear = function(color) {
 uno.WebglRender.prototype.transform = function(matrix) {
     if (!matrix)
         return this._currentMatrix;
-    return this._currentMatrix.set(matrix);
+    this._currentMatrix.set(matrix);
+    if (this._target) {
+        this._currentMatrix.translate(0, this._projection.y * 2);
+        this._currentMatrix.scale(1, -1);
+    }
+    return this._currentMatrix;
 };
 
 /**
@@ -386,6 +399,7 @@ uno.WebglRender.prototype._setupSettings = function(settings) {
  */
 uno.WebglRender.prototype._setupProps = function() {
     this._projection = new uno.Point();
+    this._target = null;
     this._currentMatrix = new uno.Matrix();
     this._currentShader = null;
     this._shaders = {};

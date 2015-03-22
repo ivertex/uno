@@ -102,8 +102,8 @@ uno.Texture.prototype.destroy = function() {
     this.scaleMode = uno.Render.SCALE_DEFAULT;
     this._pot = false;
     this._ready = false;
-    This._url = null;
-    this._extensions = null;
+    this._url = null;
+    this._extensions = {};
 };
 
 /**
