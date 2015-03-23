@@ -67,7 +67,7 @@ uno.CanvasTinter.tint = function(canvasTexture, color) {
     var cache = canvasTexture._tintCache[tint.hex];
     if (cache)
         return cache.canvas;
-    var image = canvasTexture._texture._source;
+    var image = canvasTexture._source;
     var canvas = document.createElement('canvas');
     canvas.width = image.width;
     canvas.height = image.height;
