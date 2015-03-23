@@ -51,7 +51,7 @@ function init() {
         height: 600,
         transparent: false,
         autoClear: true,
-        clearColor: new uno.Color.black.clone(),
+        clearColor: new uno.Color.BLACK.clone(),
         fps: 60
     };
     window.render1 = false;
