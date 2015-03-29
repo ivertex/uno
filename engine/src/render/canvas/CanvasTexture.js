@@ -31,6 +31,13 @@ uno.CanvasTexture = function(texture) {
      * @private
      */
     this._tintCache = {};
+
+    /**
+     * Image data for methods getPixels/setPixels
+     * @type {ImageData}
+     * @private
+     */
+    this._imageData = null;
 };
 
 /**
@@ -77,6 +84,27 @@ uno.CanvasTexture.prototype.handle = function() {
         this._source = source;
     }
     return this._source;
+};
+
+/**
+ * Get or set texture pixels
+ * @returns {Uint8ClampedArray}
+ */
+uno.CanvasTexture.prototype.getPixels = function() {
+    this._imageData = this.context().getImageData(0, 0, this._texture.width, this._texture.height);
+    return this._imageData.data;
+};
+
+/**
+ * Get or set texture pixels
+ * @param {Uint8ClampedArray} data - Pixels data
+ * @returns {CanvasTexture} - <code>this</code>
+ */
+uno.CanvasTexture.prototype.setPixels = function(data) {
+    if (this._imageData.data !== data)
+        this._imageData.set(data);
+    this.context().putImageData(this._imageData, 0, 0);
+    return this;
 };
 
 /**

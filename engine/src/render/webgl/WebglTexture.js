@@ -19,6 +19,13 @@ uno.WebglTexture = function(texture) {
      * @private
      */
     this._handles = {};
+
+    /**
+     * Image data for methods getPixels/setPixels
+     * @type {Uint8ClampedArray}
+     * @private
+     */
+    this._imageData = null;
 };
 
 /**
@@ -44,14 +51,65 @@ uno.WebglTexture.prototype.destroy = function() {
  *     This function called very frequently, try avoid variable creation
  * @param {uno.WebglRender} render - The render associated with handle
  * @param {Boolean} [buffer=false] - Return render buffer handle, not texture handle
+ * @param {Boolean} [create=true] - Should create texture or render buffer handle if it not exist
  * @returns {WebGLTexture|WebGLFramebuffer} - Corresponding texture or render buffer handle
  */
-uno.WebglTexture.prototype.handle = function(render, buffer) {
-    if (!this._handles[render.id]) {
+uno.WebglTexture.prototype.handle = function(render, buffer, create) {
+    var handles = this._handles[render.id];
+    if (!handles || (buffer ? !handles.buffer : !handles.texture)) {
+        if (create === false)
+            return false;
         this._create(render);
         render._addRestore(this);
+        return buffer ? this._handles[render.id].buffer : this._handles[render.id].texture;
     }
-    return buffer ? this._handles[render.id].buffer : this._handles[render.id].texture;
+    return buffer ? handles.buffer : handles.texture;
+};
+
+/**
+ * Get or set texture pixels
+ * @returns {Uint8ClampedArray}
+ */
+uno.WebglTexture.prototype.getPixels = function(render) {
+    var tex = this._texture;
+    var len = tex.width * tex.height * 4;
+
+    if (!this._imageData || this._imageData.length !== len) {
+        this._imageBuffer = new ArrayBuffer(len);
+        this._imageData = new Uint8Array(this._imageBuffer);
+        this._imageDataClamped = new Uint8ClampedArray(this._imageBuffer);
+    }
+
+    var ctx = render._context;
+    var buffer = this.handle(render, true, true);
+
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, buffer);
+    ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.handle(render), 0);
+    ctx.readPixels(0, 0, tex.width, tex.height, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+
+    // TODO: rewrite after changing method 'target' to property
+    var target = render._target;
+    if (target === null)
+        ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+    else
+        render.target(target);
+
+    return this._imageDataClamped;
+};
+
+/**
+ * Get or set texture pixels
+ * @param {Uint8ClampedArray} data - Pixels data
+ * @param {uno.WebglRender} render - For what render texture created
+ * @returns {CanvasTexture} - <code>this</code>
+ */
+uno.WebglTexture.prototype.setPixels = function(data, render) {
+    if (data !== this._imageDataClamped)
+        this._imageDataClamped.set(data);
+    var ctx = render._context;
+    ctx.bindTexture(ctx.TEXTURE_2D, this.handle(render));
+    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, this._texture.width, this._texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+    return this;
 };
 
 /**
@@ -81,6 +139,10 @@ uno.WebglTexture.prototype._create = function(render) {
 
     // Check is texture render target or not
     if (texture.url) {
+
+        // TODO: should we flip texture or not?
+        // ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
+
         ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         // Here we should get image from CanvasTexture
         ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, uno.CanvasTexture.get(texture).handle());

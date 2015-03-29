@@ -45,6 +45,27 @@ uno.CanvasRender.prototype.resize = function(width, height) {
 };
 
 /**
+ * Free all allocated resources and destroy render
+ */
+uno.CanvasRender.prototype.destroy = function() {
+    delete uno.Render.renders[this.id];
+    this._context = null;
+    this._canvas = null;
+    this._target = null;
+    this._displayCanvas = null;
+    this._displayContext = null;
+    this._currentMatrix = null;
+    this._clearMatrixTemp = null;
+    this._clearColorTemp = null;
+    this._bounds = null;
+    this._boundsScroll = null;
+    this._frameBind = null;
+    this._graphics.destroy();
+    this._graphics = null;
+    this.root = null;
+};
+
+/**
  * Get bounds of render
  * For browser bounds is position and size on page
  * For other platforms position and size on screen
@@ -57,69 +78,23 @@ uno.CanvasRender.prototype.bounds = function() {
 };
 
 /**
- * Free all allocated resources and destroy render
- */
-uno.CanvasRender.prototype.destroy = function() {
-    delete uno.Render.renders[this.id];
-    this._context = null;
-    this._canvas = null;
-    this._target = null;
-    this._displayCanvas = null;
-    this._displayContext = null;
-    this._currentMatrix = null;
-    this._clearColorTemp = null;
-    this._bounds = null;
-    this._boundsScroll = null;
-    this._frameBind = null;
-    this._graphics.destroy();
-    this._graphics = null;
-    this.root = null;
-};
-
-/**
  * Set or reset render target texture
  * @param {uno.CanvasTexture} texture - Texture for render buffer
+ * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.target = function(texture) {
     if (!texture) {
         this._target = null;
         this._canvas = this._displayCanvas;
         this._context = this._displayContext;
-        return;
+        return this;
     }
+
     this._target = texture;
     var extension = uno.CanvasTexture.get(texture);
     this._canvas = extension.handle(this);
     this._context = extension.context();
-};
 
-/**
- * Clear viewport with color
- * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
- * @returns {uno.CanvasRender} - <code>this</code>
- */
-uno.CanvasRender.prototype.clear = function(color) {
-    var ctx = this._context;
-    this.blendMode(uno.Render.BLEND_NORMAL);
-    this.transform(uno.Matrix.IDENTITY);
-    if (this._transparent) {
-        if (!color && this.clearColor === false)
-            return this;
-        ctx.clearRect(0, 0, this.width, this.height);
-        return this;
-    }
-    if (!color)
-        color = this.clearColor;
-    if (!color || !color.a)
-        return this;
-    var graphics = this._graphics;
-    var width = graphics.lineWidth();
-    var fill = this._clearColorTemp.set(graphics.fillColor());
-    graphics.fillColor(color);
-    graphics.lineWidth(0);
-    graphics.drawRect(0, 0, this.width, this.height);
-    graphics.fillColor(fill);
-    graphics.lineWidth(width);
     return this;
 };
 
@@ -177,6 +152,45 @@ uno.CanvasRender.prototype.lineColor = function(color) {
  */
 uno.CanvasRender.prototype.lineWidth = function(width) {
     return this._graphics.lineWidth(width);
+};
+
+/**
+ * Clear viewport with color
+ * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
+ * @returns {uno.CanvasRender} - <code>this</code>
+ */
+uno.CanvasRender.prototype.clear = function(color) {
+    var ctx = this._context;
+    this.blendMode(uno.Render.BLEND_NORMAL);
+
+    this._clearMatrixTemp.set(this._currentMatrix);
+    this.transform(uno.Matrix.IDENTITY);
+
+    if (this._transparent) {
+        if (!color && this.clearColor === false)
+            return this;
+        ctx.clearRect(0, 0, this.width, this.height);
+        return this;
+    }
+
+    if (!color)
+        color = this.clearColor;
+
+    if (!color || !color.a)
+        return this;
+
+    var graphics = this._graphics;
+    var width = graphics.lineWidth();
+    var fill = this._clearColorTemp.set(graphics.fillColor());
+    graphics.fillColor(color);
+    graphics.lineWidth(0);
+    graphics.drawRect(0, 0, this.width, this.height);
+    graphics.fillColor(fill);
+    graphics.lineWidth(width);
+
+    this.transform(this._clearMatrixTemp);
+
+    return this;
 };
 
 /**
@@ -308,6 +322,26 @@ uno.CanvasRender.prototype.endShape = function() {
 };
 
 /**
+ * Get texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @returns {Uint8Array}
+ */
+uno.CanvasRender.prototype.getPixels = function(texture) {
+    return uno.CanvasTexture.get(texture).getPixels();
+};
+
+/**
+ * Set texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @param {Uint8Array} data - Pixels data
+ * @returns {uno.CanvasRender} - <code>this</code>
+ */
+uno.CanvasRender.prototype.setPixels = function(texture, data) {
+    uno.CanvasTexture.get(texture).setPixels(data);
+    return this;
+};
+
+/**
  * Initialize settings properties helper
  * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
  * @private
@@ -337,6 +371,7 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
  */
 uno.CanvasRender.prototype._setupProps = function() {
     this._currentMatrix = new uno.Matrix();
+    this._clearMatrixTemp = new uno.Matrix();
     this._clearColorTemp = new uno.Color();
     this._target = null;
 };

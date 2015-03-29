@@ -49,18 +49,6 @@ uno.WebglRender.prototype.resize = function(width, height) {
 };
 
 /**
- * Get bounds of render
- * For browser bounds is position and size on page
- * For other platforms position and size on screen
- * @returns {uno.Rect}
- */
-uno.WebglRender.prototype.bounds = function() {
-    if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
-        this._updateBounds();
-    return this._bounds;
-};
-
-/**
  * Free all allocated resources and destroy render
  */
 uno.WebglRender.prototype.destroy = function() {
@@ -73,6 +61,7 @@ uno.WebglRender.prototype.destroy = function() {
         this._shaders[i].destroy();
     this._currentShader = null;
     this._currentMatrix = null;
+    this._targetMatrix = null;
     this._shaders = {};
     this._canvas.removeEventListener('webglcontextlost', this._contextLostHandle);
     this._canvas.removeEventListener('webglcontextrestored', this._contextRestoredHandle);
@@ -88,8 +77,21 @@ uno.WebglRender.prototype.destroy = function() {
 };
 
 /**
+ * Get bounds of render
+ * For browser bounds is position and size on page
+ * For other platforms position and size on screen
+ * @returns {uno.Rect}
+ */
+uno.WebglRender.prototype.bounds = function() {
+    if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
+        this._updateBounds();
+    return this._bounds;
+};
+
+/**
  * Set or reset render target texture
  * @param {uno.WebglTexture} texture - Texture for render buffer
+ * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.target = function(texture) {
     this._graphics.flush();
@@ -108,36 +110,6 @@ uno.WebglRender.prototype.target = function(texture) {
         this._projection.y = -texture.height / 2;
         this._context.viewport(0, 0, texture.width, texture.height);
     }
-};
-
-/**
- * Clear viewport with color
- * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
- * @returns {uno.WebglRender} - <code>this</code>
- */
-uno.WebglRender.prototype.clear = function(color) {
-    // TODO: Actually we need reset method for graphics and batch (without rendering)
-    this._graphics.flush();
-    this._batch.flush();
-
-    var ctx = this._context;
-
-    if (this._transparent) {
-        if (!color && this.clearColor === false)
-            return;
-        ctx.clearColor(0, 0, 0, 0);
-        ctx.clear(ctx.COLOR_BUFFER_BIT);
-        return this;
-    }
-
-    if (!color)
-        color = this.clearColor;
-
-    if (!color || !color.a)
-        return this;
-
-    ctx.clearColor(color.r, color.g, color.b, color.a);
-    ctx.clear(ctx.COLOR_BUFFER_BIT);
 
     return this;
 };
@@ -151,12 +123,6 @@ uno.WebglRender.prototype.transform = function(matrix) {
     if (!matrix)
         return this._currentMatrix;
     this._currentMatrix.set(matrix);
-    if (this._target) {
-        this._currentMatrix.translate(0, this._projection.y * 2);
-        this._currentMatrix.scale(1, -1);
-        //this._currentMatrix.rotate(-uno.Math.PI);
-        //this._currentMatrix.translate(0, -this._projection.y * 2);
-    }
     return this._currentMatrix;
 };
 
@@ -199,6 +165,38 @@ uno.WebglRender.prototype.lineWidth = function(width) {
 };
 
 /**
+ * Clear viewport with color
+ * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
+ * @returns {uno.WebglRender} - <code>this</code>
+ */
+uno.WebglRender.prototype.clear = function(color) {
+    // TODO: Actually we need reset method for graphics and batch (without rendering)
+    this._graphics.flush();
+    this._batch.flush();
+
+    var ctx = this._context;
+
+    if (this._transparent) {
+        if (!color && this.clearColor === false)
+            return;
+        ctx.clearColor(0, 0, 0, 0);
+        ctx.clear(ctx.COLOR_BUFFER_BIT);
+        return this;
+    }
+
+    if (!color)
+        color = this.clearColor;
+
+    if (!color || !color.a)
+        return this;
+
+    ctx.clearColor(color.r, color.g, color.b, color.a);
+    ctx.clear(ctx.COLOR_BUFFER_BIT);
+
+    return this;
+};
+
+/**
  * Draw texture
  * @param {uno.Texture} texture - The texture to render
  * @param {uno.Frame} frame - The frame to render rect of the texture
@@ -210,6 +208,18 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
     if (!texture.ready)
         return this;
     this._graphics.flush();
+
+    // If this texture is render target flip transform vertical
+    if (uno.WebglTexture.get(texture).handle(this, true, false)) {
+        var matrix = this._targetMatrix;
+        matrix.reset();
+        matrix.translate(0, this._projection.y);
+        matrix.scale(1, -1);
+        if (!this._currentMatrix.identity())
+            matrix.prepend(this._currentMatrix);
+        this._currentMatrix.set(matrix);
+    }
+
     this._batch.render(uno.WebglTexture.get(texture).handle(this), frame, tint || uno.Color.WHITE, alpha || 1);
     return this;
 };
@@ -302,6 +312,7 @@ uno.WebglRender.prototype.drawPoly = function(points) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawShape = function(shape) {
+    this._batch.flush();
     this._graphics.drawShape(shape);
     return this;
 };
@@ -320,6 +331,30 @@ uno.WebglRender.prototype.startShape = function() {
  */
 uno.WebglRender.prototype.endShape = function() {
     return this._graphics.endShape();
+};
+
+/**
+ * Get texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @returns {Uint8Array}
+ */
+uno.WebglRender.prototype.getPixels = function(texture) {
+    if (this._target === texture) {
+        this._batch.flush();
+        this._graphics.flush();
+    }
+    return uno.WebglTexture.get(texture).getPixels(this);
+};
+
+/**
+ * Set texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @param {Uint8Array} data - Pixels data
+ * @returns {uno.WebglRender} - <code>this</code>
+ */
+uno.WebglRender.prototype.setPixels = function(texture, data) {
+    uno.WebglTexture.get(texture).setPixels(data, this);
+    return this;
 };
 
 /**
@@ -404,6 +439,7 @@ uno.WebglRender.prototype._setupProps = function() {
     this._target = null;
     this._currentMatrix = new uno.Matrix();
     this._currentShader = null;
+    this._targetMatrix = new uno.Matrix();
     this._shaders = {};
 };
 

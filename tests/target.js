@@ -7,25 +7,30 @@ var target = function(object) {
     this.filter = true;
     this.m1 = new uno.Matrix();
     this.matrix = new uno.Matrix();
+    this.filterVal = 0;
+    this.filterOffset = 0.01;
     //this.matrix.rotate(uno.Math.HALF_PI);
     //this.matrix.translate(300, 300);
 };
 
 target.id = 'target';
 
-target.prototype.filterTexture = function(texture) {
-    var tex = uno.CanvasTexture.get(texture).context();
-    var image = tex.getImageData(0, 0, texture.width, texture.height);
-    var data = image.data;
+target.prototype.filterTexture = function(render, texture) {
+    var data = render.getPixels(texture);
+    this.filterVal += this.filterOffset;
+    if (this.filterVal > 0.3 || this.filterVal < -0.3)
+        this.filterOffset = -this.filterOffset;
+    var val = this.filterVal;
     for (var i = 0, l = data.length; i < l; i += 4) {
-        data[i] = data[i + 1] = data[i + 2] = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+        data[i] = data[i + 1] = data[i + 2] = 0.2126 * data[i] + (0.7152 - val) * data[i + 1] + 0.0722 * data[i + 2];
+        val += 0.00001;
     }
-    tex.putImageData(image, 0, 0);
+    render.setPixels(texture, data);
 };
 
 target.prototype.update = function(render) {
-    //this.matrix.rotate(0.005);
-    this.m1.rotate(0.005);
+    this.matrix.rotate(0.005);
+    this.m1.rotate(-0.01);
 };
 
 target.prototype.render = function(render) {
@@ -39,16 +44,17 @@ target.prototype.render = function(render) {
     }
     if (this.filter) {
         render.target(this.target);
-        render.clear();
         render.transform(this.matrix);
+        render.clear();
         render.drawTexture(this.texture, this.frame1);
         render.transform(this.m1);
+        render.fillColor(uno.Color.RED);
         render.drawRect(100, 100, 100, 100);
-        /*if (render.type === uno.Render.RENDER_CANVAS)
-            this.filterTexture(this.target);*/
+        this.filterTexture(render, this.target);
         render.target();
     }
     render.transform(uno.Matrix.IDENTITY);
+    render.fillColor(uno.Color.WHITE);
     render.drawRect(0, 0, render.width, render.height);
     render.transform(this.object.transform.matrix);
     render.drawTexture(this.filter ? this.target : this.texture, this.filter ? this.frame2 : this.frame1);
