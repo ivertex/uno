@@ -154,6 +154,8 @@ uno.WebglRender.prototype.transform = function(matrix) {
     if (this._target) {
         this._currentMatrix.translate(0, this._projection.y * 2);
         this._currentMatrix.scale(1, -1);
+        //this._currentMatrix.rotate(-uno.Math.PI);
+        //this._currentMatrix.translate(0, -this._projection.y * 2);
     }
     return this._currentMatrix;
 };
