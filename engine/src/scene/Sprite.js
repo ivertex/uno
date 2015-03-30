@@ -15,24 +15,15 @@ uno.Sprite = function(object) {
      * Texture for rendering sprite
      * @type {uno.Texture}
      * @default null
-     * @private
      */
-    this._texture = null;
+    this.texture = null;
 
     /**
      * Texture frame for rendering
-     * @type {uno.Frame}
+     * @type {uno.Rect}
      * @default null
-     * @private
      */
-    this._frame = null;
-
-    /**
-     * Is frame dirty (texture changed or not ready)
-     * @type {Boolean}
-     * @private
-     */
-    this._dirty = false;
+    this.frame = new uno.Rect();
 
     /**
      * Opacity of the sprite
@@ -64,55 +55,17 @@ uno.Sprite = function(object) {
 uno.Sprite.id = 'sprite';
 
 /**
- * The sprite texture
- * @name uno.Sprite#texture
- * @type {uno.Texture}
- * @default null
- */
-Object.defineProperty(uno.Sprite.prototype, 'texture', {
-    get: function() {
-        return this._texture;
-    },
-    set: function(value) {
-        this._texture = value;
-        this._dirty = true;
-    }
-});
-
-/**
- * The frame of the texture
- * @name uno.Sprite#frame
- * @type {uno.Frame}
- * @readonly
- */
-Object.defineProperty(uno.Sprite.prototype, 'frame', {
-    get: function() {
-        if (this._frame) {
-            if (this._dirty && this._texture && this._texture.ready)
-                this._frame.setMaxSize(this._texture.width, this._texture.height);
-            return this._frame;
-        }
-        if (this._texture && this._texture.ready)
-            this._frame = new uno.Frame(this._texture.width, this._texture.height);
-        else {
-            this._frame = new uno.Frame();
-            this._dirty = true;
-        }
-        return this._frame;
-    }
-});
-
-/**
  * Render method of the component
  * @param {CanvasRender|WebglRender} render
  */
 uno.Sprite.prototype.render = function(render) {
-    if (!this.object || !this.object.transform || !this._texture || !this._texture.ready || !this.alpha)
+    if (!this.object || !this.object.transform || !this.texture || !this.texture.ready || !this.alpha)
         return;
-    var frame = this.frame;
-    if (!frame.width || !frame.height)
-        return;
+    if (!this.frame.width && !this.frame.height) {
+        this.frame.width = this.texture.width;
+        this.frame.height = this.texture.height;
+    }
     render.transform(this.object.transform.matrix);
     render.blendMode(this.blend);
-    render.drawTexture(this._texture, frame, this.tint, this.alpha);
+    render.drawTexture(this.texture, this.frame, this.alpha, this.tint);
 };

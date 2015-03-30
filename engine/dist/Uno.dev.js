@@ -840,14 +840,22 @@ uno.Matrix.prototype.scale = function(x, y) {
 /**
  * Applies a rotation transformation to the matrix
  * @param {Number} angle - The angle in radians
+ * @param {Number|uno.Point} x - the x-coordinate of the anchor point<br>
+ *     If x is object it treated as uno.Point instance
+ * @param {Number} y - the y-coordinate of the anchor point
  * @returns {uno.Matrix} - <code>this</code>
  */
-uno.Matrix.prototype.rotate = function(angle) {
-    var cos = this._cos = Math.cos(angle);
-    var sin = this._sin = Math.sin(angle);
+uno.Matrix.prototype.rotate = function(angle, x, y) {
+    var cos = Math.cos(angle);
+    var sin = Math.sin(angle);
     var a1 = this.a;
     var c1 = this.c;
     var tx1 = this.tx;
+    // TODO: Find correct rotate around code
+    if (x && y) {
+        tx1 = x - x * cos + y * sin;
+        this.ty = y - x * sin - y * cos;
+    }
     this.a = a1 * cos - this.b * sin;
     this.b = a1 * sin + this.b * cos;
     this.c = c1 * cos - this.d * sin;
@@ -2478,387 +2486,6 @@ uno.Color.GREEN          = new uno.Color(0, 1, 0);
  */
 uno.Color.BLUE           = new uno.Color(0, 0, 1);
 /**
- * Class for hold and calculate UV coordinates
- * @constructor
- */
-uno.UV = function() {
-    /**
-     * The left-top point x-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.x0 = 0;
-
-    /**
-     * The left-top point y-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.y0 = 0;
-
-    /**
-     * The right-top point x-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.x1 = 0;
-
-    /**
-     * The right-top point y-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.y1 = 0;
-
-    /**
-     * The right-bottom point x-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.x2 = 0;
-
-    /**
-     * The right-bottom point y-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.y2 = 0;
-
-    /**
-     * The left-bottom point x-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.x3 = 0;
-
-    /**
-     * The left-bottom point y-coordinate
-     * @type {Number}
-     * @defult 0
-     */
-    this.y3 = 0;
-};
-
-/**
- * Update UV coordinates using max size and frame data
- * @param {Number} maxWidth - The max width (texture width)
- * @param {Number} maxHeight - The max height (texture height)
- * @param {Number} x - The x-coordinate of the frame
- * @param {Number} y - The y-coordinate of the frame
- * @param {Number} width - The width of the frame
- * @param {Number} height - The height of the frame
- * @returns {uno.UV} - <code>this</code>
- */
-uno.UV.prototype.update = function(maxWidth, maxHeight, x, y, width, height) {
-    this.x0 = x / maxWidth;
-    this.y0 = y / maxHeight;
-    this.x1 = (x + width) / maxWidth;
-    this.y1 = y / maxHeight;
-    this.x2 = (x + width) / maxWidth;
-    this.y2 = (y + height) / maxHeight;
-    this.x3 = x / maxWidth;
-    this.y3 = (y + height) / maxHeight;
-    return this;
-};
-/**
- * Frame represents rectangle of texture
- * @param {Number} maxWidth - Width limit of the frame (width of the texture)<br>
- *     If maxWidth is object and have x property it treated as uno.Point (max size of the frame)
- * @param {Number} maxHeight - Height limit of the frame (height of the texture)
- * @constructor
- */
-uno.Frame = function(maxWidth, maxHeight) {
-    /**
-     * @property {Number} _x - X-coordinate of the rect
-     * @private
-     * @default 0
-     */
-    this._x = 0;
-
-    /**
-     * @property {Number} _y - Y-coordinate of the rect
-     * @private
-     * @default 0
-     */
-    this._y = 0;
-
-    /**
-     * @property {Number} _width - Width the rect
-     * @private
-     * @default 0
-     */
-    this._width = maxWidth || 0;
-
-    /**
-     * @property {Number} _height - Height the rect
-     * @private
-     * @default 0
-     */
-
-    this._height = maxHeight || 0;
-    /**
-     * @property {Number} _maxWidth - Max width of the rect (width of texture)
-     * @private
-     * @default 0
-     */
-
-    this._maxWidth = maxWidth || 0;
-    /**
-     * @property {Number} _maxHeight - Height the rect (height of texture)
-     * @private
-     * @default 0
-     */
-    this._maxHeight = maxHeight || 0;
-
-    /**
-     * @property {Boolean} _dirty - Mark UV as dirty when coordinates or size changed
-     * @private
-     * @default true
-     */
-    this._dirty = true;
-
-    /**
-     * @property {uno.UV} _uv - UV coordinates of the rect
-     * @private
-     * @default null
-     */
-    this._uv = null;
-
-    if (maxWidth !== undefined && maxWidth.x !== undefined) {
-        this._maxWidth = this._width = maxWidth.x;
-        this._maxHeight = this._height = maxWidth.y;
-    }
-};
-
-/**
- * Set frame position and size
- * @param {Number|uno.Point|uno.Rect|uno.Frame} [x=0] - The new x-coordinate of the frame<br>
- *     If x is object and have no width property it treated as uno.Point (position of the frame)
- *     If x is object and have width property it treated as uno.Rect or uno.Frame (they have equal properties)
- * @param {Number|uno.Point} [y=0] - The new y-coordinate of the frame
- *     If y is object and have no width property it treated as uno.Point (size of the frame)
- * @param {Number} [width=0] - The new width of the frame
- * @param {Number} [height=0] - The new height of the frame
- * @returns {uno.Frame} - <code>this</code>
- */
-uno.Frame.prototype.set = function(x, y, width, height) {
-    if (x !== undefined && x.width !== undefined) {
-        if (x.x < 0 || x.x + x.width > this._maxWidth ||
-            x.y < 0 || x.y + x.height > this._maxHeight)
-            return this;
-        this._x = x.x;
-        this._y = x.y;
-        this._width = x.width;
-        this._height = x.height;
-        if (x.maxWidth) {
-            this._maxWidth = x.maxWidth;
-            this._maxHeight = x.maxHeight;
-        }
-        this._dirty = true;
-        return this;
-    }
-    if (x !== undefined && x.x !== undefined) {
-        if (x.x >= 0 && x.y >= 0) {
-            this._x = x.x;
-            this._y = x.y;
-        }
-        if (y !== undefined && y.x !== undefined) {
-            if (this.x + y.x <= this._maxWidth && this.y + y.y <= this._maxHeight) {
-                this._width = y.x;
-                this._height = y.y;
-            }
-        }
-        return this;
-    }
-    if (x < 0 || x + width > this._maxWidth ||
-        y < 0 || y + height > this._maxHeight)
-        return this;
-    this._x = x || 0;
-    this._y = y || 0;
-    this._width = width || 0;
-    this._height = height || 0;
-    this._dirty = true;
-    return this;
-};
-
-/**
- * Set frame position
- * @param {Number|uno.Point} x - The x-coordinate of the frame<br>
- *     If x is object and have x property it treated as uno.Point (position of the frame)
- * @param {Number} y - The y-coordinate of the frame
- * @returns {uno.Frame} - <code>this</code>
- */
-uno.Frame.prototype.setPosition = function(x, y) {
-    if (x.x !== undefined) {
-        x = x.x;
-        y = x.y;
-    }
-    if (x < 0 || x + this._width > this._maxWidth ||
-        y < 0 || y + this._height > this._maxHeight)
-        return this;
-    this._x = x;
-    this._y = y;
-    this._dirty = true;
-    return this;
-};
-
-/**
- * Set frame position
- * @param {Number|uno.Point} width - The width of the frame<br>
- *     If x is object and have x property it treated as uno.Point (size of the frame)
- * @param {Number} height - The height of the frame
- * @returns {uno.Frame} - <code>this</code>
- */
-uno.Frame.prototype.setSize = function(width, height) {
-    if (width !== undefined && width.x !== undefined) {
-        width = width.x;
-        height = width.y;
-    }
-    if (width < 0 || this._x + width > this._maxWidth ||
-        height < 0 || this._y + height > this._maxHeight)
-        return this;
-    this._width = width;
-    this._height = height;
-    this._dirty = true;
-    return this;
-};
-
-/**
- * Set frame max size
- * @param {Number|uno.Point} width - The max width of the frame<br>
- *     If x is object and have x property it treated as uno.Point (max size of the frame)
- * @param {Number} height - The max height of the frame
- * @returns {uno.Frame} - <code>this</code>
- */
-uno.Frame.prototype.setMaxSize = function(width, height) {
-    if (width !== undefined && width.x !== undefined) {
-        width = width.x;
-        height = width.y;
-    }
-    this._maxWidth = width;
-    this._maxHeight = height;
-    if (this._x > this._maxWidth)
-        this._x = this._maxWidth;
-    if (this._y > this._maxHeight)
-        this._y = this._maxHeight;
-    if (this._x + this._width > this._maxWidth)
-        this._width = this._maxWidth - this._x;
-    if (this._y + this._height > this._maxHeight)
-        this._height = this._maxHeight - this._y;
-    this._dirty = true;
-    return this;
-};
-
-/**
- * The x-coordinate of the frame
- * @name uno.Frame#x
- * @type {Number}
- * @default 0
- */
-Object.defineProperty(uno.Frame.prototype, 'x', {
-    get: function() {
-        return this._x;
-    },
-    set: function(value) {
-        if (value < 0 || value + this._width > this._maxWidth)
-            return;
-        this._x = value;
-    }
-});
-
-/**
- * The y-coordinate of the frame
- * @name uno.Frame#y
- * @type {Number}
- * @default 0
- */
-Object.defineProperty(uno.Frame.prototype, 'y', {
-    get: function() {
-        return this._y;
-    },
-    set: function(value) {
-        if (value < 0 || value + this._height > this._maxHeight)
-            return;
-        this._y = value;
-    }
-});
-
-/**
- * The width of the frame
- * @name uno.Frame#width
- * @type {Number}
- * @default 0
- */
-Object.defineProperty(uno.Frame.prototype, 'width', {
-    get: function() {
-        return this._width;
-    },
-    set: function(value) {
-        if (value < 0 || this._x + value > this._maxWidth)
-            return;
-        this._width = value;
-    }
-});
-
-/**
- * The height of the frame
- * @name uno.Frame#height
- * @type {Number}
- * @default 0
- */
-Object.defineProperty(uno.Frame.prototype, 'height', {
-    get: function() {
-        return this._height;
-    },
-    set: function(value) {
-        if (value < 0 || this._y + value > this._maxHeight)
-            return;
-        this._height = value;
-    }
-});
-
-/**
- * The max width of the frame (texture width)
- * @name uno.Frame#maxWidth
- * @type {Number}
- * @default 0
- */
-Object.defineProperty(uno.Frame.prototype, 'maxWidth', {
-    get: function() {
-        return this._maxWidth;
-    }
-});
-
-/**
- * The max height of the frame (texture height)
- * @name uno.Frame#maxHeight
- * @type {Number}
- * @default 0
- */
-Object.defineProperty(uno.Frame.prototype, 'maxHeight', {
-    get: function() {
-        return this._maxHeight;
-    }
-});
-
-/**
- * The UV coordinates for the frame
- * @name uno.Frame#uv
- * @type {uno.UV}
- * @readonly
- */
-Object.defineProperty(uno.Frame.prototype, 'uv', {
-    get: function() {
-        if (!this._uv)
-            this._uv = new uno.UV();
-        if (this._dirty) {
-            this._uv.update(this._maxWidth, this._maxHeight, this._x, this._y, this._width, this._height);
-            this._dirty = false;
-        }
-        return this._uv;
-    }
-});
-/**
  * Texture stores the information that represents an image
  * @constructor
  */
@@ -2879,11 +2506,18 @@ uno.Texture = function(width, height) {
     this.scaleMode = uno.Render.SCALE_DEFAULT;
 
     /**
-     * The texture image data
+     * Width of the texture
      * @type {Number}
      * @private
      */
-    this._source = null;
+    this._width = 0;
+
+    /**
+     * Height of the texture
+     * @type {Number}
+     * @private
+     */
+    this._height = 0;
 
     /**
      * Is texture loaded
@@ -2891,6 +2525,13 @@ uno.Texture = function(width, height) {
      * @private
      */
     this._ready = false;
+
+    /**
+     * URL if texture is loaded
+     * @type {Boolean}
+     * @private
+     */
+    this._url = null;
 
     /**
      * The texture extensions for renders
@@ -2903,11 +2544,13 @@ uno.Texture = function(width, height) {
         return;
 
     if (uno.Browser.any) {
-        this._source = uno.CanvasTexture.create(width, height);
-        this._pot = uno.Math.isPOT(this._source.width) && uno.Math.isPOT(this._source.height);
+        this._width = width;
+        this._height = height;
+        this._pot = uno.Math.isPOT(width) && uno.Math.isPOT(height);
         this._ready = true;
         return;
     }
+
     uno.error('Only browsers currently supported');
 };
 
@@ -2926,12 +2569,14 @@ uno.Texture._uid = 0;
  * @returns {uno.Texture} - <code>this</code>
  */
 uno.Texture.prototype.load = function(url, complete, cache) {
-    if (this._source)
-        this.destroy();
+    this.destroy();
+
+    // TODO: This block is platform specific. Should we do anything with it?
     if (uno.Browser.any) {
-        this._source = uno.CanvasTexture.load(url, this._onLoad.bind(this, complete), cache);
+        uno.CanvasTexture.get(this).load(url, this._onLoad.bind(this, complete), cache);
         return this;
     }
+
     uno.error('Only browsers currently supported');
 };
 
@@ -2944,8 +2589,8 @@ uno.Texture.prototype.destroy = function() {
     this.scaleMode = uno.Render.SCALE_DEFAULT;
     this._pot = false;
     this._ready = false;
-    this._source = null;
-    this._extensions = null;
+    this._url = null;
+    this._extensions = {};
 };
 
 /**
@@ -2957,9 +2602,7 @@ uno.Texture.prototype.destroy = function() {
  */
 Object.defineProperty(uno.Texture.prototype, 'width', {
     get: function() {
-        if (!this._source || !this._ready)
-            return 0;
-        return this._source.width;
+        return this._width;
     }
 });
 
@@ -2972,9 +2615,7 @@ Object.defineProperty(uno.Texture.prototype, 'width', {
  */
 Object.defineProperty(uno.Texture.prototype, 'height', {
     get: function() {
-        if (!this._source || !this._ready)
-            return 0;
-        return this._source.height;
+        return this._height;
     }
 });
 
@@ -2987,7 +2628,20 @@ Object.defineProperty(uno.Texture.prototype, 'height', {
  */
 Object.defineProperty(uno.Texture.prototype, 'ready', {
     get: function() {
-        return this._source && this._ready;
+        return this._ready;
+    }
+});
+
+/**
+ * If texture loaded URL returned else null
+ * @name uno.Texture#url
+ * @type {String}
+ * @default false
+ * @readonly
+ */
+Object.defineProperty(uno.Texture.prototype, 'url', {
+    get: function() {
+        return this._url;
     }
 });
 
@@ -3007,18 +2661,24 @@ Object.defineProperty(uno.Texture.prototype, 'pot', {
 /**
  * Process loaded texture
  * @param {Function} complete - Function to call after loading
- * @param {Object} result - The loaded texture or null if load error occured
+ * @param {Object} success - True if loading success
  * @param {String} url - URL of the texture
+ * @param {Number} width - Width of the loaded texture
+ * @param {Number} height - Height of the loaded texture
  * @private
  */
-uno.Texture.prototype._onLoad = function(complete, result, url) {
-    if (!result)
+uno.Texture.prototype._onLoad = function(complete, url, success, width, height) {
+    if (!success)
         return uno.error('Can\'t load image', '[', url, ']');
-    this._pot = uno.Math.isPOT(this._source.width) && uno.Math.isPOT(this._source.height);
+    this._width = width;
+    this._height = height;
+    this._pot = uno.Math.isPOT(width) && uno.Math.isPOT(height);
+    this._url = url;
     this._ready = true;
     if (complete)
         complete(this);
 };
+
 /**
  * Class for holding list of geometric figures - shape
  * @constructor
@@ -3601,9 +3261,40 @@ uno.CanvasGraphics.prototype.drawPoly = function(points) {
  * @constructor
  */
 uno.CanvasTexture = function(texture) {
-    this._texture = texture;
+    /**
+     * Parent texture for this extension
+     * @type {uno.Texture}
+     * @private
+     */
+    this.texture = texture;
+
+    /**
+     * Image or canvas with texture data
+     * @type {Image|canvas}
+     * @private
+     */
+    this._source = null;
+
+    /**
+     * Texture context for manipulation
+     * @type {CanvasRenderingContext2D}
+     * @private
+     */
     this._context = null;
+
+    /**
+     * Cache for texture tinting
+     * @type {Object}
+     * @private
+     */
     this._tintCache = {};
+
+    /**
+     * Image data for methods getPixels/setPixels
+     * @type {ImageData}
+     * @private
+     */
+    this._imageData = null;
 };
 
 /**
@@ -3611,7 +3302,8 @@ uno.CanvasTexture = function(texture) {
  */
 uno.CanvasTexture.prototype.destroy = function() {
     uno.CanvasTinter.removeCache(this);
-    this._texture = null;
+    this.texture = null;
+    this._source = null;
     this._context = null;
     this._tintCache = null;
 };
@@ -3626,45 +3318,50 @@ uno.CanvasTexture.prototype.tint = function(tint) {
 };
 
 /**
- * Return 2d context of the texture for render target
+ * Return 2d context of the texture for render target<br>
+ *     This function called very frequently, try avoid variable creation
  * @returns {CanvasRenderingContext2D}
  */
 uno.CanvasTexture.prototype.context = function() {
     if (!this._context)
-        this._context = this._texture._source.getContext('2d');
+        this._context = this._source.getContext('2d');
     return this._context;
 };
 
 /**
- * Get texture handle for render
- * @returns {canvas} - Texture canvas
+ * Get texture handle for render<br>
+ *     This function called very frequently, try avoid variable creation
+ * @returns {Image|canvas} - Texture canvas
  */
 uno.CanvasTexture.prototype.handle = function() {
-    return this._texture._source;
+    if (this._source === null && this.texture.width && this.texture.height) {
+        var source = document.createElement('canvas');
+        source.width = this.texture.width;
+        source.height = this.texture.height;
+        this._source = source;
+    }
+    return this._source;
 };
 
 /**
- * Get texture extension factory
- * @param {uno.Texture} texture
- * @returns {uno.CanvasTexture}
+ * Get or set texture pixels
+ * @returns {Uint8ClampedArray}
  */
-uno.CanvasTexture.get = function(texture) {
-    if (!texture._extensions.canvas)
-        texture._extensions.canvas = new uno.CanvasTexture(texture);
-    return texture._extensions.canvas;
+uno.CanvasTexture.prototype.getPixels = function() {
+    this._imageData = this.context().getImageData(0, 0, this.texture.width, this.texture.height);
+    return this._imageData.data;
 };
 
 /**
- * Create texture
- * @param {Number} width - With of the texture
- * @param {Number} height - Height of the texture
- * @returns {canvas}
+ * Get or set texture pixels
+ * @param {Uint8ClampedArray} data - Pixels data
+ * @returns {CanvasTexture} - <code>this</code>
  */
-uno.CanvasTexture.create = function(width, height) {
-    var texture = document.createElement('canvas');
-    texture.width = width;
-    texture.height = height;
-    return texture;
+uno.CanvasTexture.prototype.setPixels = function(data) {
+    if (this._imageData.data !== data)
+        this._imageData.set(data);
+    this.context().putImageData(this._imageData, 0, 0);
+    return this;
 };
 
 /**
@@ -3672,22 +3369,38 @@ uno.CanvasTexture.create = function(width, height) {
  * @param {String} url - URL of the image
  * @param {Function} complete - Call function after load
  * @param {Boolean} [cache=true] - Should the texture cached
- * @returns {canvas}
  */
-uno.CanvasTexture.load = function(url, complete, cache) {
-    if (uno.CanvasTexture._cache[url])
-        return uno.CanvasTexture._cache[url];
-    var texture = new Image();
-    texture.addEventListener('load', function() {
+uno.CanvasTexture.prototype.load = function(url, complete, cache) {
+    if (uno.CanvasTexture._cache[url]) {
+        this._source = uno.CanvasTexture._cache[url];
+        complete(url, true, this._source.width, this._source.height);
+        return;
+    }
+    var source = new Image();
+    var self = this;
+    source.addEventListener('load', function() {
         if (cache !== false)
             uno.CanvasTexture._cache[url] = cache;
-        complete(texture, url);
+        self._source = source;
+        complete(url, true, source.width, source.height);
     });
-    texture.addEventListener('error', function() {
-        complete(null, url);
+    source.addEventListener('error', function() {
+        complete(url, false);
     });
-    texture.src = url;
-    return texture;
+    source.src = url;
+    return source;
+};
+
+/**
+ * Get texture extension factory<br>
+ *     This function called very frequently, try avoid variable creation
+ * @param {uno.Texture} texture
+ * @returns {uno.CanvasTexture}
+ */
+uno.CanvasTexture.get = function(texture) {
+    if (!texture._extensions.canvas)
+        texture._extensions.canvas = new uno.CanvasTexture(texture);
+    return texture._extensions.canvas;
 };
 
 /**
@@ -3753,7 +3466,7 @@ uno.CanvasTinter._cacheTextures = [];
  */
 uno.CanvasTinter.tint = function(canvasTexture, color) {
     if (color.equal(uno.Color.WHITE))
-        return canvasTexture._texture._source;
+        return canvasTexture.texture._source;
     if (uno.CanvasTinter.multiplyMode === undefined)
         uno.CanvasTinter.multiplyMode = uno.CanvasRender._blendModesSupported();
     if (!uno.CanvasTinter._color)
@@ -3765,7 +3478,7 @@ uno.CanvasTinter.tint = function(canvasTexture, color) {
     var cache = canvasTexture._tintCache[tint.hex];
     if (cache)
         return cache.canvas;
-    var image = canvasTexture._texture._source;
+    var image = canvasTexture._source;
     var canvas = document.createElement('canvas');
     canvas.width = image.width;
     canvas.height = image.height;
@@ -3906,6 +3619,27 @@ uno.CanvasRender.prototype.resize = function(width, height) {
 };
 
 /**
+ * Free all allocated resources and destroy render
+ */
+uno.CanvasRender.prototype.destroy = function() {
+    delete uno.Render.renders[this.id];
+    this._context = null;
+    this._canvas = null;
+    this._target = null;
+    this._displayCanvas = null;
+    this._displayContext = null;
+    this._currentMatrix = null;
+    this._clearMatrixTemp = null;
+    this._clearColorTemp = null;
+    this._bounds = null;
+    this._boundsScroll = null;
+    this._frameBind = null;
+    this._graphics.destroy();
+    this._graphics = null;
+    this.root = null;
+};
+
+/**
  * Get bounds of render
  * For browser bounds is position and size on page
  * For other platforms position and size on screen
@@ -3918,66 +3652,23 @@ uno.CanvasRender.prototype.bounds = function() {
 };
 
 /**
- * Free all allocated resources and destroy render
- */
-uno.CanvasRender.prototype.destroy = function() {
-    delete uno.Render.renders[this.id];
-    this._context = null;
-    this._canvas = null;
-    this._displayCanvas = null;
-    this._displayContext = null;
-    this._currentMatrix = null;
-    this._clearColorTemp = null;
-    this._bounds = null;
-    this._boundsScroll = null;
-    this._frameBind = null;
-    this._graphics.destroy();
-    this._graphics = null;
-    this.root = null;
-};
-
-/**
  * Set or reset render target texture
  * @param {uno.CanvasTexture} texture - Texture for render buffer
+ * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.target = function(texture) {
     if (!texture) {
+        this._target = null;
         this._canvas = this._displayCanvas;
         this._context = this._displayContext;
-        return;
+        return this;
     }
+
+    this._target = texture;
     var extension = uno.CanvasTexture.get(texture);
     this._canvas = extension.handle(this);
     this._context = extension.context();
-};
 
-/**
- * Clear viewport with color
- * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
- * @returns {uno.CanvasRender} - <code>this</code>
- */
-uno.CanvasRender.prototype.clear = function(color) {
-    var ctx = this._context;
-    this.blendMode(uno.Render.BLEND_NORMAL);
-    this.transform(uno.Matrix.IDENTITY);
-    if (this._transparent) {
-        if (!color && this.clearColor === false)
-            return this;
-        ctx.clearRect(0, 0, this.width, this.height);
-        return this;
-    }
-    if (!color)
-        color = this.clearColor;
-    if (!color || !color.a)
-        return this;
-    var graphics = this._graphics;
-    var width = graphics.lineWidth();
-    var fill = this._clearColorTemp.set(graphics.fillColor());
-    graphics.fillColor(color);
-    graphics.lineWidth(0);
-    graphics.drawRect(0, 0, this.width, this.height);
-    graphics.fillColor(fill);
-    graphics.lineWidth(width);
     return this;
 };
 
@@ -4038,20 +3729,62 @@ uno.CanvasRender.prototype.lineWidth = function(width) {
 };
 
 /**
- * Draw texture
- * @param {uno.Texture} texture - The texture to render
- * @param {uno.Frame} frame - The frame to render rect of the texture
- * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
- * @param {Number} [alpha=1] - Texture opacity
+ * Clear viewport with color
+ * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
+uno.CanvasRender.prototype.clear = function(color) {
+    var ctx = this._context;
+    this.blendMode(uno.Render.BLEND_NORMAL);
+
+    this._clearMatrixTemp.set(this._currentMatrix);
+    this.transform(uno.Matrix.IDENTITY);
+
+    if (this._transparent) {
+        if (!color && this.clearColor === false)
+            return this;
+        ctx.clearRect(0, 0, this.width, this.height);
+        return this;
+    }
+
+    if (!color)
+        color = this.clearColor;
+
+    if (!color || !color.a)
+        return this;
+
+    var graphics = this._graphics;
+    var width = graphics.lineWidth();
+    var fill = this._clearColorTemp.set(graphics.fillColor());
+    graphics.fillColor(color);
+    graphics.lineWidth(0);
+    graphics.drawRect(0, 0, this.width, this.height);
+    graphics.fillColor(fill);
+    graphics.lineWidth(width);
+
+    this.transform(this._clearMatrixTemp);
+
+    return this;
+};
+
+/**
+ * Draw texture
+ * @param {uno.Texture} texture - The texture to render
+ * @param {uno.Rect} frame - The frame to render rect of the texture
+ * @param {Number} [alpha=1] - Texture opacity
+ * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
+ * @returns {uno.CanvasRender} - <code>this</code>
+ */
+uno.CanvasRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
+    if (!texture.ready)
+        return this;
     var ctx = this._context;
     this._setScaleMode(texture.scaleMode);
     this._setAlpha(alpha || 1);
     ctx.drawImage(
         (!tint || tint.equal(uno.Color.WHITE)) ? uno.CanvasTexture.get(texture).handle() : uno.CanvasTexture.get(texture).tint(tint),
-        frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height);
+        frame ? frame.x : 0, frame ? frame.y : 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height,
+        0, 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height);
     return this;
 };
 
@@ -4164,6 +3897,26 @@ uno.CanvasRender.prototype.endShape = function() {
 };
 
 /**
+ * Get texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @returns {Uint8Array}
+ */
+uno.CanvasRender.prototype.getPixels = function(texture) {
+    return uno.CanvasTexture.get(texture).getPixels();
+};
+
+/**
+ * Set texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @param {Uint8Array} data - Pixels data
+ * @returns {uno.CanvasRender} - <code>this</code>
+ */
+uno.CanvasRender.prototype.setPixels = function(texture, data) {
+    uno.CanvasTexture.get(texture).setPixels(data);
+    return this;
+};
+
+/**
  * Initialize settings properties helper
  * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
  * @private
@@ -4193,7 +3946,9 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
  */
 uno.CanvasRender.prototype._setupProps = function() {
     this._currentMatrix = new uno.Matrix();
+    this._clearMatrixTemp = new uno.Matrix();
     this._clearColorTemp = new uno.Color();
+    this._target = null;
 };
 
 /**
@@ -4710,52 +4465,6 @@ uno.WebglShader._getSize = function(ctx, type) {
     }
 };
 /**
- * Default shader for rendering in sprite batch
- * @property {Object} default
- * @property {String} default.name - Name of the shader
- * @property {String[]} default.fragment - Fragment shader
- * @property {String[]} default.vertex - Vertex shader
- * @property {Object} default.attributes - Shader attributes
- * @property {Object} default.uniforms - Shader uniforms
- */
-uno.WebglShader.default = {
-    name: 'default',
-    fragment: [
-        'precision lowp float;',
-        'varying vec2 vTextureCoord;',
-        'varying vec4 vColor;',
-        'uniform sampler2D uSampler;',
-
-        'void main(void) {',
-        '   gl_FragColor = texture2D(uSampler, vTextureCoord) * vColor;',
-        '}'
-    ],
-    vertex: [
-        'attribute vec2 aVertexPosition;',
-        'attribute vec2 aTextureCoord;',
-        'attribute vec4 aColor;',
-        'uniform vec2 uProjection;',
-        'varying vec2 vTextureCoord;',
-        'varying vec4 vColor;',
-        'const vec2 center = vec2(-1.0, 1.0);',
-
-        'void main(void) {',
-        '   gl_Position = vec4((aVertexPosition / uProjection) + center , 0.0, 1.0);',
-        '   vTextureCoord = aTextureCoord;',
-        '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
-        '}'
-    ],
-    attributes: {
-        aVertexPosition: [uno.WebglShader.FLOAT, 2],
-        aTextureCoord: [uno.WebglShader.FLOAT, 2],
-        aColor: [uno.WebglShader.UNSIGNED_BYTE, 4, true]
-    },
-    uniforms: {
-        uProjection: [uno.WebglShader.FLOAT, 2],
-        uSampler: [uno.WebglShader.SAMPLER, 1]
-    }
-};
-/**
  * Primitive shader for rendering shapes in graphics batch
  * @property {Object} default
  * @property {String} default.name - Name of the shader
@@ -4779,10 +4488,10 @@ uno.WebglShader.PRIMITIVE = {
         'attribute vec4 aColor;',
         'uniform vec2 uProjection;',
         'varying vec4 vColor;',
-        'const vec2 center = vec2(-1.0, 1.0);',
+        'const vec2 cOffset = vec2(-1.0, 1.0);',
 
         'void main(void) {',
-        '   gl_Position = vec4(aPosition / uProjection + center, 0.0, 1.0);',
+        '   gl_Position = vec4(aPosition / uProjection + cOffset, 0.0, 1.0);',
         '   vColor = aColor;',
         '}'
     ],
@@ -4791,7 +4500,8 @@ uno.WebglShader.PRIMITIVE = {
         aColor: [uno.WebglShader.UNSIGNED_BYTE, 4, true]    // Using packing ABGR (alpha and tint color)
     },
     uniforms: {
-        uProjection: [uno.WebglShader.FLOAT, 2]
+        uProjection: [uno.WebglShader.FLOAT, 2],
+        uOffset: [uno.WebglShader.FLOAT, 2]
     }
 };
 /**
@@ -4807,37 +4517,38 @@ uno.WebglShader.SPRITE = {
     name: 'sprite',
     fragment: [
         'precision lowp float;',
-        'varying vec2 vTextureCoord;',
+        'varying vec2 vUV;',
         'varying vec4 vColor;',
         'uniform sampler2D uSampler;',
 
         'void main(void) {',
-        '   gl_FragColor = texture2D(uSampler, vTextureCoord) * vColor;',
+        '   gl_FragColor = texture2D(uSampler, vUV) * vColor;',
         '}'
     ],
     vertex: [
         'attribute vec2 aPosition;',
-        'attribute vec2 aTextureCoord;',
+        'attribute vec2 aUV;',
         'attribute vec4 aColor;',
         'uniform vec2 uProjection;',
-        'varying vec2 vTextureCoord;',
+        'varying vec2 vUV;',
         'varying vec4 vColor;',
-        'const vec2 center = vec2(-1.0, 1.0);',
+        'const vec2 cOffset = vec2(-1.0, 1.0);',
 
         'void main(void) {',
-        '   gl_Position = vec4(aPosition / uProjection + center, 0.0, 1.0);',
-        '   vTextureCoord = aTextureCoord;',
+        '   gl_Position = vec4(aPosition / uProjection + cOffset, 0.0, 1.0);',
+        '   vUV = aUV;',
         '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
         '}'
     ],
     attributes: {
         aPosition: [uno.WebglShader.FLOAT, 2],
-        aTextureCoord: [uno.WebglShader.FLOAT, 2],
+        aUV: [uno.WebglShader.FLOAT, 2],
         aColor: [uno.WebglShader.UNSIGNED_BYTE, 4, true]    // Using packing ABGR (alpha and tint color)
     },
     uniforms: {
         uProjection: [uno.WebglShader.FLOAT, 2],
-        uSampler: [uno.WebglShader.SAMPLER, 1]
+        uSampler: [uno.WebglShader.SAMPLER, 1],
+        uOffset: [uno.WebglShader.FLOAT, 2]
     }
 };
 /**
@@ -5051,10 +4762,8 @@ uno.WebglGraphics.prototype.flush = function() {
     var shader = this._currentShader;
     if (!shader)
         shader = this._currentShader = render._getShader(uno.WebglShader.PRIMITIVE);
-    if (shader !== render._getShader()) {
+    if (shader !== render._getShader())
         render._setShader(shader);
-        shader.uProjection.values(render._projection.x, render._projection.y);
-    }
 
     if (this._vertexCount > this._maxVertexCount * 0.5) {
         ctx.bufferSubData(ctx.ELEMENT_ARRAY_BUFFER, 0, this._indices);
@@ -6232,18 +5941,27 @@ uno.WebglGraphics.prototype._saveState = function(blendMode) {
  */
 uno.WebglTexture = function(texture) {
     /**
-     * Host texture
+     * Parent texture for this extension
      * @type {uno.Texture}
      * @private
      */
-    this._texture = texture;
+    this.texture = texture;
 
     /**
-     * Handles for each render
-     * @type {WebGLTexture[]}
+     * Handles for each render<br>
+     *     Objects with handles <code>{ texture: TEXTURE_HANDLE, buffer: FRAME_BUFFER_HANDLE }</code>,<br>
+     *     buffer is null for not render textures (with texture._source not null)
+     * @type {Object[]}
      * @private
      */
     this._handles = {};
+
+    /**
+     * Image data for methods getPixels/setPixels
+     * @type {Uint8ClampedArray}
+     * @private
+     */
+    this._imageData = null;
 };
 
 /**
@@ -6254,24 +5972,80 @@ uno.WebglTexture.prototype.destroy = function() {
         return;
     for (var id in this._handles) {
         var render = uno.Render.renders[id];
+        var handle = this._handles[id];
         render._removeRestore(this);
-        render._context.deleteTexture(this._handles[id]);
+        render._context.deleteTexture(handle.texture);
+        if (handle.buffer)
+            render._context.deleteFramebuffer(handle.buffer);
     }
     this._handles = null;
-    this._texture = null;
+    this.texture = null;
 };
 
 /**
- * Get texture handle for render
- * @param {uno.WebglRender} render - The render needed handle
- * @returns {WebGLTexture} - Corresponding texture
+ * Get texture handle for render<br>
+ *     This function called very frequently, try avoid variable creation
+ * @param {uno.WebglRender} render - The render associated with handle
+ * @param {Boolean} [buffer=false] - Return render buffer handle, not texture handle
+ * @param {Boolean} [create=true] - Should create texture or render buffer handle if it not exist
+ * @returns {WebGLTexture|WebGLFramebuffer} - Corresponding texture or render buffer handle
  */
-uno.WebglTexture.prototype.handle = function(render) {
-    if (!this._handles[render.id]) {
-        this._handles[render.id] = uno.WebglTexture._create(render, this._texture);
+uno.WebglTexture.prototype.handle = function(render, buffer, create) {
+    var handles = this._handles[render.id];
+    if (!handles || (buffer ? !handles.buffer : !handles.texture)) {
+        if (create === false)
+            return false;
+        this._create(render);
         render._addRestore(this);
+        return buffer ? this._handles[render.id].buffer : this._handles[render.id].texture;
     }
-    return this._handles[render.id];
+    return buffer ? handles.buffer : handles.texture;
+};
+
+/**
+ * Get or set texture pixels
+ * @returns {Uint8ClampedArray}
+ */
+uno.WebglTexture.prototype.getPixels = function(render) {
+    var tex = this.texture;
+    var len = tex.width * tex.height * 4;
+
+    if (!this._imageData || this._imageData.length !== len) {
+        this._imageBuffer = new ArrayBuffer(len);
+        this._imageData = new Uint8Array(this._imageBuffer);
+        this._imageDataClamped = new Uint8ClampedArray(this._imageBuffer);
+    }
+
+    var ctx = render._context;
+    var buffer = this.handle(render, true, true);
+
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, buffer);
+    ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.handle(render), 0);
+    ctx.readPixels(0, 0, tex.width, tex.height, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+
+    // TODO: rewrite after changing method 'target' to property
+    var target = render._target;
+    if (target === null)
+        ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+    else
+        render.target(target);
+
+    return this._imageDataClamped;
+};
+
+/**
+ * Get or set texture pixels
+ * @param {Uint8ClampedArray} data - Pixels data
+ * @param {uno.WebglRender} render - For what render texture created
+ * @returns {CanvasTexture} - <code>this</code>
+ */
+uno.WebglTexture.prototype.setPixels = function(data, render) {
+    if (data !== this._imageDataClamped)
+        this._imageDataClamped.set(data);
+    var ctx = render._context;
+    ctx.bindTexture(ctx.TEXTURE_2D, this.handle(render));
+    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, this.texture.width, this.texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+    return this;
 };
 
 /**
@@ -6284,31 +6058,35 @@ uno.WebglTexture.prototype._restore = function(render) {
 };
 
 /**
- * Get texture extension factory
- * @param {uno.Texture} texture
- * @returns {uno.WebglTexture}
- */
-uno.WebglTexture.get = function(texture) {
-    if (!texture._extensions.webgl)
-        texture._extensions.webgl = new uno.WebglTexture(texture);
-    return texture._extensions.webgl;
-};
-
-/**
  * Create WebGL texture helper
  * @param {uno.WebglRender} render - For what render texture created
- * @param {uno.Texture} texture - Texture from which create
- * @returns {WebGLTexture} - Created texture
+ * @returns {Object} - Object with handles <code>{ texture: TEXTURE_HANDLE, buffer: FRAME_BUFFER_HANDLE }</code>,<br>
+ *     buffer is null for not render textures (with texture._source not null)
  * @private
  */
-uno.WebglTexture._create = function(render, texture) {
+uno.WebglTexture.prototype._create = function(render) {
     var ctx = render._context;
-    var tex = ctx.createTexture();
+    var texture = this.texture;
     var mode = texture.scaleMode === uno.Render.SCALE_LINEAR ? ctx.LINEAR : ctx.NEAREST;
+    var textureHandle = ctx.createTexture();
+    var bufferHandle = null;
 
-    ctx.bindTexture(ctx.TEXTURE_2D, tex);
-    ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, texture._source);
+    ctx.bindTexture(ctx.TEXTURE_2D, textureHandle);
+
+    // Check is texture render target or not
+    if (texture.url) {
+
+        // TODO: should we flip texture or not?
+        // ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
+
+        ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        // Here we should get image from CanvasTexture
+        ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, uno.CanvasTexture.get(texture).handle());
+    } else {
+        ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, texture.width, texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, null);
+        bufferHandle = this._createBuffer(ctx, textureHandle, texture.width, texture.height);
+    }
+
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, mode);
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, mode);
 
@@ -6321,7 +6099,39 @@ uno.WebglTexture._create = function(render, texture) {
     }
 
     ctx.bindTexture(ctx.TEXTURE_2D, null);
-    return tex;
+
+    this._handles[render.id] = { texture: textureHandle, buffer: bufferHandle };
+};
+
+/**
+ * Create frame buffer
+ * @param {WebGLRenderingContext} ctx - Render context
+ * @param {WebGLTexture} textureHandle - Texture handle for frame buffer
+ * @param {Number} width - Width of the frame buffer
+ * @param {Number} height - Height of the frame buffer
+ * @returns {WebGLFramebuffer}
+ * @private
+ */
+uno.WebglTexture.prototype._createBuffer = function(ctx, textureHandle, width, height) {
+    var handle = ctx.createFramebuffer();
+    handle.width = width;
+    handle.height = height;
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, handle);
+    ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, textureHandle, 0);
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+    return handle;
+};
+
+/**
+ * Get texture extension factory<br>
+ *     This function called very frequently, try avoid variable creation
+ * @param {uno.Texture} texture
+ * @returns {uno.WebglTexture}
+ */
+uno.WebglTexture.get = function(texture) {
+    if (!texture._extensions.webgl)
+        texture._extensions.webgl = new uno.WebglTexture(texture);
+    return texture._extensions.webgl;
 };
 /**
  * Sprite batcher for WebGL render. Used for rendering sprites with minimum draw calls
@@ -6455,7 +6265,7 @@ uno.WebglBatch.prototype.destroy = function() {
     var ctx = this._render._context;
     ctx.destroyBuffer(this._vertexBuffer);
     ctx.destroyBuffer(this._indexBuffer);
-    this._texture = null;
+    this.texture = null;
     this._indices = null;
     this._vertices = null;
     this._positions = null;
@@ -6500,23 +6310,26 @@ uno.WebglBatch.prototype._restore = function() {
 
 /**
  * Add sprite to batch queue
- * @param {WebGLTexture} texture - WebGL texture instance
- * @param {uno.Frame} frame - The frame to render rect of the texture
- * @param {uno.Color} tint - The texture tint color
+ * @param {uno.WebglTexture} texture - WebGL texture instance
+ * @param {Number} x - The x-coordinate of the texture frame
+ * @param {Number} y - The x-coordinate of the texture frame
+ * @param {Number} width - The width of the texture frame
+ * @param {Number} height - The height of the texture frame
  * @param {Number} alpha - Texture opacity
+ * @param {uno.Color} tint - The texture tint color
  */
-uno.WebglBatch.prototype.render = function(texture, frame, tint, alpha) {
-    var w = frame.width;
-    var h = frame.height;
-    var matrix = this._render._currentMatrix;
-    var blendMode = this._render._currentBlendMode;
+uno.WebglBatch.prototype.render = function(texture, x, y, width, height, alpha, tint) {
+    var tw = texture.texture.width;
+    var th = texture.texture.height;
+    var render = this._render;
+    var matrix = render._currentMatrix;
+    var blendMode = render._currentBlendMode;
     var a = matrix.a;
     var b = matrix.c;   // TODO: why we flip values?
     var c = matrix.b;
     var d = matrix.d;
     var tx = matrix.tx;
     var ty = matrix.ty;
-    var uv = frame.uv;
 
     // Using packing ABGR (alpha and tint color)
     var color = tint.packedABGR & 0x00ffffff | (alpha * 255 << 24);
@@ -6524,32 +6337,50 @@ uno.WebglBatch.prototype.render = function(texture, frame, tint, alpha) {
     var vp = this._positions;
     var vc = this._colors;
 
+    var uvx0;
+    var uvy0;
+    var uvx1;
+    var uvy1;
+
+    // Check for render target and flip if it is
+    if (texture.handle(render, true, false)) {
+        uvx0 = x / tw;
+        uvy0 = (y + height) / th;
+        uvx1 = (x + width) / tw;
+        uvy1 = y / th;
+    } else {
+        uvx0 = x / tw;
+        uvy0 = y / th;
+        uvx1 = (x + width) / tw;
+        uvy1 = (y + height) / th;
+    }
+
     vp[i++] = tx;
     vp[i++] = ty;
-    vp[i++] = uv.x0;
-    vp[i++] = uv.y0;
+    vp[i++] = uvx0;
+    vp[i++] = uvy0;
     vc[i++] = color;
 
-    vp[i++] = a * w + tx;
-    vp[i++] = b * w + ty;
-    vp[i++] = uv.x1;
-    vp[i++] = uv.y1;
+    vp[i++] = a * width + tx;
+    vp[i++] = b * width + ty;
+    vp[i++] = uvx1;
+    vp[i++] = uvy0;
     vc[i++] = color;
 
-    vp[i++] = a * w + c * h + tx;
-    vp[i++] = d * h + b * w + ty;
-    vp[i++] = uv.x2;
-    vp[i++] = uv.y2;
+    vp[i++] = a * width + c * height + tx;
+    vp[i++] = d * height + b * width + ty;
+    vp[i++] = uvx1;
+    vp[i++] = uvy1;
     vc[i++] = color;
 
-    vp[i++] = c * h + tx;
-    vp[i++] = d * h + ty;
-    vp[i++] = uv.x3;
-    vp[i++] = uv.y3;
+    vp[i++] = c * height + tx;
+    vp[i++] = d * height + ty;
+    vp[i++] = uvx0;
+    vp[i++] = uvy1;
     vc[i++] = color;
 
     ++this._spriteCount;
-    this._saveState(texture, blendMode);
+    this._saveState(texture.handle(render), blendMode);
     if (this._spriteCount >= this._maxSpriteCount)
         this.flush();
 };
@@ -6571,10 +6402,8 @@ uno.WebglBatch.prototype.flush = function() {
     var shader = this._currentShader;
     if (!shader)
         shader = this._currentShader = render._getShader(uno.WebglShader.SPRITE);
-    if (shader !== render._getShader()) {
+    if (shader !== render._getShader())
         render._setShader(shader);
-        shader.uProjection.values(render._projection.x, render._projection.y);
-    }
 
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)
@@ -6682,18 +6511,6 @@ uno.WebglRender.prototype.resize = function(width, height) {
 };
 
 /**
- * Get bounds of render
- * For browser bounds is position and size on page
- * For other platforms position and size on screen
- * @returns {uno.Rect}
- */
-uno.WebglRender.prototype.bounds = function() {
-    if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
-        this._updateBounds();
-    return this._bounds;
-};
-
-/**
  * Free all allocated resources and destroy render
  */
 uno.WebglRender.prototype.destroy = function() {
@@ -6706,15 +6523,15 @@ uno.WebglRender.prototype.destroy = function() {
         this._shaders[i].destroy();
     this._currentShader = null;
     this._currentMatrix = null;
+    this._targetMatrix = null;
     this._shaders = {};
     this._canvas.removeEventListener('webglcontextlost', this._contextLostHandle);
     this._canvas.removeEventListener('webglcontextrestored', this._contextRestoredHandle);
     this._contextLostHandle = null;
     this._contextRestoredHandle = null;
     this._context = null;
+    this._target = null;
     this._canvas = null;
-    this._displayCanvas = null;
-    this._displayContext = null;
     this._projection = null;
     this._bounds = null;
     this._boundsScroll = null;
@@ -6722,37 +6539,42 @@ uno.WebglRender.prototype.destroy = function() {
 };
 
 /**
- * Set or reset render target texture
- * @param {uno.WebglTexture} texture - Texture for render buffer
+ * Get bounds of render
+ * For browser bounds is position and size on page
+ * For other platforms position and size on screen
+ * @returns {uno.Rect}
  */
-uno.WebglRender.prototype.target = function(texture) {
-    if (!texture) {
-        this._canvas = this._displayCanvas;
-        this._context = this._displayContext;
-        return;
-    }
+uno.WebglRender.prototype.bounds = function() {
+    if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
+        this._updateBounds();
+    return this._bounds;
 };
 
 /**
- * Clear viewport with color
- * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
+ * Set or reset render target texture
+ * @param {uno.WebglTexture} texture - Texture for render buffer
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.clear = function(color) {
-    var ctx = this._context;
-    if (this._transparent) {
-        if (!color && this.clearColor === false)
-            return;
-        ctx.clearColor(0, 0, 0, 0);
-        ctx.clear(ctx.COLOR_BUFFER_BIT);
-        return this;
+uno.WebglRender.prototype.target = function(texture) {
+    this._graphics.flush();
+    this._batch.flush();
+
+    if (!texture) {
+        this._target = null;
+        this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
+        this._projection.x = this.width / 2;
+        this._projection.y = -this.height / 2;
+        this._updateShaders();
+        this._context.viewport(0, 0, this.width, this.height);
+    } else {
+        this._target = texture;
+        this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(texture).handle(this, true));
+        this._projection.x = texture.width / 2;
+        this._projection.y = -texture.height / 2;
+        this._updateShaders();
+        this._context.viewport(0, 0, texture.width, texture.height);
     }
-    if (!color)
-        color = this.clearColor;
-    if (!color || !color.a)
-        return this;
-    ctx.clearColor(color.r, color.g, color.b, color.a);
-    ctx.clear(ctx.COLOR_BUFFER_BIT);
+
     return this;
 };
 
@@ -6764,7 +6586,8 @@ uno.WebglRender.prototype.clear = function(color) {
 uno.WebglRender.prototype.transform = function(matrix) {
     if (!matrix)
         return this._currentMatrix;
-    return this._currentMatrix.set(matrix);
+    this._currentMatrix.set(matrix);
+    return this._currentMatrix;
 };
 
 /**
@@ -6806,16 +6629,52 @@ uno.WebglRender.prototype.lineWidth = function(width) {
 };
 
 /**
+ * Clear viewport with color
+ * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
+ * @returns {uno.WebglRender} - <code>this</code>
+ */
+uno.WebglRender.prototype.clear = function(color) {
+    // TODO: Actually we need reset method for graphics and batch (without rendering)
+    this._graphics.flush();
+    this._batch.flush();
+
+    var ctx = this._context;
+
+    if (this._transparent) {
+        if (!color && this.clearColor === false)
+            return;
+        ctx.clearColor(0, 0, 0, 0);
+        ctx.clear(ctx.COLOR_BUFFER_BIT);
+        return this;
+    }
+
+    if (!color)
+        color = this.clearColor;
+
+    if (!color || !color.a)
+        return this;
+
+    ctx.clearColor(color.r, color.g, color.b, color.a);
+    ctx.clear(ctx.COLOR_BUFFER_BIT);
+
+    return this;
+};
+
+/**
  * Draw texture
  * @param {uno.Texture} texture - The texture to render
- * @param {uno.Frame} frame - The frame to render rect of the texture
+ * @param {uno.Rect} frame - The frame to render rect of the texture
  * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
  * @param {Number} [alpha=1] - Texture opacity
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
+uno.WebglRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
+    if (!texture.ready)
+        return this;
     this._graphics.flush();
-    this._batch.render(uno.WebglTexture.get(texture).handle(this), frame, tint || uno.Color.WHITE, alpha || 1);
+    this._batch.render(uno.WebglTexture.get(texture), frame ? frame.x : 0, frame ? frame.y : 0,
+        frame ? frame.width : texture.width, frame ? frame.height : texture.height,
+        alpha || 1, tint || uno.Color.WHITE);
     return this;
 };
 
@@ -6907,6 +6766,7 @@ uno.WebglRender.prototype.drawPoly = function(points) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawShape = function(shape) {
+    this._batch.flush();
     this._graphics.drawShape(shape);
     return this;
 };
@@ -6928,6 +6788,30 @@ uno.WebglRender.prototype.endShape = function() {
 };
 
 /**
+ * Get texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @returns {Uint8Array}
+ */
+uno.WebglRender.prototype.getPixels = function(texture) {
+    if (this._target === texture) {
+        this._batch.flush();
+        this._graphics.flush();
+    }
+    return uno.WebglTexture.get(texture).getPixels(this);
+};
+
+/**
+ * Set texture pixels
+ * @param {uno.Texture} texture - The texture to process
+ * @param {Uint8Array} data - Pixels data
+ * @returns {uno.WebglRender} - <code>this</code>
+ */
+uno.WebglRender.prototype.setPixels = function(texture, data) {
+    uno.WebglTexture.get(texture).setPixels(data, this);
+    return this;
+};
+
+/**
  * Get shader from registered
  * @param {Object} shader - The shader settings object. If undefined than current shader returned
  * @returns {uno.WebglShader} - Shader
@@ -6939,6 +6823,7 @@ uno.WebglRender.prototype._getShader = function(shader) {
     if (this._shaders[shader.name])
         return this._shaders[shader.name];
     var newShader = new uno.WebglShader(this, shader);
+    newShader.uProjection.values(this._projection.x, this._projection.y);
     this._shaders[shader.name] = newShader;
     return newShader;
 };
@@ -6953,6 +6838,23 @@ uno.WebglRender.prototype._setShader = function(shader) {
         return;
     shader.use();
     this._currentShader = shader;
+};
+
+/**
+ * Update uniform uProjection for registered shaders after render resize
+ * @private
+ */
+uno.WebglRender.prototype._updateShaders = function() {
+    var shaders = this._shaders;
+    for (var i in shaders) {
+        var shader = shaders[i];
+        if (shader.uProjection) {
+            shader.use();
+            shader.uProjection.values(this._projection.x, this._projection.y);
+        }
+    }
+    if (this._currentShader)
+        this._currentShader.use();
 };
 
 /**
@@ -6988,7 +6890,7 @@ uno.WebglRender.prototype._setupSettings = function(settings) {
     this.clearColor = settings.clearColor ? settings.clearColor.clone() : def.clearColor.clone();
     this.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
     this.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
-    this._displayCanvas = this._canvas = settings.canvas;
+    this._canvas = settings.canvas;
     this._transparent = settings.transparent !== undefined ? !!settings.transparent : def.transparent;
     this._autoClear = settings.autoClear !== undefined ? !!settings.autoClear : def.autoClear;
     this._antialias = settings.antialias !== undefined ? !!settings.antialias : def.antialias;
@@ -7006,8 +6908,10 @@ uno.WebglRender.prototype._setupSettings = function(settings) {
  */
 uno.WebglRender.prototype._setupProps = function() {
     this._projection = new uno.Point();
+    this._target = null;
     this._currentMatrix = new uno.Matrix();
     this._currentShader = null;
+    this._targetMatrix = new uno.Matrix();
     this._shaders = {};
 };
 
@@ -7102,19 +7006,6 @@ uno.WebglRender.prototype._updateBounds = function() {
 };
 
 /**
- * Update uniform uProjection for registered shaders after render resize
- * @private
- */
-uno.WebglRender.prototype._updateShaders = function() {
-    var shaders = this._shaders;
-    for (var i in shaders) {
-        var shader = shaders[i];
-        if (shader.uProjection)
-            shader.uProjection.values(this._projection.x, this._projection.y);
-    }
-};
-
-/**
  * Create WebGL context
  * @private
  */
@@ -7129,7 +7020,7 @@ uno.WebglRender.prototype._createContext = function() {
     };
     var error = 'This browser does not support webGL. Try using the canvas render';
     try {
-        this._displayContext = this._context = this._canvas.getContext('experimental-webgl', options) ||
+        this._context = this._canvas.getContext('experimental-webgl', options) ||
             this._canvas.getContext('webgl', options);
     } catch (e) {
         return uno.error(error);
@@ -9140,24 +9031,15 @@ uno.Sprite = function(object) {
      * Texture for rendering sprite
      * @type {uno.Texture}
      * @default null
-     * @private
      */
-    this._texture = null;
+    this.texture = null;
 
     /**
      * Texture frame for rendering
-     * @type {uno.Frame}
+     * @type {uno.Rect}
      * @default null
-     * @private
      */
-    this._frame = null;
-
-    /**
-     * Is frame dirty (texture changed or not ready)
-     * @type {Boolean}
-     * @private
-     */
-    this._dirty = false;
+    this.frame = new uno.Rect();
 
     /**
      * Opacity of the sprite
@@ -9189,57 +9071,19 @@ uno.Sprite = function(object) {
 uno.Sprite.id = 'sprite';
 
 /**
- * The sprite texture
- * @name uno.Sprite#texture
- * @type {uno.Texture}
- * @default null
- */
-Object.defineProperty(uno.Sprite.prototype, 'texture', {
-    get: function() {
-        return this._texture;
-    },
-    set: function(value) {
-        this._texture = value;
-        this._dirty = true;
-    }
-});
-
-/**
- * The frame of the texture
- * @name uno.Sprite#frame
- * @type {uno.Frame}
- * @readonly
- */
-Object.defineProperty(uno.Sprite.prototype, 'frame', {
-    get: function() {
-        if (this._frame) {
-            if (this._dirty && this._texture && this._texture.ready)
-                this._frame.setMaxSize(this._texture.width, this._texture.height);
-            return this._frame;
-        }
-        if (this._texture && this._texture.ready)
-            this._frame = new uno.Frame(this._texture.width, this._texture.height);
-        else {
-            this._frame = new uno.Frame();
-            this._dirty = true;
-        }
-        return this._frame;
-    }
-});
-
-/**
  * Render method of the component
  * @param {CanvasRender|WebglRender} render
  */
 uno.Sprite.prototype.render = function(render) {
-    if (!this.object || !this.object.transform || !this._texture || !this._texture.ready || !this.alpha)
+    if (!this.object || !this.object.transform || !this.texture || !this.texture.ready || !this.alpha)
         return;
-    var frame = this.frame;
-    if (!frame.width || !frame.height)
-        return;
+    if (!this.frame.width && !this.frame.height) {
+        this.frame.width = this.texture.width;
+        this.frame.height = this.texture.height;
+    }
     render.transform(this.object.transform.matrix);
     render.blendMode(this.blend);
-    render.drawTexture(this._texture, frame, this.tint, this.alpha);
+    render.drawTexture(this.texture, this.frame, this.alpha, this.tint);
 };
 /**
  * Transform component

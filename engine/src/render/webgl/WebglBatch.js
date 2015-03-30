@@ -130,7 +130,7 @@ uno.WebglBatch.prototype.destroy = function() {
     var ctx = this._render._context;
     ctx.destroyBuffer(this._vertexBuffer);
     ctx.destroyBuffer(this._indexBuffer);
-    this._texture = null;
+    this.texture = null;
     this._indices = null;
     this._vertices = null;
     this._positions = null;
@@ -175,14 +175,17 @@ uno.WebglBatch.prototype._restore = function() {
 
 /**
  * Add sprite to batch queue
- * @param {WebGLTexture} texture - WebGL texture instance
- * @param {uno.Frame} frame - The frame to render rect of the texture
- * @param {uno.Color} tint - The texture tint color
+ * @param {uno.WebglTexture} texture - WebGL texture instance
+ * @param {Number} x - The x-coordinate of the texture frame
+ * @param {Number} y - The x-coordinate of the texture frame
+ * @param {Number} width - The width of the texture frame
+ * @param {Number} height - The height of the texture frame
  * @param {Number} alpha - Texture opacity
+ * @param {uno.Color} tint - The texture tint color
  */
-uno.WebglBatch.prototype.render = function(texture, frame, tint, alpha) {
-    var w = frame.width;
-    var h = frame.height;
+uno.WebglBatch.prototype.render = function(texture, x, y, width, height, alpha, tint) {
+    var tw = texture.texture.width;
+    var th = texture.texture.height;
     var render = this._render;
     var matrix = render._currentMatrix;
     var blendMode = render._currentBlendMode;
@@ -192,7 +195,6 @@ uno.WebglBatch.prototype.render = function(texture, frame, tint, alpha) {
     var d = matrix.d;
     var tx = matrix.tx;
     var ty = matrix.ty;
-    var uv = frame.uv;
 
     // Using packing ABGR (alpha and tint color)
     var color = tint.packedABGR & 0x00ffffff | (alpha * 255 << 24);
@@ -200,32 +202,50 @@ uno.WebglBatch.prototype.render = function(texture, frame, tint, alpha) {
     var vp = this._positions;
     var vc = this._colors;
 
+    var uvx0;
+    var uvy0;
+    var uvx1;
+    var uvy1;
+
+    // Check for render target and flip if it is
+    if (texture.handle(render, true, false)) {
+        uvx0 = x / tw;
+        uvy0 = (y + height) / th;
+        uvx1 = (x + width) / tw;
+        uvy1 = y / th;
+    } else {
+        uvx0 = x / tw;
+        uvy0 = y / th;
+        uvx1 = (x + width) / tw;
+        uvy1 = (y + height) / th;
+    }
+
     vp[i++] = tx;
     vp[i++] = ty;
-    vp[i++] = uv.x0;
-    vp[i++] = uv.y0;
+    vp[i++] = uvx0;
+    vp[i++] = uvy0;
     vc[i++] = color;
 
-    vp[i++] = a * w + tx;
-    vp[i++] = b * w + ty;
-    vp[i++] = uv.x1;
-    vp[i++] = uv.y1;
+    vp[i++] = a * width + tx;
+    vp[i++] = b * width + ty;
+    vp[i++] = uvx1;
+    vp[i++] = uvy0;
     vc[i++] = color;
 
-    vp[i++] = a * w + c * h + tx;
-    vp[i++] = d * h + b * w + ty;
-    vp[i++] = uv.x2;
-    vp[i++] = uv.y2;
+    vp[i++] = a * width + c * height + tx;
+    vp[i++] = d * height + b * width + ty;
+    vp[i++] = uvx1;
+    vp[i++] = uvy1;
     vc[i++] = color;
 
-    vp[i++] = c * h + tx;
-    vp[i++] = d * h + ty;
-    vp[i++] = uv.x3;
-    vp[i++] = uv.y3;
+    vp[i++] = c * height + tx;
+    vp[i++] = d * height + ty;
+    vp[i++] = uvx0;
+    vp[i++] = uvy1;
     vc[i++] = color;
 
     ++this._spriteCount;
-    this._saveState(texture, blendMode);
+    this._saveState(texture.handle(render), blendMode);
     if (this._spriteCount >= this._maxSpriteCount)
         this.flush();
 };
@@ -249,8 +269,6 @@ uno.WebglBatch.prototype.flush = function() {
         shader = this._currentShader = render._getShader(uno.WebglShader.SPRITE);
     if (shader !== render._getShader())
         render._setShader(shader);
-
-    shader.uProjection.values(render._projection.x, render._projection.y);
 
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)

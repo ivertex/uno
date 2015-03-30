@@ -196,12 +196,12 @@ uno.CanvasRender.prototype.clear = function(color) {
 /**
  * Draw texture
  * @param {uno.Texture} texture - The texture to render
- * @param {uno.Frame} frame - The frame to render rect of the texture
- * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
+ * @param {uno.Rect} frame - The frame to render rect of the texture
  * @param {Number} [alpha=1] - Texture opacity
+ * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
+uno.CanvasRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
     if (!texture.ready)
         return this;
     var ctx = this._context;
@@ -209,7 +209,8 @@ uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
     this._setAlpha(alpha || 1);
     ctx.drawImage(
         (!tint || tint.equal(uno.Color.WHITE)) ? uno.CanvasTexture.get(texture).handle() : uno.CanvasTexture.get(texture).tint(tint),
-        frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height);
+        frame ? frame.x : 0, frame ? frame.y : 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height,
+        0, 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height);
     return this;
 };
 

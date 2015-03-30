@@ -9,7 +9,7 @@ uno.CanvasTexture = function(texture) {
      * @type {uno.Texture}
      * @private
      */
-    this._texture = texture;
+    this.texture = texture;
 
     /**
      * Image or canvas with texture data
@@ -45,7 +45,7 @@ uno.CanvasTexture = function(texture) {
  */
 uno.CanvasTexture.prototype.destroy = function() {
     uno.CanvasTinter.removeCache(this);
-    this._texture = null;
+    this.texture = null;
     this._source = null;
     this._context = null;
     this._tintCache = null;
@@ -77,10 +77,10 @@ uno.CanvasTexture.prototype.context = function() {
  * @returns {Image|canvas} - Texture canvas
  */
 uno.CanvasTexture.prototype.handle = function() {
-    if (this._source === null && this._texture.width && this._texture.height) {
+    if (this._source === null && this.texture.width && this.texture.height) {
         var source = document.createElement('canvas');
-        source.width = this._texture.width;
-        source.height = this._texture.height;
+        source.width = this.texture.width;
+        source.height = this.texture.height;
         this._source = source;
     }
     return this._source;
@@ -91,7 +91,7 @@ uno.CanvasTexture.prototype.handle = function() {
  * @returns {Uint8ClampedArray}
  */
 uno.CanvasTexture.prototype.getPixels = function() {
-    this._imageData = this.context().getImageData(0, 0, this._texture.width, this._texture.height);
+    this._imageData = this.context().getImageData(0, 0, this.texture.width, this.texture.height);
     return this._imageData.data;
 };
 

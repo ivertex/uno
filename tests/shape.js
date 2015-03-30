@@ -53,64 +53,6 @@ graphs.prototype.render = function(render, deltaTime) {
     render.drawShape(this.shape);
 };
 
-var drag = function(object) {
-    this.object = object;
-    this.wheel = true;
-    this.mouse = true;
-    this.touch = true;
-
-    this._p1 = new uno.Point();
-    this._p2 = new uno.Point();
-    this._move = new uno.Point();
-    this._distance = 0;
-    this._angle = 0;
-};
-
-drag.id = 'draggable';
-
-drag.prototype.input = function(event) {
-    var transform = this.object.transform;
-
-    if (this.wheel && uno.Mouse.wheel(event)) {
-        if (event.wheelX || event.wheelY)
-            transform.position.subtract(event.wheelX, event.wheelY);
-        return;
-    }
-
-    if (this.mouse) {
-        if (uno.Mouse.down(event, uno.Mouse.LEFT)) {
-            this._p1.set(event.x, event.y);
-            this._move.set(this._p1);
-        }
-        if (uno.Mouse.move(event, uno.Mouse.LEFT)) {
-            this._p1.set(event.x, event.y);
-            transform.position.subtract(this._move.subtract(this._p1));
-            this._move.set(this._p1);
-        }
-    }
-
-    if (this.touch && uno.Touch.any(event)) {
-        if (event.points.length > 0)
-            this._p1.set(event.points.item(0));
-        var angle = false, distance = false;
-        if (event.points.length > 1) {
-            this._p2.set(event.points.item(1));
-            angle = this._p1.angle(this._p2);
-            distance = this._p1.distance(this._p2);
-        }
-        if (uno.Touch.move(event)) {
-            transform.position.subtract(this._move.subtract(this._p1));
-            if (angle !== false)
-                transform.rotation += angle - this._angle;
-            if (distance !== false)
-                transform.scale.add((distance - this._distance) * 0.005).clamp(0.1, 1);
-        }
-        this._angle = angle;
-        this._distance = distance;
-        this._move.set(this._p1);
-    }
-};
-
 
 function create(render1, render2) {
     window.stage = uno.Object.create();
@@ -127,37 +69,5 @@ function create(render1, render2) {
 }
 
 function init() {
-    var settings = {
-        container: document.body,
-        width: uno.Screen.availWidth,
-        height: uno.Screen.availHeight,
-        transparent: false,
-        autoClear: true,
-        clearColor: new uno.Color(0, 0.5, 0.5),
-        fps: 60
-    };
-    window.render1 = true;
-    window.render2 = true;
-
-    if (window.render1) {
-        settings.mode = uno.Render.RENDER_CANVAS;
-        settings.ups = 60;
-        if (window.render2) {
-            if (settings.width > settings.height)
-                settings.width /= 2;
-            else
-                settings.height /= 2;
-        }
-        window.render1 = uno.Render.create(settings);
-    }
-    if (window.render2) {
-        try {
-            settings.mode = uno.Render.RENDER_WEBGL;
-            settings.ups = 60;
-            window.render2 = uno.Render.create(settings);
-        } catch (e) {
-            console.log(e);
-        }
-    }
-    create(render1, render2);
+    createRenders(true, true);
 }

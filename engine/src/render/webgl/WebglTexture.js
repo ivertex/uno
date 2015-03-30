@@ -9,7 +9,7 @@ uno.WebglTexture = function(texture) {
      * @type {uno.Texture}
      * @private
      */
-    this._texture = texture;
+    this.texture = texture;
 
     /**
      * Handles for each render<br>
@@ -43,7 +43,7 @@ uno.WebglTexture.prototype.destroy = function() {
             render._context.deleteFramebuffer(handle.buffer);
     }
     this._handles = null;
-    this._texture = null;
+    this.texture = null;
 };
 
 /**
@@ -71,7 +71,7 @@ uno.WebglTexture.prototype.handle = function(render, buffer, create) {
  * @returns {Uint8ClampedArray}
  */
 uno.WebglTexture.prototype.getPixels = function(render) {
-    var tex = this._texture;
+    var tex = this.texture;
     var len = tex.width * tex.height * 4;
 
     if (!this._imageData || this._imageData.length !== len) {
@@ -108,7 +108,7 @@ uno.WebglTexture.prototype.setPixels = function(data, render) {
         this._imageDataClamped.set(data);
     var ctx = render._context;
     ctx.bindTexture(ctx.TEXTURE_2D, this.handle(render));
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, this._texture.width, this._texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, this.texture.width, this.texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
     return this;
 };
 
@@ -130,7 +130,7 @@ uno.WebglTexture.prototype._restore = function(render) {
  */
 uno.WebglTexture.prototype._create = function(render) {
     var ctx = render._context;
-    var texture = this._texture;
+    var texture = this.texture;
     var mode = texture.scaleMode === uno.Render.SCALE_LINEAR ? ctx.LINEAR : ctx.NEAREST;
     var textureHandle = ctx.createTexture();
     var bufferHandle = null;

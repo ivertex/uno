@@ -212,8 +212,6 @@ uno.WebglGraphics.prototype.flush = function() {
     if (shader !== render._getShader())
         render._setShader(shader);
 
-    shader.uProjection.values(render._projection.x, render._projection.y);
-
     if (this._vertexCount > this._maxVertexCount * 0.5) {
         ctx.bufferSubData(ctx.ELEMENT_ARRAY_BUFFER, 0, this._indices);
         ctx.bufferSubData(ctx.ARRAY_BUFFER, 0, this._vertices);

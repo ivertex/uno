@@ -102,12 +102,14 @@ uno.WebglRender.prototype.target = function(texture) {
         this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
         this._projection.x = this.width / 2;
         this._projection.y = -this.height / 2;
+        this._updateShaders();
         this._context.viewport(0, 0, this.width, this.height);
     } else {
         this._target = texture;
         this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(texture).handle(this, true));
         this._projection.x = texture.width / 2;
         this._projection.y = -texture.height / 2;
+        this._updateShaders();
         this._context.viewport(0, 0, texture.width, texture.height);
     }
 
@@ -199,28 +201,18 @@ uno.WebglRender.prototype.clear = function(color) {
 /**
  * Draw texture
  * @param {uno.Texture} texture - The texture to render
- * @param {uno.Frame} frame - The frame to render rect of the texture
+ * @param {uno.Rect} frame - The frame to render rect of the texture
  * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
  * @param {Number} [alpha=1] - Texture opacity
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawTexture = function(texture, frame, tint, alpha) {
+uno.WebglRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
     if (!texture.ready)
         return this;
     this._graphics.flush();
-
-    // If this texture is render target flip transform vertical
-    if (uno.WebglTexture.get(texture).handle(this, true, false)) {
-        var matrix = this._targetMatrix;
-        matrix.reset();
-        matrix.translate(0, this._projection.y);
-        matrix.scale(1, -1);
-        if (!this._currentMatrix.identity())
-            matrix.prepend(this._currentMatrix);
-        this._currentMatrix.set(matrix);
-    }
-
-    this._batch.render(uno.WebglTexture.get(texture).handle(this), frame, tint || uno.Color.WHITE, alpha || 1);
+    this._batch.render(uno.WebglTexture.get(texture), frame ? frame.x : 0, frame ? frame.y : 0,
+        frame ? frame.width : texture.width, frame ? frame.height : texture.height,
+        alpha || 1, tint || uno.Color.WHITE);
     return this;
 };
 
@@ -369,6 +361,7 @@ uno.WebglRender.prototype._getShader = function(shader) {
     if (this._shaders[shader.name])
         return this._shaders[shader.name];
     var newShader = new uno.WebglShader(this, shader);
+    newShader.uProjection.values(this._projection.x, this._projection.y);
     this._shaders[shader.name] = newShader;
     return newShader;
 };
@@ -383,6 +376,23 @@ uno.WebglRender.prototype._setShader = function(shader) {
         return;
     shader.use();
     this._currentShader = shader;
+};
+
+/**
+ * Update uniform uProjection for registered shaders after render resize
+ * @private
+ */
+uno.WebglRender.prototype._updateShaders = function() {
+    var shaders = this._shaders;
+    for (var i in shaders) {
+        var shader = shaders[i];
+        if (shader.uProjection) {
+            shader.use();
+            shader.uProjection.values(this._projection.x, this._projection.y);
+        }
+    }
+    if (this._currentShader)
+        this._currentShader.use();
 };
 
 /**
@@ -531,19 +541,6 @@ uno.WebglRender.prototype._updateBounds = function() {
     var rect = this._canvas.getBoundingClientRect();
     this._bounds.set(rect.left, rect.top, rect.width, rect.height);
     this._boundsScroll.set(uno.Screen.scrollX, uno.Screen.scrollY);
-};
-
-/**
- * Update uniform uProjection for registered shaders after render resize
- * @private
- */
-uno.WebglRender.prototype._updateShaders = function() {
-    var shaders = this._shaders;
-    for (var i in shaders) {
-        var shader = shaders[i];
-        if (shader.uProjection)
-            shader.uProjection.values(this._projection.x, this._projection.y);
-    }
 };
 
 /**
