@@ -326,9 +326,24 @@ uno.WebglRender.prototype.endShape = function() {
 };
 
 /**
+ * Get texture pixel
+ * @param {uno.Texture} texture - The texture to process
+ * @param {Number} x - The x-coordinate of the pixel
+ * @param {Number} y - The y-coordinate of the pixel
+ * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
+ */
+uno.WebglRender.prototype.getPixel = function(texture, x, y) {
+    if (this._target === texture) {
+        this._batch.flush();
+        this._graphics.flush();
+    }
+    return uno.WebglTexture.get(texture).getPixel(x, y, this);
+};
+
+/**
  * Get texture pixels
  * @param {uno.Texture} texture - The texture to process
- * @returns {Uint8Array}
+ * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
  */
 uno.WebglRender.prototype.getPixels = function(texture) {
     if (this._target === texture) {
@@ -341,7 +356,7 @@ uno.WebglRender.prototype.getPixels = function(texture) {
 /**
  * Set texture pixels
  * @param {uno.Texture} texture - The texture to process
- * @param {Uint8Array} data - Pixels data
+ * @param {Uint8ClampedArray} data - Pixels data
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.setPixels = function(texture, data) {

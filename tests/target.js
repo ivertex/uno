@@ -43,7 +43,8 @@ target.prototype.render = function(render) {
         render.transform(this.m1);
         render.fillColor(uno.Color.RED);
         render.drawRect(100, 100, 100, 100);
-        this.filterTexture(render, this.target);
+        //this.filterTexture(render, this.target);
+        console.log(render.getPixel(this.target, 0, 0));
         render.target();
     }
     render.transform(uno.Matrix.IDENTITY);

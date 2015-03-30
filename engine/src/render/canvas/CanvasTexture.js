@@ -90,6 +90,14 @@ uno.CanvasTexture.prototype.handle = function() {
  * Get or set texture pixels
  * @returns {Uint8ClampedArray}
  */
+uno.CanvasTexture.prototype.getPixel = function(x, y) {
+    return this.context().getImageData(x, y, 1, 1).data;
+};
+
+/**
+ * Get or set texture pixels
+ * @returns {Uint8ClampedArray}
+ */
 uno.CanvasTexture.prototype.getPixels = function() {
     this._imageData = this.context().getImageData(0, 0, this.texture.width, this.texture.height);
     return this._imageData.data;

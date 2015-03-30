@@ -323,9 +323,20 @@ uno.CanvasRender.prototype.endShape = function() {
 };
 
 /**
+ * Get texture pixel
+ * @param {uno.Texture} texture - The texture to process
+ * @param {Number} x - The x-coordinate of the pixel
+ * @param {Number} y - The y-coordinate of the pixel
+ * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
+ */
+uno.CanvasRender.prototype.getPixel = function(texture, x, y) {
+    return uno.CanvasTexture.get(texture).getPixel(x, y);
+};
+
+/**
  * Get texture pixels
  * @param {uno.Texture} texture - The texture to process
- * @returns {Uint8Array}
+ * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
  */
 uno.CanvasRender.prototype.getPixels = function(texture) {
     return uno.CanvasTexture.get(texture).getPixels();
@@ -334,7 +345,7 @@ uno.CanvasRender.prototype.getPixels = function(texture) {
 /**
  * Set texture pixels
  * @param {uno.Texture} texture - The texture to process
- * @param {Uint8Array} data - Pixels data
+ * @param {Uint8ClampedArray} data - Pixels data
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.setPixels = function(texture, data) {

@@ -47,6 +47,13 @@ uno.WebglTexture = function(texture) {
      * @private
      */
     this._imageData32 = null;
+
+    /**
+     * Pixel data for method getPixel
+     * @type {Uint8Array}
+     * @private
+     */
+    this._pixelData = null;
 };
 
 /**
@@ -88,7 +95,39 @@ uno.WebglTexture.prototype.handle = function(render, buffer, create) {
 };
 
 /**
- * Get or set texture pixels
+ * Get texture pixel by coordinates
+ * @param {Number} x - The x-coordinate of the pixel
+ * @param {Number} y - The y-coordinate of the pixel
+ * @param {uno.WebglRender} render - For what render need extract pixel data
+ * @returns {Uint8ClampedArray}
+ */
+uno.WebglTexture.prototype.getPixel = function(x, y, render) {
+    var ctx = render._context;
+    var buffer = this.handle(render, true, true);
+
+    if (!this._pixelData) {
+        this._pixelBuffer = new ArrayBuffer(4);
+        this._pixelData = new Uint8Array(this._pixelBuffer);
+        this._pixelDataClamped = new Uint8ClampedArray(this._pixelBuffer);
+    }
+
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, buffer);
+    ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.handle(render), 0);
+    ctx.readPixels(x, y, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, this._pixelData);
+
+    // TODO: rewrite after changing method 'target' to property
+    var target = render._target;
+    if (target === null)
+        ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+    else
+        render.target(target);
+
+    return this._pixelDataClamped;
+};
+
+/**
+ * Get texture pixels
+ * @param {uno.WebglRender} render - For what render need extract pixel data
  * @returns {Uint8ClampedArray}
  */
 uno.WebglTexture.prototype.getPixels = function(render) {
@@ -131,7 +170,7 @@ uno.WebglTexture.prototype.getPixels = function(render) {
 };
 
 /**
- * Get or set texture pixels
+ * Set texture pixels
  * @param {Uint8ClampedArray} data - Pixels data
  * @param {uno.WebglRender} render - For what render texture created
  * @returns {CanvasTexture} - <code>this</code>
