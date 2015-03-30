@@ -21,11 +21,32 @@ uno.WebglTexture = function(texture) {
     this._handles = {};
 
     /**
-     * Image data for methods getPixels/setPixels
-     * @type {Uint8ClampedArray}
+     * Image data buffer for methods getPixels/setPixels
+     * @type {ArrayBuffer}
+     * @private
+     */
+    this._imageBuffer = null;
+
+    /**
+     * Image data view for methods getPixels/setPixels
+     * @type {Uint8Array}
      * @private
      */
     this._imageData = null;
+
+    /**
+     * Image data view clamped for returning
+     * @type {Uint8ClampedArray}
+     * @private
+     */
+    this._imageDataClamped = null;
+
+    /**
+     * Image data view uint32 for Y flipping
+     * @type {Uint32Array}
+     * @private
+     */
+    this._imageData32 = null;
 };
 
 /**
@@ -78,6 +99,7 @@ uno.WebglTexture.prototype.getPixels = function(render) {
         this._imageBuffer = new ArrayBuffer(len);
         this._imageData = new Uint8Array(this._imageBuffer);
         this._imageDataClamped = new Uint8ClampedArray(this._imageBuffer);
+        this._imageData32 = new Uint32Array(this._imageBuffer);
     }
 
     var ctx = render._context;
@@ -94,6 +116,17 @@ uno.WebglTexture.prototype.getPixels = function(render) {
     else
         render.target(target);
 
+    // TODO: optimize this block
+    var w = tex.width, h = tex.height, tmp = 0, data = this._imageData32;
+    len = h * 0.5;
+    for (var y = 0; y < len; ++y) {
+        for (var x = 0; x < w; ++x) {
+            tmp = data[y * w + x];
+            data[y * w + x] = data[(h - y) * w + x];
+            data[(h - y) * w + x] = tmp;
+        }
+    }
+
     return this._imageDataClamped;
 };
 
@@ -108,6 +141,7 @@ uno.WebglTexture.prototype.setPixels = function(data, render) {
         this._imageDataClamped.set(data);
     var ctx = render._context;
     ctx.bindTexture(ctx.TEXTURE_2D, this.handle(render));
+    ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
     ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, this.texture.width, this.texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
     return this;
 };
