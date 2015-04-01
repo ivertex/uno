@@ -95,44 +95,31 @@ uno.WebglTexture.prototype.handle = function(render, buffer, create) {
 };
 
 /**
- * Get texture pixel by coordinates
- * @param {Number} x - The x-coordinate of the pixel
- * @param {Number} y - The y-coordinate of the pixel
- * @param {uno.WebglRender} render - For what render need extract pixel data
- * @returns {Uint8ClampedArray}
- */
-uno.WebglTexture.prototype.getPixel = function(x, y, render) {
-    var ctx = render._context;
-    var buffer = this.handle(render, true, true);
-
-    if (!this._pixelData) {
-        this._pixelBuffer = new ArrayBuffer(4);
-        this._pixelData = new Uint8Array(this._pixelBuffer);
-        this._pixelDataClamped = new Uint8ClampedArray(this._pixelBuffer);
-    }
-
-    ctx.bindFramebuffer(ctx.FRAMEBUFFER, buffer);
-    ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.handle(render), 0);
-    ctx.readPixels(x, y, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, this._pixelData);
-
-    // TODO: rewrite after changing method 'target' to property
-    var target = render._target;
-    if (target === null)
-        ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
-    else
-        render.target(target);
-
-    return this._pixelDataClamped;
-};
-
-/**
  * Get texture pixels
  * @param {uno.WebglRender} render - For what render need extract pixel data
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
  * @returns {Uint8ClampedArray}
  */
-uno.WebglTexture.prototype.getPixels = function(render) {
-    var tex = this.texture;
-    var len = tex.width * tex.height * 4;
+uno.WebglTexture.prototype.getPixels = function(render, x, y, width, height) {
+    var w = this.texture.width;
+    var h = this.texture.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return this;
+
+    y = h - y - height;
+
+    var len = width * height * 4;
+    var ctx = render._context;
+    var buffer = this.handle(render, true, true);
 
     if (!this._imageData || this._imageData.length !== len) {
         this._imageBuffer = new ArrayBuffer(len);
@@ -141,12 +128,9 @@ uno.WebglTexture.prototype.getPixels = function(render) {
         this._imageData32 = new Uint32Array(this._imageBuffer);
     }
 
-    var ctx = render._context;
-    var buffer = this.handle(render, true, true);
-
     ctx.bindFramebuffer(ctx.FRAMEBUFFER, buffer);
     ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.handle(render), 0);
-    ctx.readPixels(0, 0, tex.width, tex.height, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+    ctx.readPixels(x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
 
     // TODO: rewrite after changing method 'target' to property
     var target = render._target;
@@ -155,14 +139,18 @@ uno.WebglTexture.prototype.getPixels = function(render) {
     else
         render.target(target);
 
-    // TODO: optimize this block
-    var w = tex.width, h = tex.height, tmp = 0, data = this._imageData32;
-    len = h * 0.5;
-    for (var y = 0; y < len; ++y) {
-        for (var x = 0; x < w; ++x) {
-            tmp = data[y * w + x];
-            data[y * w + x] = data[(h - y) * w + x];
-            data[(h - y) * w + x] = tmp;
+    // Flip by Y
+    if (height > 1) {
+        var tmp = 0;
+        var data = this._imageData32;
+
+        h = height * 0.5;
+        for (y = 0; y < h; ++y) {
+            for (x = 0; x < width; ++x) {
+                tmp = data[y * width + x];
+                data[y * width + x] = data[(height - y - 1) * width + x];
+                data[(height - y - 1) * width + x] = tmp;
+            }
         }
     }
 
@@ -173,15 +161,38 @@ uno.WebglTexture.prototype.getPixels = function(render) {
  * Set texture pixels
  * @param {Uint8ClampedArray} data - Pixels data
  * @param {uno.WebglRender} render - For what render texture created
- * @returns {CanvasTexture} - <code>this</code>
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
+ * @returns {uno.WebglTexture} - <code>this</code>
  */
-uno.WebglTexture.prototype.setPixels = function(data, render) {
+uno.WebglTexture.prototype.setPixels = function(data, render, x, y, width, height) {
+    var w = this.texture.width;
+    var h = this.texture.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (!data || width * height * 4 !== data.length)
+        return this;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return this;
+
+    y = h - y - height;
+
     if (data !== this._imageDataClamped)
         this._imageDataClamped.set(data);
+
     var ctx = render._context;
     ctx.bindTexture(ctx.TEXTURE_2D, this.handle(render));
     ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, this.texture.width, this.texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+    ctx.texSubImage2D(ctx.TEXTURE_2D, 0, x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
+    ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, false);
+
     return this;
 };
 

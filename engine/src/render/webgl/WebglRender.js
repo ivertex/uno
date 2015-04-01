@@ -61,7 +61,6 @@ uno.WebglRender.prototype.destroy = function() {
         this._shaders[i].destroy();
     this._currentShader = null;
     this._currentMatrix = null;
-    this._targetMatrix = null;
     this._shaders = {};
     this._canvas.removeEventListener('webglcontextlost', this._contextLostHandle);
     this._canvas.removeEventListener('webglcontextrestored', this._contextRestoredHandle);
@@ -100,17 +99,17 @@ uno.WebglRender.prototype.target = function(texture) {
     if (!texture) {
         this._target = null;
         this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
-        this._projection.x = this.width / 2;
-        this._projection.y = -this.height / 2;
-        this._updateShaders();
+        this._projection.x = this.width * 0.5;
+        this._projection.y = -this.height * 0.5;
         this._context.viewport(0, 0, this.width, this.height);
+        this._updateShaders();
     } else {
         this._target = texture;
         this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(texture).handle(this, true));
-        this._projection.x = texture.width / 2;
-        this._projection.y = -texture.height / 2;
-        this._updateShaders();
+        this._projection.x = texture.width * 0.5;
+        this._projection.y = -texture.height * 0.5;
         this._context.viewport(0, 0, texture.width, texture.height);
+        this._updateShaders();
     }
 
     return this;
@@ -326,41 +325,32 @@ uno.WebglRender.prototype.endShape = function() {
 };
 
 /**
- * Get texture pixel
- * @param {uno.Texture} texture - The texture to process
- * @param {Number} x - The x-coordinate of the pixel
- * @param {Number} y - The y-coordinate of the pixel
- * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
- */
-uno.WebglRender.prototype.getPixel = function(texture, x, y) {
-    if (this._target === texture) {
-        this._batch.flush();
-        this._graphics.flush();
-    }
-    return uno.WebglTexture.get(texture).getPixel(x, y, this);
-};
-
-/**
  * Get texture pixels
  * @param {uno.Texture} texture - The texture to process
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
  * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
  */
-uno.WebglRender.prototype.getPixels = function(texture) {
-    if (this._target === texture) {
-        this._batch.flush();
-        this._graphics.flush();
-    }
-    return uno.WebglTexture.get(texture).getPixels(this);
+uno.WebglRender.prototype.getPixels = function(texture, x, y, width, height) {
+    this._graphics.flush();
+    this._batch.flush();
+    return uno.WebglTexture.get(texture).getPixels(this, x, y, width, height);
 };
 
 /**
  * Set texture pixels
  * @param {uno.Texture} texture - The texture to process
  * @param {Uint8ClampedArray} data - Pixels data
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.setPixels = function(texture, data) {
-    uno.WebglTexture.get(texture).setPixels(data, this);
+uno.WebglRender.prototype.setPixels = function(texture, data, x, y, width, height) {
+    uno.WebglTexture.get(texture).setPixels(data, this, x, y, width, height);
     return this;
 };
 
@@ -427,7 +417,7 @@ uno.WebglRender.prototype._loseContext = function(restoreAfter) {
     setTimeout(function() {
         uno.log('Restoring context in render with id [', this.id, ']');
         ext.restoreContext();
-    }.bind(this), restoreAfter | 1000);
+    }.bind(this), restoreAfter || 1000);
     return true;
 };
 
@@ -464,7 +454,6 @@ uno.WebglRender.prototype._setupProps = function() {
     this._target = null;
     this._currentMatrix = new uno.Matrix();
     this._currentShader = null;
-    this._targetMatrix = new uno.Matrix();
     this._shaders = {};
 };
 

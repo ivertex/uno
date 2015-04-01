@@ -42,7 +42,7 @@ function loadTest() {
     var head = document.getElementsByTagName('head')[0];
     var script = document.createElement('script');
     script.type = 'text/javascript';
-    script.src = 'tests/' + name + '.js';
+    script.src = 'tests/' + name + '.js?' + Math.random();
     script.onload = function() { init(); };
     head.appendChild(script);
 }

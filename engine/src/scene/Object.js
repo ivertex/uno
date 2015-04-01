@@ -51,7 +51,7 @@ uno.Object.prototype.addChild = function(child, index) {
     if (!this._children)
         this._children = [];
     var children = this._children;
-    index = index | children.length;
+    index = index || children.length;
     if (index < 0 || index > children.length)
         return uno.error('The index [', index, '] out of bounds');
     if (index === children.length)

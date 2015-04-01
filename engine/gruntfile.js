@@ -19,8 +19,6 @@ module.exports = function(grunt) {
         'src/system/Os.js',
         'src/system/Screen.js',
         'src/render/common/Color.js',
-        'src/render/common/UV.js',
-        'src/render/common/Frame.js',
         'src/render/common/Texture.js',
         'src/render/common/Shape.js',
         'src/render/Render.js',

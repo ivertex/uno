@@ -6,7 +6,7 @@ var target = function(object) {
     this.m1 = new uno.Matrix();
     this.matrix = new uno.Matrix();
     this.filterVal = 0;
-    this.filterOffset = 0.01;
+    this.filterOffset = 0.001;
     //this.matrix.rotate(uno.Math.HALF_PI);
     //this.matrix.translate(300, 300);
 };
@@ -14,16 +14,16 @@ var target = function(object) {
 target.id = 'target';
 
 target.prototype.filterTexture = function(render, texture) {
-    var data = render.getPixels(texture);
+    var data = render.getPixels(texture, 100, 100, 200, 200);
     this.filterVal += this.filterOffset;
-    if (this.filterVal > 0.3 || this.filterVal < -0.3)
+    if (this.filterVal > 0.5 || this.filterVal < -0.5)
         this.filterOffset = -this.filterOffset;
     var val = this.filterVal;
     for (var i = 0, l = data.length; i < l; i += 4) {
-        data[i] = data[i + 1] = data[i + 2] = 0.2126 * data[i] + (0.7152 - val) * data[i + 1] + 0.0722 * data[i + 2];
-        val += 0.00001;
+        data[i] = data[i + 1] = data[i + 2] = val * (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]);
+        val += 0.00003;
     }
-    render.setPixels(texture, data);
+    render.setPixels(texture, data, 50, 50, 200, 200);
 };
 
 target.prototype.update = function(render) {
@@ -41,10 +41,10 @@ target.prototype.render = function(render) {
         render.transform(this.matrix);
         render.drawTexture(this.texture);
         render.transform(this.m1);
-        render.fillColor(uno.Color.RED);
+        render.fillColor(uno.Color.BLUE);
         render.drawRect(100, 100, 100, 100);
-        //this.filterTexture(render, this.target);
-        console.log(render.getPixel(this.target, 0, 0));
+        this.filterTexture(render, this.target);
+        //console.log(render.type, render.getPixels(this.target, 100, 100, 1, 1));
         render.target();
     }
     render.transform(uno.Matrix.IDENTITY);

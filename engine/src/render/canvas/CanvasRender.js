@@ -323,33 +323,30 @@ uno.CanvasRender.prototype.endShape = function() {
 };
 
 /**
- * Get texture pixel
- * @param {uno.Texture} texture - The texture to process
- * @param {Number} x - The x-coordinate of the pixel
- * @param {Number} y - The y-coordinate of the pixel
- * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
- */
-uno.CanvasRender.prototype.getPixel = function(texture, x, y) {
-    return uno.CanvasTexture.get(texture).getPixel(x, y);
-};
-
-/**
  * Get texture pixels
  * @param {uno.Texture} texture - The texture to process
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
  * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
  */
-uno.CanvasRender.prototype.getPixels = function(texture) {
-    return uno.CanvasTexture.get(texture).getPixels();
+uno.CanvasRender.prototype.getPixels = function(texture, x, y, width, height) {
+    return uno.CanvasTexture.get(texture).getPixels(x, y, width, height);
 };
 
 /**
  * Set texture pixels
  * @param {uno.Texture} texture - The texture to process
  * @param {Uint8ClampedArray} data - Pixels data
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.setPixels = function(texture, data) {
-    uno.CanvasTexture.get(texture).setPixels(data);
+uno.CanvasRender.prototype.setPixels = function(texture, data, x, y, width, height) {
+    uno.CanvasTexture.get(texture).setPixels(data, x, y, width, height);
     return this;
 };
 

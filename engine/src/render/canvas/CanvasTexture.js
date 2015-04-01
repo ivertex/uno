@@ -88,30 +88,58 @@ uno.CanvasTexture.prototype.handle = function() {
 
 /**
  * Get or set texture pixels
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
  * @returns {Uint8ClampedArray}
  */
-uno.CanvasTexture.prototype.getPixel = function(x, y) {
-    return this.context().getImageData(x, y, 1, 1).data;
-};
+uno.CanvasTexture.prototype.getPixels = function(x, y, width, height) {
+    var w = this.texture.width;
+    var h = this.texture.height;
 
-/**
- * Get or set texture pixels
- * @returns {Uint8ClampedArray}
- */
-uno.CanvasTexture.prototype.getPixels = function() {
-    this._imageData = this.context().getImageData(0, 0, this.texture.width, this.texture.height);
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return this;
+
+    this._imageData = this.context().getImageData(x, y, width, height);
+
     return this._imageData.data;
 };
 
 /**
  * Get or set texture pixels
  * @param {Uint8ClampedArray} data - Pixels data
- * @returns {CanvasTexture} - <code>this</code>
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
+ * @returns {uno.CanvasTexture} - <code>this</code>
  */
-uno.CanvasTexture.prototype.setPixels = function(data) {
+uno.CanvasTexture.prototype.setPixels = function(data, x, y, width, height) {
+    var w = this.texture.width;
+    var h = this.texture.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (!data || width * height * 4 !== data.length)
+        return this;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return this;
+
     if (this._imageData.data !== data)
         this._imageData.set(data);
-    this.context().putImageData(this._imageData, 0, 0);
+
+    this.context().putImageData(this._imageData, x, y);
+
     return this;
 };
 
