@@ -139,7 +139,7 @@ Object.defineProperty(uno.WebglRender.prototype, 'transform', {
 /**
  * Current blend mode
  * @name uno.WebglRender#blendMode
- * @type {uno.Matrix}
+ * @type {Number}
  */
 Object.defineProperty(uno.WebglRender.prototype, 'blendMode', {
     get: function() {
@@ -685,13 +685,13 @@ uno.WebglRender.prototype._resetState = function() {
  * @param {Number} blendMode - New blend mode
  * @private
  */
-uno.WebglRender.prototype._setBlendMode = function(mode) {
-    mode = mode || uno.Render.BLEND_NORMAL;
-    if (mode === this._contextBlendMode || !uno.WebglRender._blendModes[mode])
+uno.WebglRender.prototype._setBlendMode = function(blendMode) {
+    blendMode = blendMode || uno.Render.BLEND_NORMAL;
+    if (blendMode === this._contextBlendMode || !uno.WebglRender._blendModes[blendMode])
         return;
-    var mode = uno.WebglRender._blendModes[mode];
-    this._context.blendFunc(mode[0], mode[1]);
-    this._contextBlendMode = mode;
+    blendMode = uno.WebglRender._blendModes[blendMode];
+    this._context.blendFunc(blendMode[0], blendMode[1]);
+    this._contextBlendMode = blendMode;
 };
 
 /**

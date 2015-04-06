@@ -121,7 +121,7 @@ Object.defineProperty(uno.CanvasRender.prototype, 'transform', {
 /**
  * Set current blend mode
  * @name uno.CanvasRender#blendMode
- * @type {uno.Matrix}
+ * @type {Number}
  */
 Object.defineProperty(uno.CanvasRender.prototype, 'blendMode', {
     get: function() {
@@ -546,15 +546,15 @@ uno.CanvasRender.prototype._setTransform = function(matrix) {
 
 /**
  * Set new blend mode
- * @param {Number} mode - The new blend mode. See {@link uno.Render} constants
+ * @param {Number} blendMode - The new blend mode. See {@link uno.Render} constants
  * @private
  */
-uno.CanvasRender.prototype._setBlendMode = function(mode) {
-    mode = mode || uno.Render.BLEND_NORMAL;
-    if (this._contextBlendMode === mode || !uno.CanvasRender._blendModes[mode])
+uno.CanvasRender.prototype._setBlendMode = function(blendMode) {
+    blendMode = blendMode || uno.Render.BLEND_NORMAL;
+    if (this._contextBlendMode === blendMode || !uno.CanvasRender._blendModes[blendMode])
         return;
-    this._context.globalCompositeOperation = uno.CanvasRender._blendModes[mode];
-    this._contextBlendMode = mode;
+    this._context.globalCompositeOperation = uno.CanvasRender._blendModes[blendMode];
+    this._contextBlendMode = blendMode;
 };
 
 /**
