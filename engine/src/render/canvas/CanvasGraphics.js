@@ -91,7 +91,6 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
     var types = uno.Shape, figure, render = this._render;
     var world = this._shapeWorldMatrix.set(render._currentMatrix), temp = this._shapeTempMatrix;
     var worldEmpty = world.identity();
-    var blendMode = render._currentBlendMode;
     var fillColor = this._currentFillColor;
     var lineColor = this._currentLineColor;
     var lineWidth = this._currentLineWidth;
@@ -99,15 +98,15 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
         item = items[i];
         figure = item.shape;
         if (worldEmpty || !item._matrix)
-            render.transform(item._matrix ? item._matrix : world);
+            render.transform = item._matrix ? item._matrix : world;
         else {
             uno.Matrix.concat(item._matrix, world, temp);
-            render.transform(temp);
+            render.transform = temp;
         }
         this.lineColor(item.lineColor);
         this.lineWidth(item.lineWidth);
         render.fillColor(item.fillColor);
-        render.blendMode(item.blendMode);
+        render._setBlendMode(item.blendMode);
         switch (item.type) {
             case types.LINE:
                 this.drawLine(figure.x1, figure.y1, figure.x2, figure.y2);
@@ -132,8 +131,7 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
     this.lineColor(lineColor);
     this.lineWidth(lineWidth);
     render.fillColor(fillColor);
-    render.blendMode(blendMode);
-    render.transform(world);
+    render.transform = world;
 };
 
 /**

@@ -132,12 +132,11 @@ uno.WebglTexture.prototype.getPixels = function(render, x, y, width, height) {
     ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.handle(render), 0);
     ctx.readPixels(x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, this._imageData);
 
-    // TODO: rewrite after changing method 'target' to property
     var target = render._target;
     if (target === null)
         ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
     else
-        render.target(target);
+        render.target = target;
 
     // Flip by Y
     if (height > 1) {

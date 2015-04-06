@@ -176,7 +176,7 @@ uno.Mouse.prototype._callInput = function(type) {
     var prevent = false;
     for (var i in renders) {
         var render = renders[i];
-        var bounds = render.bounds();
+        var bounds = render.bounds;
         var pointer = this._position;
         if (render.root && bounds.contains(pointer)) {
             event._set(type, this._button, pointer.x - bounds.x, pointer.y - bounds.y, this._wheel.x, this._wheel.y);

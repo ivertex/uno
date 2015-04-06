@@ -236,7 +236,7 @@ uno.WebglGraphics.prototype.flush = function() {
     var count = 0;
 
     for (var i = 0, l = this._stateCount; i < l; ++i) {
-        render._applyBlendMode(modes[i]);
+        render._setBlendMode(modes[i]);
         count = states[i];
         ctx.drawElements(ctx.TRIANGLES, count - index, ctx.UNSIGNED_SHORT, index * 2);
         index = count;

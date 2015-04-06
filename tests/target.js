@@ -36,21 +36,21 @@ target.prototype.render = function(render) {
     if (!this.texture || !this.texture.ready)
         return;
     if (this.filter) {
-        render.target(this.target);
+        render.target = this.target;
         render.clear();
-        render.transform(this.matrix);
+        render.transform = this.matrix;
         render.drawTexture(this.texture);
-        render.transform(this.m1);
+        render.transform = this.m1;
         render.fillColor(uno.Color.BLUE);
         render.drawRect(100, 100, 100, 100);
         this.filterTexture(render, this.target);
         //console.log(render.type, render.getPixels(this.target, 100, 100, 1, 1));
-        render.target();
+        render.target = null;
     }
-    render.transform(uno.Matrix.IDENTITY);
+    render.transform.reset();
     render.fillColor(uno.Color.WHITE);
     render.drawRect(0, 0, render.width, render.height);
-    render.transform(this.object.transform.matrix);
+    render.transform = this.object.transform.matrix;
     render.drawTexture(this.filter ? this.target : this.texture);
 };
 

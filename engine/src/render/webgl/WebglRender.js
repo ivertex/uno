@@ -76,67 +76,81 @@ uno.WebglRender.prototype.destroy = function() {
 };
 
 /**
- * Get bounds of render
- * For browser bounds is position and size on page
+ * Bounds of the render<br>
+ * For browser bounds is position and size on page<br>
  * For other platforms position and size on screen
- * @returns {uno.Rect}
+ * @name uno.WebglRender#bounds
+ * @type {uno.Rect}
+ * @readonly
  */
-uno.WebglRender.prototype.bounds = function() {
-    if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
-        this._updateBounds();
-    return this._bounds;
-};
+Object.defineProperty(uno.WebglRender.prototype, 'bounds', {
+    get: function () {
+        if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
+            this._updateBounds();
+        return this._bounds;
+    }
+});
 
 /**
- * Set or reset render target texture
- * @param {uno.WebglTexture} texture - Texture for render buffer
- * @returns {uno.WebglRender} - <code>this</code>
+ * Render target texture
+ * @name uno.WebglRender#target
+ * @type {uno.Texture}
  */
-uno.WebglRender.prototype.target = function(texture) {
-    this._graphics.flush();
-    this._batch.flush();
+Object.defineProperty(uno.WebglRender.prototype, 'target', {
+    get: function() {
+        return this._target;
+    },
+    set: function(value) {
+        this._graphics.flush();
+        this._batch.flush();
 
-    if (!texture) {
-        this._target = null;
-        this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
-        this._projection.x = this.width * 0.5;
-        this._projection.y = -this.height * 0.5;
-        this._context.viewport(0, 0, this.width, this.height);
-        this._updateShaders();
-    } else {
-        this._target = texture;
-        this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(texture).handle(this, true));
-        this._projection.x = texture.width * 0.5;
-        this._projection.y = -texture.height * 0.5;
-        this._context.viewport(0, 0, texture.width, texture.height);
+        if (!value) {
+            this._target = null;
+            this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
+            this._projection.x = this.width * 0.5;
+            this._projection.y = -this.height * 0.5;
+            this._context.viewport(0, 0, this.width, this.height);
+        } else {
+            this._target = value;
+            this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(value).handle(this, true));
+            this._projection.x = value.width * 0.5;
+            this._projection.y = -value.height * 0.5;
+            this._context.viewport(0, 0, value.width, value.height);
+        }
+
         this._updateShaders();
     }
-
-    return this;
-};
+});
 
 /**
- * Set current transform
- * @param {uno.Matrix} [matrix] - The new matrix transform
- * @returns {uno.Matrix} - Current matrix transform
+ * Current transform
+ * @name uno.WebglRender#transform
+ * @type {uno.Matrix}
  */
-uno.WebglRender.prototype.transform = function(matrix) {
-    if (!matrix)
+Object.defineProperty(uno.WebglRender.prototype, 'transform', {
+    get: function() {
         return this._currentMatrix;
-    this._currentMatrix.set(matrix);
-    return this._currentMatrix;
-};
+    },
+    set: function(value) {
+        this._currentMatrix.set(value);
+    }
+});
 
 /**
- * Set current blend mode
- * @param {Number} [mode] - The new blend mode. See {@link uno.Render} constants
- * @returns {Number} - Current blend mode
+ * Current blend mode
+ * @name uno.WebglRender#blendMode
+ * @type {uno.Matrix}
  */
-uno.WebglRender.prototype.blendMode = function(mode) {
-    if (!mode || !uno.WebglRender._blendModes[mode])
+Object.defineProperty(uno.WebglRender.prototype, 'blendMode', {
+    get: function() {
         return this._currentBlendMode;
-    return this._currentBlendMode = mode;
-};
+    },
+    set: function(value) {
+        if (!value || !uno.WebglRender._blendModes[value])
+            return;
+        this._currentBlendMode = value;
+    }
+});
 
 /**
  * Set current fill color for rendering graphics shapes
@@ -199,7 +213,7 @@ uno.WebglRender.prototype.clear = function(color) {
 /**
  * Draw texture
  * @param {uno.Texture} texture - The texture to render
- * @param {uno.Rect} frame - The frame to render rect of the texture
+ * @param {uno.Rect} [frame] - The frame to render rect of the texture (default full texture)
  * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
  * @param {Number} [alpha=1] - Texture opacity
  * @returns {uno.WebglRender} - <code>this</code>
@@ -452,6 +466,8 @@ uno.WebglRender.prototype._setupProps = function() {
     this._projection = new uno.Point();
     this._target = null;
     this._currentMatrix = new uno.Matrix();
+    this._contextBlendMode = uno.Render.BLEND_NONE;
+    this._currentBlendMode = uno.Render.BLEND_NORMAL;
     this._currentShader = null;
     this._shaders = {};
 };
@@ -575,8 +591,7 @@ uno.WebglRender.prototype._createContext = function() {
     ctx.colorMask(true, true, true, true);
     uno.WebglRender._initBlendModes(ctx);
     this._currentShader = null;
-    this._currentBlendMode = uno.Render.BLEND_NORMAL;
-    this._applyBlendMode(this._currentBlendMode);
+    this._setBlendMode();
     this._restore();
     this._contextLost = false;
 };
@@ -653,12 +668,14 @@ uno.WebglRender.prototype._onFrame = function(time) {
  * @private
  */
 uno.WebglRender.prototype._resetState = function() {
-    this.blendMode(uno.Render.BLEND_NORMAL);
-    this.transform(uno.Matrix.IDENTITY);
+    this.blendMode = uno.Render.BLEND_NORMAL;
+    this.transform.reset();
+
     var defaults = uno.Render.DEFAULT_GRAPHICS;
     this.fillColor(defaults.fillColor);
     this.lineColor(defaults.lineColor);
     this.lineWidth(defaults.lineWidth);
+
     if (this._autoClear)
         this.clear();
 };
@@ -668,14 +685,13 @@ uno.WebglRender.prototype._resetState = function() {
  * @param {Number} blendMode - New blend mode
  * @private
  */
-uno.WebglRender.prototype._applyBlendMode = function(blendMode) {
-    if (this._applyedBlendMode === blendMode || !uno.WebglRender._blendModes)
+uno.WebglRender.prototype._setBlendMode = function(mode) {
+    mode = mode || uno.Render.BLEND_NORMAL;
+    if (mode === this._contextBlendMode || !uno.WebglRender._blendModes[mode])
         return;
-    this._applyedBlendMode = blendMode;
-    var mode = uno.WebglRender._blendModes[blendMode];
-    if (!mode)
-        return;
+    var mode = uno.WebglRender._blendModes[mode];
     this._context.blendFunc(mode[0], mode[1]);
+    this._contextBlendMode = mode;
 };
 
 /**

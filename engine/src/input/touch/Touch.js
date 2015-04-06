@@ -114,7 +114,7 @@ uno.Touch.prototype._callInput = function(type) {
         var render = renders[i];
         if (!render.root)
             continue;
-        event._set(type, render.bounds(), this._points);
+        event._set(type, render.bounds, this._points);
         if (event.points.length) {
             render.root.input(event, render);
             prevent = true;

@@ -302,7 +302,7 @@ uno.WebglBatch.prototype.flush = function() {
     var texture, current = null;
 
     for (var i = 0, l = this._stateCount; i < l; ++i) {
-        render._applyBlendMode(modes[i]);
+        render._setBlendMode(modes[i]);
         texture = textures[i];
         if (texture !== current) {
             sampler.texture(0, texture);

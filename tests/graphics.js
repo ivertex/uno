@@ -22,7 +22,7 @@ graphs.prototype.build = function(render) {
 graphs.prototype.render = function(render, deltaTime) {
     if (!this.object.transform)
         return;
-    render.transform(this.object.transform.matrix);
+    render.transform = this.object.transform.matrix;
     render.lineColor(this.groundColor);
     render.lineWidth(10);
     render.drawLine(0, 200, 300, 200);
@@ -36,16 +36,16 @@ graphs.prototype.render = function(render, deltaTime) {
     render.lineColor(uno.Color.RED);
     render.fillColor(uno.Color.GREEN);
     render.lineWidth(10);
-    render.blendMode(uno.Render.BLEND_ADD);
+    render.blendMode = uno.Render.BLEND_ADD;
     render.drawEllipse(150, 130, 50, 70);
     render.fillColor(this.sunColor);
     render.lineWidth(0);
-    render.blendMode(uno.Render.BLEND_NORMAL);
+    render.blendMode = uno.Render.BLEND_NORMAL;
     render.drawCircle(50, 0, 30);
     render.fillColor(null);
     render.lineColor(uno.Color.BLUE);
     render.lineWidth(30);
-    render.blendMode(uno.Render.BLEND_ADD);
+    render.blendMode = uno.Render.BLEND_ADD;
     render.drawArc(150, 200, 200, 0, uno.Math.PI, true);
 };
 
