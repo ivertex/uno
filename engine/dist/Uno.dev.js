@@ -3029,10 +3029,10 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
     for (i = 0; i < l; ++i) {
         item = items[i];
         figure = item.shape;
-        if (worldEmpty || !item.matrix)
-            render.transform(item.matrix ? item.matrix : world);
+        if (worldEmpty || !item._matrix)
+            render.transform(item._matrix ? item._matrix : world);
         else {
-            uno.Matrix.concat(item.matrix, world, temp);
+            uno.Matrix.concat(item._matrix, world, temp);
             render.transform(temp);
         }
         this.lineColor(item.lineColor);
@@ -4897,7 +4897,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         for (i = 0, l = items.length; i < l; ++i) {
             item = items[i];
             source = item.shape;
-            render._currentMatrix.set(item.matrix ? item.matrix : identity);
+            render._currentMatrix.set(item._matrix ? item._matrix : identity);
             render._currentBlendMode = item.blendMode;
             this._currentFillColor = item.fillColor;
             this._currentLineColor = item.lineColor;
@@ -9081,7 +9081,7 @@ uno.Sprite.prototype.render = function(render) {
         this.frame.width = this.texture.width;
         this.frame.height = this.texture.height;
     }
-    render.transform(this.object.transform.matrix);
+    render.transform(this.object.transform._matrix);
     render.blendMode(this.blend);
     render.drawTexture(this.texture, this.frame, this.alpha, this.tint);
 };
@@ -9130,15 +9130,15 @@ uno.Transform = function(object) {
      * @type {uno.Matrix}
      * @default uno.Matrix.IDENTITY
      */
-    this.matrix = new uno.Matrix();
+    this._matrix = new uno.Matrix();
 };
 
 uno.Transform.id = 'transform';
 
 uno.Transform.prototype.update = function() {
-    this.matrix.transform(this.position, this.scale, this.rotation, this.pivot,
+    this._matrix.transform(this.position, this.scale, this.rotation, this.pivot,
         this.object && this.object.parent && this.object.parent.transform ?
-            this.object.parent.transform.matrix : uno.Matrix.IDENTITY);
+            this.object.parent.transform._matrix : uno.Matrix.IDENTITY);
 };
 
 uno.Transform.prototype.setPosition = function(x, y) {

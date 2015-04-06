@@ -14,6 +14,7 @@
  */
 uno.Matrix = function(a, b, c, d, tx, ty) {
     /**
+     * Scale X
      * @name uno.Matrix#a
      * @type {Number}
      * @default 1
@@ -21,6 +22,7 @@ uno.Matrix = function(a, b, c, d, tx, ty) {
     this.a = 1;
 
     /**
+     * Shear Y
      * @name uno.Matrix#b
      * @type {Number}
      * @default 0
@@ -28,6 +30,7 @@ uno.Matrix = function(a, b, c, d, tx, ty) {
     this.b = 0;
 
     /**
+     * Shear X
      * @name uno.Matrix#c
      * @type {Number}
      * @default 0
@@ -35,6 +38,7 @@ uno.Matrix = function(a, b, c, d, tx, ty) {
     this.c = 0;
 
     /**
+     * Scale Y
      * @name uno.Matrix#d
      * @type {Number}
      * @default 1
@@ -42,6 +46,7 @@ uno.Matrix = function(a, b, c, d, tx, ty) {
     this.d = 1;
 
     /**
+     * Translate X
      * @name uno.Matrix#tx
      * @type {Number}
      * @default 0
@@ -49,6 +54,7 @@ uno.Matrix = function(a, b, c, d, tx, ty) {
     this.tx = 0;
 
     /**
+     * Translate Y
      * @name uno.Matrix#ty
      * @type {Number}
      * @default 0
@@ -266,22 +272,14 @@ uno.Matrix.prototype.scale = function(x, y) {
 /**
  * Applies a rotation transformation to the matrix
  * @param {Number} angle - The angle in radians
- * @param {Number|uno.Point} x - the x-coordinate of the anchor point<br>
- *     If x is object it treated as uno.Point instance
- * @param {Number} y - the y-coordinate of the anchor point
  * @returns {uno.Matrix} - <code>this</code>
  */
-uno.Matrix.prototype.rotate = function(angle, x, y) {
+uno.Matrix.prototype.rotate = function(angle) {
     var cos = Math.cos(angle);
     var sin = Math.sin(angle);
     var a1 = this.a;
     var c1 = this.c;
     var tx1 = this.tx;
-    // TODO: Find correct rotate around code
-    if (x && y) {
-        tx1 = x - x * cos + y * sin;
-        this.ty = y - x * sin - y * cos;
-    }
     this.a = a1 * cos - this.b * sin;
     this.b = a1 * sin + this.b * cos;
     this.c = c1 * cos - this.d * sin;

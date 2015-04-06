@@ -171,9 +171,8 @@ uno.WebglRender.prototype.lineWidth = function(width) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.clear = function(color) {
-    // TODO: Actually we need reset method for graphics and batch (without rendering)
-    this._graphics.flush();
-    this._batch.flush();
+    this._graphics.reset();
+    this._batch.reset();
 
     var ctx = this._context;
 

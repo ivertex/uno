@@ -223,10 +223,6 @@ uno.WebglTexture.prototype._create = function(render) {
 
     // Check is texture render target or not
     if (texture.url) {
-
-        // TODO: should we flip texture or not?
-        // ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
-
         ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         // Here we should get image from CanvasTexture
         ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, uno.CanvasTexture.get(texture).handle());

@@ -98,10 +98,10 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
     for (i = 0; i < l; ++i) {
         item = items[i];
         figure = item.shape;
-        if (worldEmpty || !item.matrix)
-            render.transform(item.matrix ? item.matrix : world);
+        if (worldEmpty || !item._matrix)
+            render.transform(item._matrix ? item._matrix : world);
         else {
-            uno.Matrix.concat(item.matrix, world, temp);
+            uno.Matrix.concat(item._matrix, world, temp);
             render.transform(temp);
         }
         this.lineColor(item.lineColor);

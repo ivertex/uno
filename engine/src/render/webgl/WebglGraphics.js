@@ -193,6 +193,16 @@ uno.WebglGraphics.prototype._restore = function() {
 };
 
 /**
+ * Reset graphics batch
+ */
+uno.WebglGraphics.prototype.reset = function() {
+    this._stateBlendModeLast = this._defaultBlendMode;
+    this._stateCount = 0;
+    this._vertexCount = 0;
+    this._indexCount = 0;
+};
+
+/**
  * Render all current shapes and free batch buffers
  * @returns {Boolean} - Is rendered anything
  */
@@ -232,10 +242,7 @@ uno.WebglGraphics.prototype.flush = function() {
         index = count;
     }
 
-    this._stateBlendModeLast = this._defaultBlendMode;
-    this._stateCount = 0;
-    this._vertexCount = 0;
-    this._indexCount = 0;
+    this.reset();
 
     return true;
 };
@@ -344,7 +351,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         for (i = 0, l = items.length; i < l; ++i) {
             item = items[i];
             source = item.shape;
-            render._currentMatrix.set(item.matrix ? item.matrix : identity);
+            render._currentMatrix.set(item._matrix ? item._matrix : identity);
             render._currentBlendMode = item.blendMode;
             this._currentFillColor = item.fillColor;
             this._currentLineColor = item.lineColor;
@@ -736,7 +743,7 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
     var i, k, sin, cos, sx, sy, px1, py1, px2, py2;
 
     var arc = angle !== pi2;
-    var segments = Math.round(Math.round(this._smooth * Math.sqrt(radius)) / pi2 * (angle < 0 ? -angle : angle));
+    var segments = Math.round(Math.round(this._smooth * Math.sqrt(Math.max(a * radius, d * radius))) / pi2 * (angle < 0 ? -angle : angle));
     var delta = angle / segments;
     if (arc)
         ++segments;
@@ -1245,7 +1252,7 @@ uno.WebglGraphics.prototype._drawEllipse = function(x, y, width, height) {
     px = Math.abs(a * width + b * height);
     py = Math.abs(c * width + d * height);
 
-    segments = Math.round(this._smooth * Math.sqrt(Math.max(width, height)));
+    segments = Math.round(this._smooth * Math.sqrt(Math.max(a * width, d * height)));
     delta = uno.Math.TWO_PI / segments;
     cos = Math.cos(delta);
     sin = Math.sin(delta);

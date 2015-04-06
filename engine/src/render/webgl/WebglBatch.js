@@ -251,6 +251,23 @@ uno.WebglBatch.prototype.render = function(texture, x, y, width, height, alpha, 
 };
 
 /**
+ * Reset sprite batch
+ */
+uno.WebglBatch.prototype.reset = function() {
+    var states = this._states;
+
+    // Clear all links to textures
+    for (var i = 0, l = this._stateCount; i < l; ++i)
+        states[i] = null;
+
+    this._stateTextureLast = null;
+
+    this._stateBlendModeLast = uno.Render.BLEND_NORMAL;
+    this._stateCount = 0;
+    this._spriteCount = 0;
+};
+
+/**
  * Render all current batched textures and free batch buffers
  * @returns {Boolean} - Is rendered anything
  */
@@ -296,14 +313,7 @@ uno.WebglBatch.prototype.flush = function() {
         index = count;
     }
 
-    // Clear all links to textures
-    for (i = 0, l = this._stateCount; i < l; ++i)
-        states[i] = null;
-    this._stateTextureLast = null;
-
-    this._stateBlendModeLast = uno.Render.BLEND_NORMAL;
-    this._stateCount = 0;
-    this._spriteCount = 0;
+    this.reset();
 };
 
 /**
