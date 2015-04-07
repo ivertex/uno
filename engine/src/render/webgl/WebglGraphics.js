@@ -132,21 +132,21 @@ uno.WebglGraphics = function(render) {
      * @type {uno.Color}
      * @private
      */
-    this._currentFillColor = uno.Render.DEFAULT_GRAPHICS.fillColor.clone();
+    this.fillColor = uno.Render.DEFAULT_GRAPHICS.fillColor.clone();
 
     /**
      * Current line color
      * @type {uno.Color}
      * @private
      */
-    this._currentLineColor = uno.Render.DEFAULT_GRAPHICS.lineColor.clone();
+    this.lineColor = uno.Render.DEFAULT_GRAPHICS.lineColor.clone();
 
     /**
      * Current line width
      * @type {uno.Color}
      * @private
      */
-    this._currentLineWidth = uno.Render.DEFAULT_GRAPHICS.lineWidth;
+    this.lineWidth = uno.Render.DEFAULT_GRAPHICS.lineWidth;
 
     this._restore();
     render._addRestore(this);
@@ -167,8 +167,8 @@ uno.WebglGraphics.prototype.destroy = function() {
     this._states = null;
     this._stateBlendModes = null;
     this._shapeMatrix = null;
-    this._currentFillColor = null;
-    this._currentLineColor = null;
+    this.fillColor = null;
+    this.lineColor = null;
 };
 
 /**
@@ -246,9 +246,9 @@ uno.WebglGraphics.prototype.flush = function() {
  * @returns {uno.Color} - Current fill color
  */
 uno.WebglGraphics.prototype.fillColor = function(color) {
-    if (color === undefined || this._currentFillColor.equal(color ? color : uno.Color.TRANSPARENT))
-        return this._currentFillColor;
-    return this._currentFillColor.set(color ? color : uno.Color.TRANSPARENT);
+    if (color === undefined || this.fillColor.equal(color ? color : uno.Color.TRANSPARENT))
+        return this.fillColor;
+    return this.fillColor.set(color ? color : uno.Color.TRANSPARENT);
 };
 
 /**
@@ -257,9 +257,9 @@ uno.WebglGraphics.prototype.fillColor = function(color) {
  * @returns {uno.Color} - Current line color
  */
 uno.WebglGraphics.prototype.lineColor = function(color) {
-    if (color === undefined || this._currentLineColor.equal(color ? color : uno.Color.TRANSPARENT))
-        return this._currentLineColor;
-    return this._currentLineColor.set(color ? color : uno.Color.TRANSPARENT);
+    if (color === undefined || this.lineColor.equal(color ? color : uno.Color.TRANSPARENT))
+        return this.lineColor;
+    return this.lineColor.set(color ? color : uno.Color.TRANSPARENT);
 };
 
 /**
@@ -269,8 +269,8 @@ uno.WebglGraphics.prototype.lineColor = function(color) {
  */
 uno.WebglGraphics.prototype.lineWidth = function(width) {
     if (width === undefined || width === null || width < 0)
-        return this._currentLineWidth;
-    return this._currentLineWidth = width;
+        return this.lineWidth;
+    return this.lineWidth = width;
 };
 
 /**
@@ -327,11 +327,11 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         return false;
     var i, l, source;
     var render = this._render;
-    var matrix = this._shapeMatrix.set(render._currentMatrix);
+    var matrix = this._shapeMatrix.set(render.transform);
     var identity = uno.Matrix.IDENTITY;
-    var fillColor = this._currentFillColor;
-    var lineColor = this._currentLineColor;
-    var lineWidth = this._currentLineWidth;
+    var fillColor = this.fillColor;
+    var lineColor = this.lineColor;
+    var lineWidth = this.lineWidth;
     var blendMode = render._currentBlendMode;
 
     // If shape not made
@@ -344,11 +344,11 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         for (i = 0, l = items.length; i < l; ++i) {
             item = items[i];
             source = item.shape;
-            render._currentMatrix.set(item._matrix ? item._matrix : identity);
-            render._currentBlendMode = item.value;
-            this._currentFillColor = item.fillColor;
-            this._currentLineColor = item.lineColor;
-            this._currentLineWidth = item.lineWidth;
+            render._currentMatrix.set(item.matrix ? item.matrix : identity);
+            render._currentBlendMode = item.blendMode;
+            this.fillColor = item.fillColor;
+            this.lineColor = item.lineColor;
+            this.lineWidth = item.lineWidth;
             switch (item.type) {
                 case types.LINE:
                     this.drawLine(source.x1, source.y1, source.x2, source.y2);
@@ -372,9 +372,9 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         }
         this._shape = shape;
         this.endShape();
-        this._currentFillColor = fillColor;
-        this._currentLineColor = lineColor;
-        this._currentLineWidth = lineWidth;
+        this.fillColor = fillColor;
+        this.lineColor = lineColor;
+        this.lineWidth = lineWidth;
         render._currentBlendMode = blendMode;
         render._currentMatrix.set(matrix);
     }
@@ -449,8 +449,8 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
  * @returns {Boolean} - Is line rendered
  */
 uno.WebglGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
-    var lineColor = this._currentLineColor;
-    var lineWidth = this._currentLineWidth;
+    var lineColor = this.lineColor;
+    var lineWidth = this.lineWidth;
 
     if (!lineWidth || !lineColor || !lineColor.a)
         return false;
@@ -464,7 +464,7 @@ uno.WebglGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
-        this._shape.add(matrix, uno.Shape.types.LINE,
+        this._shape.add(matrix, uno.Shape.LINE,
             new uno.Line(x1, y1, x2, y2), null, lineColor, lineWidth, blendMode);
     }
 
@@ -525,9 +525,9 @@ uno.WebglGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
  * @returns {Boolean} - Is rectangle rendered
  */
 uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
-    var fillColor = this._currentFillColor;
-    var lineColor = this._currentLineColor;
-    var lineWidth = this._currentLineWidth;
+    var fillColor = this.fillColor;
+    var lineColor = this.lineColor;
+    var lineWidth = this.lineWidth;
 
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
@@ -541,7 +541,7 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
-        this._shape.add(matrix, uno.Shape.types.RECT,
+        this._shape.add(matrix, uno.Shape.RECT,
             new uno.Rect(x, y, width, height), fillColor, lineColor, lineWidth, blendMode);
     }
 
@@ -659,9 +659,9 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
  */
 uno.WebglGraphics.prototype.drawCircle = function(x, y, radius) {
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.types.CIRCLE,
-            new uno.Circle(x, y, radius), this._currentFillColor, this._currentLineColor,
-            this._currentLineWidth, this._render._currentBlendMode);
+        this._shape.add(this._render.transform, uno.Shape.CIRCLE,
+            new uno.Circle(x, y, radius), this.fillColor, this.lineColor,
+            this.lineWidth, this._render.blend);
     }
     return this._drawEllipse(x, y, radius * 2, radius * 2);
 };
@@ -676,9 +676,9 @@ uno.WebglGraphics.prototype.drawCircle = function(x, y, radius) {
  */
 uno.WebglGraphics.prototype.drawEllipse = function(x, y, width, height) {
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.types.ELLIPSE,
-            new uno.Ellipse(x, y, width, height), this._currentFillColor, this._currentLineColor,
-            this._currentLineWidth, this._render._currentBlendMode);
+        this._shape.add(this._render.transform, uno.Shape.ELLIPSE,
+            new uno.Ellipse(x, y, width, height), this.fillColor, this.lineColor,
+            this.lineWidth, this._render.blend);
     }
     return this._drawEllipse(x, y, width, height);
 };
@@ -694,9 +694,9 @@ uno.WebglGraphics.prototype.drawEllipse = function(x, y, width, height) {
  * @returns {Boolean} - Is arc rendered
  */
 uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
-    var fillColor = this._currentFillColor;
-    var lineColor = this._currentLineColor;
-    var lineWidth = this._currentLineWidth;
+    var fillColor = this.fillColor;
+    var lineColor = this.lineColor;
+    var lineWidth = this.lineWidth;
 
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
@@ -721,7 +721,7 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
-        this._shape.add(matrix, uno.Shape.types.ARC,
+        this._shape.add(matrix, uno.Shape.ARC,
             new uno.Arc(x, y, radius, startAngle, endAngle, antiClockwise), fillColor, lineColor, lineWidth, blendMode);
     }
 
@@ -870,9 +870,9 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
  */
 uno.WebglGraphics.prototype.drawPoly = function(points) {
     var len = points.length;
-    var fillColor = this._currentFillColor;
-    var lineColor = this._currentLineColor;
-    var lineWidth = this._currentLineWidth;
+    var fillColor = this.fillColor;
+    var lineColor = this.lineColor;
+    var lineWidth = this.lineWidth;
 
     if (len < 2 || (!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
@@ -903,7 +903,7 @@ uno.WebglGraphics.prototype.drawPoly = function(points) {
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
-        this._shape.add(matrix, uno.Shape.types.POLY,
+        this._shape.add(matrix, uno.Shape.POLY,
             new uno.Poly(points), fillColor, lineColor, lineWidth, blendMode);
     }
 
@@ -1218,9 +1218,9 @@ uno.WebglGraphics.prototype.drawPoly = function(points) {
  * @private
  */
 uno.WebglGraphics.prototype._drawEllipse = function(x, y, width, height) {
-    var fillColor = this._currentFillColor;
-    var lineColor = this._currentLineColor;
-    var lineWidth = this._currentLineWidth;
+    var fillColor = this.fillColor;
+    var lineColor = this.lineColor;
+    var lineWidth = this.lineWidth;
 
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
@@ -1229,6 +1229,7 @@ uno.WebglGraphics.prototype._drawEllipse = function(x, y, width, height) {
 
     var matrix = this._render._currentMatrix;
     var blendMode = this._render._currentBlendMode;
+
     var a = matrix.a, b = matrix.b, c = matrix.c, d = matrix.d, tx = matrix.tx, ty = matrix.ty;
     var vc = this._vertexCount;
     var ii = this._indexCount;

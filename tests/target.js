@@ -27,29 +27,30 @@ target.prototype.filterTexture = function(render, texture) {
 };
 
 target.prototype.update = function(render) {
-    this.matrix.rotate(0.005);
-    this.m1.rotate(-0.01);
+    this.matrix.rotate(0.0005);
+    this.m1.rotate(-0.001);
     this.object.transform.rotation += 0.001;
 };
 
 target.prototype.render = function(render) {
     if (!this.texture || !this.texture.ready)
         return;
+    render.fillColor = uno.Color.BLUE;
+    render.drawCircle(200, 200, 100);
     if (this.filter) {
         render.target = this.target;
-        render.clear();
+        render.clear(uno.Color.WHITE);
         render.transform = this.matrix;
         render.drawTexture(this.texture);
         render.transform = this.m1;
-        render.fillColor(uno.Color.BLUE);
+        render.fillColor = uno.Color.GREEN;
         render.drawRect(100, 100, 100, 100);
         this.filterTexture(render, this.target);
         //console.log(render.type, render.getPixels(this.target, 100, 100, 1, 1));
         render.target = null;
     }
-    render.transform.reset();
-    render.fillColor(uno.Color.WHITE);
-    render.drawRect(0, 0, render.width, render.height);
+    //render.clear();
+    //render.fillColor = uno.Color.RED;
     render.transform = this.object.transform.matrix;
     render.drawTexture(this.filter ? this.target : this.texture);
 };

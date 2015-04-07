@@ -61,12 +61,11 @@ uno.Sprite.id = 'sprite';
 uno.Sprite.prototype.render = function(render) {
     if (!this.object || !this.object.transform || !this.texture || !this.texture.ready || !this.alpha)
         return;
-    if (!this.frame.width && !this.frame.height) {
-        this.frame.width = this.texture.width;
-        this.frame.height = this.texture.height;
-    }
     render.transform = this.object.transform.matrix;
     render.alpha = this.alpha;
     render.blend = this.blend;
-    render.drawTexture(this.texture, this.frame, this.alpha, this.tint);
+    if (this.frame.width && this.frame.height)
+        render.drawTexture(this.texture, this.frame, this.tint);
+    else
+        render.drawTexture(this.texture, null, this.tint);
 };

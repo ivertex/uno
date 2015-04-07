@@ -5,13 +5,6 @@
  */
 uno.WebglRender = function(settings) {
     /**
-     * Type of render. See {@link uno.Render} constants
-     * @type {Number}
-     * @default uno.Render.RENDER_WEBGL
-     */
-    this.type = uno.Render.RENDER_WEBGL;
-
-    /**
      * Root scene object
      * @type {uno.Object}
      */
@@ -29,14 +22,210 @@ uno.WebglRender = function(settings) {
 };
 
 /**
+ * Type the render. See {@link uno.Render} constants
+ * @name uno.WebglRender#type
+ * @type {Number}
+ * @default uno.Render.RENDER_WEBGL
+ * @readonly
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'type', {
+    get: function () {
+        return uno.Render.RENDER_WEBGL;
+    }
+});
+
+/**
+ * Width of the render
+ * @name uno.WebglRender#width
+ * @type {Number}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'width', {
+    get: function () {
+        return this._width;
+    },
+    set: function(value) {
+        if (value !== this._width)
+            this.resize(value, this._height);
+    }
+});
+
+/**
+ * Height of the render
+ * @name uno.WebglRender#height
+ * @type {Number}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'height', {
+    get: function () {
+        return this._height;
+    },
+    set: function(value) {
+        if (value !== this._height)
+            this.resize(this._width, value);
+    }
+});
+
+/**
+ * Bounds of the render<br>
+ * For browser bounds is position and size on page<br>
+ * For other platforms position and size on screen
+ * @name uno.WebglRender#bounds
+ * @type {uno.Rect}
+ * @readonly
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'bounds', {
+    get: function () {
+        if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
+            this._updateBounds();
+        return this._bounds;
+    }
+});
+
+/**
+ * Render target texture
+ * @name uno.WebglRender#target
+ * @type {uno.Texture}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'target', {
+    get: function() {
+        return this._target;
+    },
+    set: function(value) {
+        if (!value) {
+            if (value !== this._target) {
+                this._graphics.flush();
+                this._batch.flush();
+                this._target = null;
+                this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
+                this._projection.x = this.width * 0.5;
+                this._projection.y = -this.height * 0.5;
+                this._context.viewport(0, 0, this.width, this.height);
+                this._updateShaders();
+            }
+        } else {
+            if (this._target !== value) {
+                this._graphics.flush();
+                this._batch.flush();
+                this._target = value;
+                this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(value).handle(this, true));
+                this._projection.x = value.width * 0.5;
+                this._projection.y = -value.height * 0.5;
+                this._context.viewport(0, 0, value.width, value.height);
+                this._updateShaders();
+            }
+        }
+    }
+});
+
+/**
+ * Current transform
+ * @name uno.WebglRender#transform
+ * @type {uno.Matrix}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'transform', {
+    get: function() {
+        return this._currentMatrix;
+    },
+    set: function(value) {
+        this._currentMatrix.set(value);
+    }
+});
+
+/**
+ * Current alpha
+ * @name uno.WebglRender#alpha
+ * @type {Number}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'alpha', {
+    get: function() {
+        return this._currentAlpha;
+    },
+    set: function(value) {
+        this._currentAlpha = value;
+    }
+});
+
+/**
+ * Current blend mode
+ * @name uno.WebglRender#blend
+ * @type {Number}
+ * @default uno.Render.RENDER_NORMAL
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'blend', {
+    get: function() {
+        return this._currentBlendMode;
+    },
+    set: function(value) {
+        if (this._currentBlendMode === value || !uno.WebglRender._blendModes[value])
+            return;
+        this._currentBlendMode = value;
+    }
+});
+
+/**
+ * Current fill color
+ * @name uno.WebglRender#fillColor
+ * @type {uno.Color}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'fillColor', {
+    get: function() {
+        return this._graphics.fillColor;
+    },
+    set: function(value) {
+        if (!value) {
+            this._graphics.fillColor.set(uno.Color.TRANSPARENT);
+            return;
+        }
+        if (this._graphics.fillColor.equal(value))
+            return;
+        this._graphics.fillColor.set(value);
+    }
+});
+
+/**
+ * Current line color
+ * @name uno.WebglRender#lineColor
+ * @type {uno.Color}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'lineColor', {
+    get: function() {
+        return this._graphics.lineColor;
+    },
+    set: function(value) {
+        if (!value) {
+            this._graphics.lineColor.set(uno.Color.TRANSPARENT);
+            return;
+        }
+        if (this._graphics.lineColor.equal(value))
+            return;
+        this._graphics.lineColor.set(value);
+    }
+});
+
+/**
+ * Current line width
+ * @name uno.WebglRender#lineWidth
+ * @type {Number}
+ */
+Object.defineProperty(uno.WebglRender.prototype, 'lineWidth', {
+    get: function() {
+        return this._graphics.lineWidth;
+    },
+    set: function(value) {
+        if (!value || value < 0)
+            value = 0;
+        this._graphics.lineWidth = value;
+    }
+});
+
+/**
  * Resize viewport
  * @param {Number} width - New width of the viewport
  * @param {Number} height - New width of the viewport
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.resize = function(width, height) {
-    this.width = width;
-    this.height = height;
+    this._width = width;
+    this._height = height;
     this._canvas.width = width;
     this._canvas.height = height;
     this._projection.x = width / 2;
@@ -75,125 +264,6 @@ uno.WebglRender.prototype.destroy = function() {
 };
 
 /**
- * Bounds of the render<br>
- * For browser bounds is position and size on page<br>
- * For other platforms position and size on screen
- * @name uno.WebglRender#bounds
- * @type {uno.Rect}
- * @readonly
- */
-Object.defineProperty(uno.WebglRender.prototype, 'bounds', {
-    get: function () {
-        if (!this._boundsScroll.equal(uno.Screen.scrollX, uno.Screen.scrollY))
-            this._updateBounds();
-        return this._bounds;
-    }
-});
-
-/**
- * Render target texture
- * @name uno.WebglRender#target
- * @type {uno.Texture}
- */
-Object.defineProperty(uno.WebglRender.prototype, 'target', {
-    get: function() {
-        return this._target;
-    },
-    set: function(value) {
-        this._graphics.flush();
-        this._batch.flush();
-
-        if (!value) {
-            this._target = null;
-            this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
-            this._projection.x = this.width * 0.5;
-            this._projection.y = -this.height * 0.5;
-            this._context.viewport(0, 0, this.width, this.height);
-        } else {
-            this._target = value;
-            this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(value).handle(this, true));
-            this._projection.x = value.width * 0.5;
-            this._projection.y = -value.height * 0.5;
-            this._context.viewport(0, 0, value.width, value.height);
-        }
-
-        this._updateShaders();
-    }
-});
-
-/**
- * Current transform
- * @name uno.WebglRender#transform
- * @type {uno.Matrix}
- */
-Object.defineProperty(uno.WebglRender.prototype, 'transform', {
-    get: function() {
-        return this._currentMatrix;
-    },
-    set: function(value) {
-        this._currentMatrix.set(value);
-    }
-});
-
-/**
- * Current alpha
- * @name uno.WebglRender#alpha
- * @type {Number}
- */
-Object.defineProperty(uno.WebglRender.prototype, 'alpha', {
-    get: function() {
-        return this._currentAlpha;
-    },
-    set: function(value) {
-        this._currentAlpha = value;
-    }
-});
-
-/**
- * Current blend mode
- * @name uno.WebglRender#blend
- * @type {Number}
- */
-Object.defineProperty(uno.WebglRender.prototype, 'blend', {
-    get: function() {
-        return this._currentBlendMode;
-    },
-    set: function(value) {
-        if (this._currentBlendMode === value || !uno.WebglRender._blendModes[value])
-            return;
-        this._currentBlendMode = value;
-    }
-});
-
-
-/**
- * Set current fill color for rendering graphics shapes
- * @param {uno.Color} [color] - The new fill color
- * @returns {uno.Color} - Current fill color
- */
-uno.WebglRender.prototype.fillColor = function(color) {
-    return this._graphics.fillColor(color);
-};
-
-/**
- * Set current line color for rendering graphics shapes
- * @param {uno.Color} [color] - The new line color
- * @returns {uno.Color} - Current line color
- */
-uno.WebglRender.prototype.lineColor = function(color) {
-    return this._graphics.lineColor(color);
-};
-
-/**
- * Set current line width for rendering graphics shapes
- * @param {Number} [width] - The new line width
- * @returns {Number} - Current line width
- */
-uno.WebglRender.prototype.lineWidth = function(width) {
-    return this._graphics.lineWidth(width);
-};
-
-/**
  * Clear viewport with color
  * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
  * @returns {uno.WebglRender} - <code>this</code>
@@ -229,11 +299,9 @@ uno.WebglRender.prototype.clear = function(color) {
  * @param {uno.Texture} texture - The texture to render
  * @param {uno.Rect} [frame] - The frame to render rect of the texture (default full texture)
  * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
- * @param {Number} [alpha=1] - Texture opacity
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
-    // TODO: remove alpha from arguments
+uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
     if (!texture.ready || !this._currentAlpha)
         return this;
     this._graphics.flush();
@@ -691,13 +759,15 @@ uno.WebglRender.prototype._onFrame = function(time) {
  * @private
  */
 uno.WebglRender.prototype._resetState = function() {
-    this._currentMatrix.reset();
-    this._setBlendMode();
+    this.target = null;
+    this.transform.reset();
+    this.alpha = 1;
+    this.blend = uno.Render.BLEND_NORMAL;
 
     var defaults = uno.Render.DEFAULT_GRAPHICS;
-    this.fillColor(defaults.fillColor);
-    this.lineColor(defaults.lineColor);
-    this.lineWidth(defaults.lineWidth);
+    this.fillColor = defaults.fillColor;
+    this.lineColor = defaults.lineColor;
+    this.lineWidth = defaults.lineWidth;
 
     if (this._autoClear)
         this.clear();

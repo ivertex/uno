@@ -30,40 +30,47 @@ uno.CanvasRender = function(settings) {
 };
 
 /**
- * Resize viewport
- * @param {Number} width - New width of the viewport
- * @param {Number} height - New width of the viewport
- * @returns {uno.CanvasRender} - <code>this</code>
+ * Type the render. See {@link uno.Render} constants
+ * @name uno.WebglRender#type
+ * @type {Number}
+ * @default uno.Render.RENDER_CANVAS
+ * @readonly
  */
-uno.CanvasRender.prototype.resize = function(width, height) {
-    this.width = width;
-    this.height = height;
-    this._canvas.width = width;
-    this._canvas.height = height;
-    this._updateBounds();
-    return this;
-};
+Object.defineProperty(uno.CanvasRender.prototype, 'type', {
+    get: function () {
+        return uno.Render.RENDER_CANVAS;
+    }
+});
 
 /**
- * Free all allocated resources and destroy render
+ * Width of the render
+ * @name uno.CanvasRender#width
+ * @type {Number}
  */
-uno.CanvasRender.prototype.destroy = function() {
-    delete uno.Render.renders[this.id];
-    this._context = null;
-    this._canvas = null;
-    this._target = null;
-    this._displayCanvas = null;
-    this._displayContext = null;
-    this._currentMatrix = null;
-    this._contextMatrix = null;
-    this._clearColorTemp = null;
-    this._bounds = null;
-    this._boundsScroll = null;
-    this._frameBind = null;
-    this._graphics.destroy();
-    this._graphics = null;
-    this.root = null;
-};
+Object.defineProperty(uno.CanvasRender.prototype, 'width', {
+    get: function () {
+        return this._width;
+    },
+    set: function(value) {
+        if (value !== this._width)
+            this.resize(value, this._height);
+    }
+});
+
+/**
+ * Height of the render
+ * @name uno.CanvasRender#height
+ * @type {Number}
+ */
+Object.defineProperty(uno.CanvasRender.prototype, 'height', {
+    get: function () {
+        return this._height;
+    },
+    set: function(value) {
+        if (value !== this._height)
+            this.resize(this._width, value);
+    }
+});
 
 /**
  * Get bounds of render<br>
@@ -92,15 +99,23 @@ Object.defineProperty(uno.CanvasRender.prototype, 'target', {
     },
     set: function(value) {
         if (!value) {
-            this._target = null;
-            this._canvas = this._displayCanvas;
-            this._context = this._displayContext;
-            return;
+            if (this._target) {
+                this._target = null;
+                this._canvas = this._displayCanvas;
+                this._context = this._displayContext;
+                this._transformReset = true;
+                this._scaleModeReset = true;
+                //this._graphics.reset();
+            }
+        } else if (this._target !== value) {
+            this._target = value;
+            var extension = uno.CanvasTexture.get(value);
+            this._canvas = extension.handle(this);
+            this._context = extension.context();
+            this._transformReset = true;
+            this._scaleModeReset = true;
+            //this._graphics.reset();
         }
-        this._target = value;
-        var extension = uno.CanvasTexture.get(value);
-        this._canvas = extension.handle(this);
-        this._context = extension.context();
     }
 });
 
@@ -128,63 +143,119 @@ Object.defineProperty(uno.CanvasRender.prototype, 'alpha', {
         return this._currentAlpha;
     },
     set: function(value) {
+        if (this._currentAlpha === value)
+            return;
+        this._context.globalAlpha = value;
         this._currentAlpha = value;
     }
 });
 
 /**
  * Set current blend mode
- * @name uno.CanvasRender#blendMode
+ * @name uno.CanvasRender#blend
  * @type {Number}
  */
-Object.defineProperty(uno.CanvasRender.prototype, 'value', {
+Object.defineProperty(uno.CanvasRender.prototype, 'blend', {
     get: function() {
         return this._currentBlendMode;
     },
     set: function(value) {
+        if (this._currentBlendMode === value || !uno.CanvasRender._blendModes[value])
+            return;
+        this._context.globalCompositeOperation = uno.CanvasRender._blendModes[value];
         this._currentBlendMode = value;
     }
 });
 
 /**
- * Set current scale mode
- * @name uno.CanvasRender#scaleMode
- * @type {Number}
+ * Current fill color
+ * @name uno.CanvasRender#fillColor
+ * @type {uno.Color}
  */
-Object.defineProperty(uno.CanvasRender.prototype, 'scaleMode', {
+Object.defineProperty(uno.CanvasRender.prototype, 'fillColor', {
     get: function() {
-        return this._currentScaleMode;
+        return this._graphics.fillColor;
     },
     set: function(value) {
-        this._currentScaleMode = value;
+        if (!value) {
+            this._graphics.fillColor.set(uno.Color.TRANSPARENT);
+            return;
+        }
+        if (this._graphics.fillColor.equal(value))
+            return;
+        this._graphics.fillColor.set(value);
     }
 });
 
 /**
- * Set current fill color for rendering graphics shapes
- * @param {uno.Color} [color] - The new fill color
- * @returns {uno.Color} - Current fill color
+ * Current line color
+ * @name uno.CanvasRender#lineColor
+ * @type {uno.Color}
  */
-uno.CanvasRender.prototype.fillColor = function(color) {
-    return this._graphics.fillColor(color);
+Object.defineProperty(uno.CanvasRender.prototype, 'lineColor', {
+    get: function() {
+        return this._graphics.lineColor;
+    },
+    set: function(value) {
+        if (!value) {
+            this._graphics.lineColor.set(uno.Color.TRANSPARENT);
+            return;
+        }
+        if (this._graphics.lineColor.equal(value))
+            return;
+        this._graphics.lineColor.set(value);
+    }
+});
+
+/**
+ * Current line width
+ * @name uno.CanvasRender#lineWidth
+ * @type {Number}
+ */
+Object.defineProperty(uno.CanvasRender.prototype, 'lineWidth', {
+    get: function() {
+        return this._graphics.lineWidth;
+    },
+    set: function(value) {
+        if (!value || value < 0)
+            value = 0;
+        this._graphics.lineWidth = value;
+    }
+});
+
+/**
+ * Resize viewport
+ * @param {Number} width - New width of the viewport
+ * @param {Number} height - New width of the viewport
+ * @returns {uno.CanvasRender} - <code>this</code>
+ */
+uno.CanvasRender.prototype.resize = function(width, height) {
+    this._width = width;
+    this._height = height;
+    this._canvas.width = width;
+    this._canvas.height = height;
+    this._updateBounds();
+    return this;
 };
 
 /**
- * Set current line color for rendering graphics shapes
- * @param {uno.Color} [color] - The new line color
- * @returns {uno.Color} - Current line color
+ * Free all allocated resources and destroy render
  */
-uno.CanvasRender.prototype.lineColor = function(color) {
-    return this._graphics.lineColor(color);
-};
-
-/**
- * Set current line width for rendering graphics shapes
- * @param {Number} [width] - The new line width
- * @returns {Number} - Current line width
- */
-uno.CanvasRender.prototype.lineWidth = function(width) {
-    return this._graphics.lineWidth(width);
+uno.CanvasRender.prototype.destroy = function() {
+    delete uno.Render.renders[this.id];
+    this._context = null;
+    this._canvas = null;
+    this._target = null;
+    this._displayCanvas = null;
+    this._displayContext = null;
+    this._currentMatrix = null;
+    this._clearColorTemp = null;
+    this._bounds = null;
+    this._boundsScroll = null;
+    this._frameBind = null;
+    this._graphics.destroy();
+    this._graphics = null;
+    this.root = null;
 };
 
 /**
@@ -195,12 +266,10 @@ uno.CanvasRender.prototype.lineWidth = function(width) {
 uno.CanvasRender.prototype.clear = function(color) {
     var ctx = this._context;
 
-    this._setState();
-
     if (this._transparent) {
         if (!color && this.clearColor === false)
             return this;
-        ctx.clearRect(0, 0, this.width, this.height);
+        ctx.clearRect(0, 0, this._width, this._height);
         return this;
     }
 
@@ -211,15 +280,24 @@ uno.CanvasRender.prototype.clear = function(color) {
         return this;
 
     var graphics = this._graphics;
-    var width = graphics.lineWidth();
-    var fill = this._clearColorTemp.set(graphics.fillColor());
-    graphics.fillColor(color);
-    graphics.lineWidth(0);
-    graphics.drawRect(0, 0, this.width, this.height);
-    graphics.fillColor(fill);
-    graphics.lineWidth(width);
+    var alpha = this._currentAlpha;
+    var blend = this._currentBlendMode;
+    var width = graphics.lineWidth;
+    var fill = this._clearColorTemp.set(graphics.fillColor);
 
-    this._setState(this._currentMatrix, this._currentAlpha, this._currentBlendMode, this._currentScaleMode);
+    this._setTransform();
+    this.blend = uno.Render.BLEND_NORMAL;
+    this.alpha = 1;
+
+    graphics.fillColor.set(color);
+    graphics.lineWidth = 0;
+    graphics.drawRect(0, 0, this._width, this._height);
+    graphics.fillColor.set(fill);
+    graphics.lineWidth = width;
+
+    this._setTransform(this._currentMatrix);
+    this.blend = blend;
+    this.alpha = alpha;
 
     return this;
 };
@@ -228,15 +306,15 @@ uno.CanvasRender.prototype.clear = function(color) {
  * Draw texture
  * @param {uno.Texture} texture - The texture to render
  * @param {uno.Rect} [frame] - The frame to render rect of the texture (default full texture)
- * @param {Number} [alpha=1] - Texture opacity
  * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
-    if (!texture.ready || alpha === 0)
+uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint) {
+    if (!texture.ready)
         return this;
     var ctx = this._context;
-    this._setState(this._currentMatrix, this._currentAlpha, this._currentBlendMode, texture.scaleMode);
+    this._setScaleMode(texture.scaleMode);
+    this._setTransform(this._currentMatrix);
     ctx.drawImage(
         (!tint || tint.equal(uno.Color.WHITE)) ? uno.CanvasTexture.get(texture).handle() : uno.CanvasTexture.get(texture).tint(tint),
         frame ? frame.x : 0, frame ? frame.y : 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height,
@@ -253,7 +331,6 @@ uno.CanvasRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawLine = function(x1, y1, x2, y2) {
-    this._setAlpha();
     this._setTransform(this._currentMatrix);
     this._graphics.drawLine(x1, y1, x2, y2);
     return this;
@@ -268,8 +345,6 @@ uno.CanvasRender.prototype.drawLine = function(x1, y1, x2, y2) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawRect = function(x, y, width, height) {
-    this._setAlpha();
-    this._setBlendMode(this._currentBlendMode);
     this._setTransform(this._currentMatrix);
     this._graphics.drawRect(x, y, width, height);
     return this;
@@ -283,8 +358,6 @@ uno.CanvasRender.prototype.drawRect = function(x, y, width, height) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawCircle = function(x, y, radius) {
-    this._setAlpha();
-    this._setBlendMode(this._currentBlendMode);
     this._setTransform(this._currentMatrix);
     this._graphics.drawCircle(x, y, radius);
     return this;
@@ -299,8 +372,6 @@ uno.CanvasRender.prototype.drawCircle = function(x, y, radius) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawEllipse = function(x, y, width, height) {
-    this._setAlpha();
-    this._setBlendMode(this._currentBlendMode);
     this._setTransform(this._currentMatrix);
     this._graphics.drawEllipse(x, y, width, height);
     return this;
@@ -317,8 +388,6 @@ uno.CanvasRender.prototype.drawEllipse = function(x, y, width, height) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
-    this._setAlpha();
-    this._setBlendMode(this._currentBlendMode);
     this._setTransform(this._currentMatrix);
     this._graphics.drawArc(x, y, radius, startAngle, endAngle, antiClockwise);
     return this;
@@ -330,8 +399,6 @@ uno.CanvasRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawPoly = function(points) {
-    this._setAlpha();
-    this._setBlendMode(this._currentBlendMode);
     this._setTransform(this._currentMatrix);
     this._graphics.drawPoly(points);
     return this;
@@ -343,7 +410,6 @@ uno.CanvasRender.prototype.drawPoly = function(points) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawShape = function(shape) {
-    this._setBlendMode(this._currentBlendMode);
     this._setTransform(this._currentMatrix);
     this._graphics.drawShape(shape);
     return this;
@@ -424,12 +490,10 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
 uno.CanvasRender.prototype._setupProps = function() {
     this._currentMatrix = new uno.Matrix();
     this._contextMatrix = new uno.Matrix();
+    this._transformReset = false;
     this._currentBlendMode = uno.Render.BLEND_NORMAL;
-    this._contextBlendMode = 0;
     this._currentScaleMode = uno.Render.SCALE_DEFAULT;
-    this._contextScaleMode = 0;
     this._currentAlpha = 1;
-    this._contextAlpha = 1;
     this._clearColorTemp = new uno.Color();
     this._target = null;
 };
@@ -539,60 +603,35 @@ uno.CanvasRender.prototype._onFrame = function(time) {
  * @private
  */
 uno.CanvasRender.prototype._resetState = function() {
-    this._setState();
+    this.target = null;
+    this.transform.reset();
+    this.blend = uno.Render.BLEND_NORMAL;
+    this.alpha = 1;
 
     var defaults = uno.Render.DEFAULT_GRAPHICS;
-    this.fillColor(defaults.fillColor);
-    this.lineColor(defaults.lineColor);
-    this.lineWidth(defaults.lineWidth);
+    this.fillColor = defaults.fillColor;
+    this.lineColor = defaults.lineColor;
+    this.lineWidth = defaults.lineWidth;
 
     if (this._autoClear)
         this.clear();
 };
 
 /**
- * Set new transfrom matrix
- * @param {uno.Matrix} [matrix=uno.Matrix.IDENTITY] - New transform matrix
- * @param {Number} [alpha=1] - Alpha value
- * @param {Number} [blendMode=uno.RENDER.BLEND_NORMAL] - The new blend mode. See {@link uno.Render} constants
- * @param {Number} [scaleMode=uno.RENDER.SCALE_DEFAULT] - See {@link uno.Render} constants
- * @private
- */
-uno.CanvasRender.prototype._setState = function(matrix, alpha, blendMode, scaleMode) {
-    this._setTransform(matrix);
-    this._setAlpha(alpha);
-    this._setBlendMode(blendMode);
-    this._setScaleMode(scaleMode);
-};
-
-/**
- * Set new transfrom matrix
+ * Set transform for render
  * @param {uno.Matrix} matrix - New transform matrix
  * @private
  */
 uno.CanvasRender.prototype._setTransform = function(matrix) {
-    if (!matrix)
-        matrix = uno.Matrix.IDENTITY;
-    if (matrix.equal(this._contextMatrix))
+    matrix = matrix || uno.Matrix.IDENTITY;
+    if (!this._transformReset && this._contextMatrix.equal(matrix))
         return;
     if (this._hasResetTransform && matrix.identity())
         this._context.resetTransform();
     else
         this._context.setTransform(matrix.a, matrix.c, matrix.b, matrix.d, matrix.tx, matrix.ty);
     this._contextMatrix.set(matrix);
-};
-
-/**
- * Set new blend mode
- * @param {Number} blendMode - The new blend mode. See {@link uno.Render} constants
- * @private
- */
-uno.CanvasRender.prototype._setBlendMode = function(blendMode) {
-    blendMode = blendMode || uno.Render.BLEND_NORMAL;
-    if (this._contextBlendMode === blendMode || !uno.CanvasRender._blendModes[blendMode])
-        return;
-    this._context.globalCompositeOperation = uno.CanvasRender._blendModes[blendMode];
-    this._contextBlendMode = blendMode;
+    this._transformReset = false;
 };
 
 /**
@@ -602,23 +641,11 @@ uno.CanvasRender.prototype._setBlendMode = function(blendMode) {
  */
 uno.CanvasRender.prototype._setScaleMode = function(scaleMode) {
     scaleMode = scaleMode || uno.Render.SCALE_DEFAULT;
-    if (this._contextScaleMode === scaleMode || !uno.CanvasRender._smoothProperty)
+    if (!this._scaleModeReset && this._currentScaleMode === scaleMode || !uno.CanvasRender._smoothProperty)
         return;
     this._context[uno.CanvasRender._smoothProperty] = scaleMode === uno.Render.SCALE_LINEAR;
-    this._contextScaleMode = scaleMode;
-};
-
-/**
- * Set new opacity
- * @param {Number} [alpha=1] - Alpha value
- * @private
- */
-uno.CanvasRender.prototype._setAlpha = function(alpha) {
-    alpha = alpha || 1;
-    if (this._contextAlpha === alpha)
-        return;
-    this._contextAlpha = alpha;
-    this._context.globalAlpha = alpha;
+    this._currentScaleMode = scaleMode;
+    this._scaleModeReset = false;
 };
 
 /**
