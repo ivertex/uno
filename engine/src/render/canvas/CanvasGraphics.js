@@ -106,7 +106,7 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
         this.lineColor(item.lineColor);
         this.lineWidth(item.lineWidth);
         render.fillColor(item.fillColor);
-        render._setBlendMode(item.blendMode);
+        render._setBlendMode(item.value);
         switch (item.type) {
             case types.LINE:
                 this.drawLine(figure.x1, figure.y1, figure.x2, figure.y2);

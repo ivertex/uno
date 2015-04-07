@@ -29,7 +29,7 @@ uno.Shape.prototype.add = function(matrix, type, figure, fillColor, lineColor, l
         fillColor: fillColor ? fillColor.clone() : null,
         lineColor: lineColor ? lineColor.clone() : null,
         lineWidth: lineWidth,
-        blendMode: blendMode
+        value: blendMode
     });
     return this;
 };

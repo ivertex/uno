@@ -36,6 +36,7 @@ debug.id = 'debug';
 
 debug.prototype.input = function(event) {
     if (uno.Mouse.down(event, uno.Mouse.RIGHT)) {
+        window.render2._loseContext();
         var s = this.object.sprite;
         s.blend = s.blend > 3 ? 0 : s.blend + 1;
     }

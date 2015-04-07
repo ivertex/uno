@@ -19,13 +19,6 @@ uno.WebglGraphics = function(render) {
     this._smooth = 5;
 
     /**
-     * Working shader (primitive)
-     * @type {uno.WebglShader}
-     * @private
-     */
-    this._currentShader = null;
-
-    /**
      * Vertex size in buffer (x, y, abgr pack - alpha and tint color, 4 byte each)
      * @type {Number}
      * @private
@@ -216,11 +209,8 @@ uno.WebglGraphics.prototype.flush = function() {
     ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     ctx.bindBuffer(ctx.ARRAY_BUFFER, this._vertexBuffer);
 
-    var shader = this._currentShader;
-    if (!shader)
-        shader = this._currentShader = render._getShader(uno.WebglShader.PRIMITIVE);
-    if (shader !== render._getShader())
-        render._setShader(shader);
+    var shader = render._getShader(uno.WebglShader.PRIMITIVE);
+    render._setShader(shader);
 
     if (this._vertexCount > this._maxVertexCount * 0.5) {
         ctx.bufferSubData(ctx.ELEMENT_ARRAY_BUFFER, 0, this._indices);
@@ -234,6 +224,7 @@ uno.WebglGraphics.prototype.flush = function() {
     var modes = this._stateBlendModes;
     var index = 0;
     var count = 0;
+    var mode = render._currentBlendMode;
 
     for (var i = 0, l = this._stateCount; i < l; ++i) {
         render._setBlendMode(modes[i]);
@@ -241,6 +232,8 @@ uno.WebglGraphics.prototype.flush = function() {
         ctx.drawElements(ctx.TRIANGLES, count - index, ctx.UNSIGNED_SHORT, index * 2);
         index = count;
     }
+
+    render._setBlendMode(mode);
 
     this.reset();
 
@@ -352,7 +345,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
             item = items[i];
             source = item.shape;
             render._currentMatrix.set(item._matrix ? item._matrix : identity);
-            render._currentBlendMode = item.blendMode;
+            render._currentBlendMode = item.value;
             this._currentFillColor = item.fillColor;
             this._currentLineColor = item.lineColor;
             this._currentLineWidth = item.lineWidth;

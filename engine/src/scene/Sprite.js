@@ -66,6 +66,7 @@ uno.Sprite.prototype.render = function(render) {
         this.frame.height = this.texture.height;
     }
     render.transform = this.object.transform.matrix;
-    render.blendMode = this.blend;
+    render.alpha = this.alpha;
+    render.blend = this.blend;
     render.drawTexture(this.texture, this.frame, this.alpha, this.tint);
 };

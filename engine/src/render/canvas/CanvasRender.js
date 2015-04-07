@@ -119,16 +119,44 @@ Object.defineProperty(uno.CanvasRender.prototype, 'transform', {
 });
 
 /**
+ * Set current alpha
+ * @name uno.CanvasRender#alpha
+ * @type {Number}
+ */
+Object.defineProperty(uno.CanvasRender.prototype, 'alpha', {
+    get: function() {
+        return this._currentAlpha;
+    },
+    set: function(value) {
+        this._currentAlpha = value;
+    }
+});
+
+/**
  * Set current blend mode
  * @name uno.CanvasRender#blendMode
  * @type {Number}
  */
-Object.defineProperty(uno.CanvasRender.prototype, 'blendMode', {
+Object.defineProperty(uno.CanvasRender.prototype, 'value', {
     get: function() {
         return this._currentBlendMode;
     },
     set: function(value) {
         this._currentBlendMode = value;
+    }
+});
+
+/**
+ * Set current scale mode
+ * @name uno.CanvasRender#scaleMode
+ * @type {Number}
+ */
+Object.defineProperty(uno.CanvasRender.prototype, 'scaleMode', {
+    get: function() {
+        return this._currentScaleMode;
+    },
+    set: function(value) {
+        this._currentScaleMode = value;
     }
 });
 
@@ -167,8 +195,7 @@ uno.CanvasRender.prototype.lineWidth = function(width) {
 uno.CanvasRender.prototype.clear = function(color) {
     var ctx = this._context;
 
-    this._setBlendMode(uno.Render.BLEND_NORMAL);
-    this._setTransform(uno.Matrix.IDENTITY);
+    this._setState();
 
     if (this._transparent) {
         if (!color && this.clearColor === false)
@@ -192,8 +219,7 @@ uno.CanvasRender.prototype.clear = function(color) {
     graphics.fillColor(fill);
     graphics.lineWidth(width);
 
-    this._setTransform(this._currentMatrix);
-    this._setBlendMode(this._currentBlendMode);
+    this._setState(this._currentMatrix, this._currentAlpha, this._currentBlendMode, this._currentScaleMode);
 
     return this;
 };
@@ -210,10 +236,7 @@ uno.CanvasRender.prototype.drawTexture = function(texture, frame, alpha, tint) {
     if (!texture.ready || alpha === 0)
         return this;
     var ctx = this._context;
-    this._setScaleMode(texture.scaleMode);
-    this._setAlpha(alpha || 1);
-    this._setBlendMode(this._currentBlendMode);
-    this._setTransform(this._currentMatrix);
+    this._setState(this._currentMatrix, this._currentAlpha, this._currentBlendMode, texture.scaleMode);
     ctx.drawImage(
         (!tint || tint.equal(uno.Color.WHITE)) ? uno.CanvasTexture.get(texture).handle() : uno.CanvasTexture.get(texture).tint(tint),
         frame ? frame.x : 0, frame ? frame.y : 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height,
@@ -402,8 +425,10 @@ uno.CanvasRender.prototype._setupProps = function() {
     this._currentMatrix = new uno.Matrix();
     this._contextMatrix = new uno.Matrix();
     this._currentBlendMode = uno.Render.BLEND_NORMAL;
-    this._contextBlendMode = uno.Render.BLEND_NORMAL;
-    this._contextScaleMode = uno.Render.SCALE_DEFAULT;
+    this._contextBlendMode = 0;
+    this._currentScaleMode = uno.Render.SCALE_DEFAULT;
+    this._contextScaleMode = 0;
+    this._currentAlpha = 1;
     this._contextAlpha = 1;
     this._clearColorTemp = new uno.Color();
     this._target = null;
@@ -514,11 +539,7 @@ uno.CanvasRender.prototype._onFrame = function(time) {
  * @private
  */
 uno.CanvasRender.prototype._resetState = function() {
-    this._setAlpha();
-    this._setScaleMode(uno.Render.SCALE_DEFAULT);
-
-    this.blendMode = uno.Render.BLEND_NORMAL;
-    this.transform.reset();
+    this._setState();
 
     var defaults = uno.Render.DEFAULT_GRAPHICS;
     this.fillColor(defaults.fillColor);
@@ -531,10 +552,27 @@ uno.CanvasRender.prototype._resetState = function() {
 
 /**
  * Set new transfrom matrix
+ * @param {uno.Matrix} [matrix=uno.Matrix.IDENTITY] - New transform matrix
+ * @param {Number} [alpha=1] - Alpha value
+ * @param {Number} [blendMode=uno.RENDER.BLEND_NORMAL] - The new blend mode. See {@link uno.Render} constants
+ * @param {Number} [scaleMode=uno.RENDER.SCALE_DEFAULT] - See {@link uno.Render} constants
+ * @private
+ */
+uno.CanvasRender.prototype._setState = function(matrix, alpha, blendMode, scaleMode) {
+    this._setTransform(matrix);
+    this._setAlpha(alpha);
+    this._setBlendMode(blendMode);
+    this._setScaleMode(scaleMode);
+};
+
+/**
+ * Set new transfrom matrix
  * @param {uno.Matrix} matrix - New transform matrix
  * @private
  */
 uno.CanvasRender.prototype._setTransform = function(matrix) {
+    if (!matrix)
+        matrix = uno.Matrix.IDENTITY;
     if (matrix.equal(this._contextMatrix))
         return;
     if (this._hasResetTransform && matrix.identity())

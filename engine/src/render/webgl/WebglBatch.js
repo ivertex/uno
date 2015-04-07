@@ -12,13 +12,6 @@ uno.WebglBatch = function(render) {
     this._render = render;
 
     /**
-     * Current used shader
-     * @type {uno.WebglShader}
-     * @private
-     */
-    this._currentShader = null;
-
-    /**
      * Size of vertex in buffer (x, y, u, v, abgr pack - alpha and tint color, 4 byte each)
      * @type {Number}
      * @private
@@ -135,7 +128,6 @@ uno.WebglBatch.prototype.destroy = function() {
     this._vertices = null;
     this._positions = null;
     this._colors = null;
-    this._currentShader = null;
     this._render = null;
     this._states = null;
     this._stateBlendModes = null;
@@ -281,11 +273,8 @@ uno.WebglBatch.prototype.flush = function() {
     ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     ctx.bindBuffer(ctx.ARRAY_BUFFER, this._vertexBuffer);
 
-    var shader = this._currentShader;
-    if (!shader)
-        shader = this._currentShader = render._getShader(uno.WebglShader.SPRITE);
-    if (shader !== render._getShader())
-        render._setShader(shader);
+    var shader = render._getShader(uno.WebglShader.SPRITE);
+    render._setShader(shader);
 
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)
@@ -300,6 +289,7 @@ uno.WebglBatch.prototype.flush = function() {
     var index = 0;
     var count = 0;
     var texture, current = null;
+    var mode = render._currentBlendMode;
 
     for (var i = 0, l = this._stateCount; i < l; ++i) {
         render._setBlendMode(modes[i]);
@@ -312,6 +302,8 @@ uno.WebglBatch.prototype.flush = function() {
         ctx.drawElements(ctx.TRIANGLES, count - index, ctx.UNSIGNED_SHORT, index * 2);
         index = count;
     }
+
+    render._setBlendMode(mode);
 
     this.reset();
 };
