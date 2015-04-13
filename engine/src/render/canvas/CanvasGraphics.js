@@ -19,16 +19,6 @@ uno.CanvasGraphics = function(render) {
     this._currentFillColor = new uno.Color();
     this._currentLineColor = new uno.Color();
     this._currentLineWidth = 0;
-
-    this.reset(true);
-};
-
-/**
- * Reset graphics style
- * @param {Boolean} [force=false] - Do not check cache
- */
-uno.CanvasGraphics.prototype.reset = function(force) {
-    this._setStyle(this.fillColor, this.lineColor, this.lineWidth, force);
 };
 
 /**
@@ -76,55 +66,63 @@ uno.CanvasGraphics.prototype.endShape = function() {
 uno.CanvasGraphics.prototype.drawShape = function(shape) {
     var i, items = shape.items, l = items.length, item;
     var types = uno.Shape, figure, render = this._render;
-    var blend = render._currentBlendMode;
+    /*var blend = render._currentBlendMode;
     var fillColor = this._shapeFillColor.set(this.fillColor);
     var lineColor = this._shapeLineColor.set(this.lineColor);
-    var lineWidth = this.lineWidth;
+    var lineWidth = this.lineWidth;*/
     var world = this._shapeWorldMatrix.set(render.transform), temp = this._shapeTempMatrix;
     var worldEmpty = world.identity();
+
     for (i = 0; i < l; ++i) {
         item = items[i];
         figure = item.shape;
         if (worldEmpty || !item._matrix)
-            render.transform = item._matrix ? item._matrix : world;
+            //render.transform = item._matrix ? item._matrix : world;
+            temp.set(item._matrix ? item._matrix : world);
         else {
             uno.Matrix.concat(item._matrix, world, temp);
-            render.transform = temp;
+            //render.transform = temp;
         }
-        if (item.fillColor)
+        /*if (item.fillColor)
             this.fillColor.set(item.fillColor);
         if (item.lineColor)
             this.lineColor.set(item.lineColor);
         this.lineWidth = item.lineWidth;
-        render.blend = item.blendMode;
+        render.blend = item.blendMode;*/
+        render._setState(temp, false, item.blendMode);
+        this._setState(item.fillColor, item.lineColor, item.lineWidth);
+
         switch (item.type) {
             case types.LINE:
-                this.drawLine(figure.x1, figure.y1, figure.x2, figure.y2);
+                render.drawLine(figure.x1, figure.y1, figure.x2, figure.y2);
                 break;
             case types.RECT:
-                this.drawRect(figure.x, figure.y, figure.width, figure.height);
+                render.drawRect(figure.x, figure.y, figure.width, figure.height);
                 break;
             case types.CIRCLE:
-                this.drawCircle(figure.x, figure.y, figure.radius);
+                render.drawCircle(figure.x, figure.y, figure.radius);
                 break;
             case types.ELLIPSE:
-                this.drawEllipse(figure.x, figure.y, figure.width, figure.height);
+                render.drawEllipse(figure.x, figure.y, figure.width, figure.height);
                 break;
             case types.ARC:
-                this.drawArc(figure.x, figure.y, figure.radius, figure.startAngle, figure.endAngle, figure.antiClockwise);
+                render.drawArc(figure.x, figure.y, figure.radius, figure.startAngle, figure.endAngle, figure.antiClockwise);
                 break;
             case types.POLY:
-                this.drawPoly(figure.points);
+                render.drawPoly(figure.points);
                 break;
         }
     }
 
-    this.fillColor.set(fillColor);
+    render._setState(render._currentTransform, false, render._currentBlendMode);
+    this._setState(this.fillColor, this.lineColor, this.lineWidth);
+
+    /*this.fillColor.set(fillColor);
     this.lineColor.set(lineColor);
     this.lineWidth = lineWidth;
 
     render.blend = blend;
-    render.transform = world;
+    render.transform = world;*/
 };
 
 /**
@@ -141,11 +139,11 @@ uno.CanvasGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
     if (!lineColor || !lineColor.a)
         return false;
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.LINE,
+        this._shape.add(this._render._currentTransform, uno.Shape.LINE,
             new uno.Line(x1, y1, x2, y2), null, lineColor, lineWidth, this._render._currentBlendMode);
         return true;
     }
-    this._setStyle(null, lineColor, lineWidth);
+    this._setState(null, lineColor, lineWidth);
     var ctx = this._render._context;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -169,11 +167,11 @@ uno.CanvasGraphics.prototype.drawRect = function(x, y, width, height) {
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.RECT,
+        this._shape.add(this._render._currentTransform, uno.Shape.RECT,
             new uno.Rect(x, y, width, height), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
         return false;
     }
-    this._setStyle(fillColor, lineColor, lineWidth);
+    this._setState(fillColor, lineColor, lineWidth);
     var ctx = this._render._context;
     if (fillColor && fillColor.a)
         ctx.fillRect(x, y, width, height);
@@ -196,11 +194,11 @@ uno.CanvasGraphics.prototype.drawCircle = function(x, y, radius) {
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.CIRCLE,
+        this._shape.add(this._render._currentTransform, uno.Shape.CIRCLE,
             new uno.Circle(x, y, radius), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
         return true;
     }
-    this._setStyle(fillColor, lineColor, lineWidth);
+    this._setState(fillColor, lineColor, lineWidth);
     var ctx = this._render._context;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, uno.Math.TWO_PI, false);
@@ -226,11 +224,11 @@ uno.CanvasGraphics.prototype.drawEllipse = function(x, y, width, height) {
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.ELLIPSE,
+        this._shape.add(this._render._currentTransform, uno.Shape.ELLIPSE,
             new uno.Ellipse(x, y, width, height), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
         return true;
     }
-    this._setStyle(fillColor, lineColor, lineWidth);
+    this._setState(fillColor, lineColor, lineWidth);
     var ctx = this._render._context;
     var kappa = 0.5522848;
     var w = width * 0.5;
@@ -273,12 +271,12 @@ uno.CanvasGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAng
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.ARC,
+        this._shape.add(this._render._currentTransform, uno.Shape.ARC,
             new uno.Arc(x, y, radius, startAngle, endAngle, antiClockwise),
             fillColor, lineColor, lineWidth, this._render._currentBlendMode);
         return true;
     }
-    this._setStyle(fillColor, lineColor, lineWidth);
+    this._setState(fillColor, lineColor, lineWidth);
     var ctx = this._render._context;
     ctx.beginPath();
     ctx.arc(x, y, radius, startAngle, endAngle, antiClockwise);
@@ -303,11 +301,11 @@ uno.CanvasGraphics.prototype.drawPoly = function(points) {
     if ((!fillColor || !fillColor.a) && (!lineWidth || !lineColor || !lineColor.a))
         return false;
     if (this._shape) {
-        this._shape.add(this._render._currentMatrix, uno.Shape.POLY,
+        this._shape.add(this._render._currentTransform, uno.Shape.POLY,
             new uno.Poly(points), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
         return true;
     }
-    this._setStyle(fillColor, lineColor, lineWidth);
+    this._setState(fillColor, lineColor, lineWidth);
     var ctx = this._render._context;
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
@@ -323,14 +321,26 @@ uno.CanvasGraphics.prototype.drawPoly = function(points) {
 };
 
 /**
+ * Reset graphics style
+ * @private
+ */
+uno.CanvasGraphics.prototype._resetState = function() {
+    var defaults = uno.Render.DEFAULT_GRAPHICS;
+    this._setState(defaults.fillColor, defaults.lineColor, defaults.lineWidth);
+    this._currentFillColor.set(defaults.fillColor);
+    this._currentLineColor.set(defaults.lineColor);
+    this._currentLineWidth = defaults.lineWidth;
+};
+
+/**
  * Set graphics style
  * @param {uno.Color} fillColor - Fill color
  * @param {uno.Color} lineColor - Line color
  * @param {Number} lineWidth - Line width
- * @param {Boolean} [force=false] - Do not check cache
+ * @param {Boolean} force - Do not check cache
  * @private
  */
-uno.CanvasGraphics.prototype._setStyle = function(fillColor, lineColor, lineWidth, force) {
+uno.CanvasGraphics.prototype._setState = function(fillColor, lineColor, lineWidth, force) {
     if (fillColor && (force || !this._currentFillColor.equal(fillColor))) {
         this._render._context.fillStyle = fillColor.cssRGBA;
         this._currentFillColor.set(fillColor);
@@ -339,7 +349,7 @@ uno.CanvasGraphics.prototype._setStyle = function(fillColor, lineColor, lineWidt
         this._render._context.strokeStyle = lineColor.cssRGBA;
         this._currentLineColor.set(lineColor);
     }
-    if (force || this._currentLineWidth !== this.lineWidth) {
+    if (force || this._currentLineWidth !== lineWidth) {
         this._render._context.lineWidth = lineWidth;
         this._currentLineWidth = lineWidth;
     }

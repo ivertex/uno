@@ -123,10 +123,10 @@ Object.defineProperty(uno.WebglRender.prototype, 'target', {
  */
 Object.defineProperty(uno.WebglRender.prototype, 'transform', {
     get: function() {
-        return this._currentMatrix;
+        return this._currentTransform;
     },
     set: function(value) {
-        this._currentMatrix.set(value);
+        this._currentTransform.set(value);
     }
 });
 
@@ -248,7 +248,7 @@ uno.WebglRender.prototype.destroy = function() {
     for (var i in this._shaders)
         this._shaders[i].destroy();
     this._currentShader = null;
-    this._currentMatrix = null;
+    this._currentTransform = null;
     this._shaders = {};
     this._canvas.removeEventListener('webglcontextlost', this._contextLostHandle);
     this._canvas.removeEventListener('webglcontextrestored', this._contextRestoredHandle);
@@ -564,7 +564,7 @@ uno.WebglRender.prototype._setupProps = function() {
     this._boundsScroll = new uno.Point();
     this._projection = new uno.Point();
     this._target = null;
-    this._currentMatrix = new uno.Matrix();
+    this._currentTransform = new uno.Matrix();
     this._currentAlpha = 1;
     this._currentBlendMode = -1;
     this._currentShader = null;

@@ -344,7 +344,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         for (i = 0, l = items.length; i < l; ++i) {
             item = items[i];
             source = item.shape;
-            render._currentMatrix.set(item.matrix ? item.matrix : identity);
+            render._currentTransform.set(item.matrix ? item.matrix : identity);
             render._currentBlendMode = item.blendMode;
             this.fillColor = item.fillColor;
             this.lineColor = item.lineColor;
@@ -376,7 +376,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         this.lineColor = lineColor;
         this.lineWidth = lineWidth;
         render._currentBlendMode = blendMode;
-        render._currentMatrix.set(matrix);
+        render._currentTransform.set(matrix);
     }
 
     // Check for max batch size limitation
@@ -460,7 +460,7 @@ uno.WebglGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
     if (this._maxVertexCount - this._vertexCount < 4)
         this.flush();
 
-    var matrix = this._render._currentMatrix;
+    var matrix = this._render._currentTransform;
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
@@ -537,7 +537,7 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
     if (this._maxVertexCount - this._vertexCount < 12)
         this.flush();
 
-    var matrix = this._render._currentMatrix;
+    var matrix = this._render._currentTransform;
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
@@ -717,7 +717,7 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
     if (!angle)
         return false;
 
-    var matrix = this._render._currentMatrix;
+    var matrix = this._render._currentTransform;
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
@@ -899,7 +899,7 @@ uno.WebglGraphics.prototype.drawPoly = function(points) {
         vi = vc * this._vertexSize;
     }
 
-    var matrix = this._render._currentMatrix;
+    var matrix = this._render._currentTransform;
     var blendMode = this._render._currentBlendMode;
 
     if (this._shape) {
@@ -1227,7 +1227,7 @@ uno.WebglGraphics.prototype._drawEllipse = function(x, y, width, height) {
     if (width === 0 || height === 0)
         return false;
 
-    var matrix = this._render._currentMatrix;
+    var matrix = this._render._currentTransform;
     var blendMode = this._render._currentBlendMode;
 
     var a = matrix.a, b = matrix.b, c = matrix.c, d = matrix.d, tx = matrix.tx, ty = matrix.ty;
