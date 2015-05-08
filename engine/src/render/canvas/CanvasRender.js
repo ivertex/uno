@@ -629,15 +629,15 @@ uno.CanvasRender.prototype._setState = function(transform, alpha, blendMode, sca
             context.setTransform(transform.a, transform.c, transform.b, transform.d, transform.tx, transform.ty);
         this._contextTransform.set(transform);
     }
-    if (alpha && (force || this._contextAlpha !== alpha)) {
+    if (alpha !== undefined && (force || this._contextAlpha !== alpha)) {
         context.globalAlpha = alpha;
         this._contextAlpha = alpha;
     }
-    if (blendMode && (force || this._contextBlendMode !== blendMode)) {
-        context.globalCompositeOperation = uno.CanvasRender._blendModes[this._currentBlendMode];
+    if (blendMode !== undefined && (force || this._contextBlendMode !== blendMode)) {
+        context.globalCompositeOperation = uno.CanvasRender._blendModes[blendMode];
         this._contextBlendMode = blendMode;
     }
-    if (scaleMode && (force || this._contextScaleMode !== scaleMode)) {
+    if (scaleMode !== undefined && (force || this._contextScaleMode !== scaleMode)) {
         context[uno.CanvasRender._smoothProperty] = scaleMode === uno.Render.SCALE_LINEAR;
         this._contextScaleMode = scaleMode;
     }

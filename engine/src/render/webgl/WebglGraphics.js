@@ -16,7 +16,7 @@ uno.WebglGraphics = function(render) {
      * @type {Number}
      * @private
      */
-    this._smooth = 5;
+    this._smooth = 6;
 
     /**
      * Vertex size in buffer (x, y, abgr pack - alpha and tint color, 4 byte each)

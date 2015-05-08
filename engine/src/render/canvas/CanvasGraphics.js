@@ -66,63 +66,57 @@ uno.CanvasGraphics.prototype.endShape = function() {
 uno.CanvasGraphics.prototype.drawShape = function(shape) {
     var i, items = shape.items, l = items.length, item;
     var types = uno.Shape, figure, render = this._render;
-    /*var blend = render._currentBlendMode;
+    var blendMode = render._currentBlendMode;
     var fillColor = this._shapeFillColor.set(this.fillColor);
     var lineColor = this._shapeLineColor.set(this.lineColor);
-    var lineWidth = this.lineWidth;*/
-    var world = this._shapeWorldMatrix.set(render.transform), temp = this._shapeTempMatrix;
-    var worldEmpty = world.identity();
+    var lineWidth = this.lineWidth;
+    var worldMatrix = this._shapeWorldMatrix.set(render.transform);
+    var tempMatrix = this._shapeTempMatrix;
+    var emptyMatrix = worldMatrix.identity();
 
     for (i = 0; i < l; ++i) {
         item = items[i];
         figure = item.shape;
-        if (worldEmpty || !item._matrix)
-            //render.transform = item._matrix ? item._matrix : world;
-            temp.set(item._matrix ? item._matrix : world);
-        else {
-            uno.Matrix.concat(item._matrix, world, temp);
-            //render.transform = temp;
-        }
-        /*if (item.fillColor)
+        if (emptyMatrix || !item._matrix)
+            tempMatrix.set(item._matrix ? item._matrix : worldMatrix);
+        else
+            uno.Matrix.concat(item._matrix, worldMatrix, tempMatrix);
+
+        if (item.fillColor)
             this.fillColor.set(item.fillColor);
         if (item.lineColor)
             this.lineColor.set(item.lineColor);
         this.lineWidth = item.lineWidth;
-        render.blend = item.blendMode;*/
-        render._setState(temp, false, item.blendMode);
-        this._setState(item.fillColor, item.lineColor, item.lineWidth);
+
+        render._setState(tempMatrix, undefined, item.blendMode);
 
         switch (item.type) {
             case types.LINE:
-                render.drawLine(figure.x1, figure.y1, figure.x2, figure.y2);
+                this.drawLine(figure.x1, figure.y1, figure.x2, figure.y2);
                 break;
             case types.RECT:
-                render.drawRect(figure.x, figure.y, figure.width, figure.height);
+                this.drawRect(figure.x, figure.y, figure.width, figure.height);
                 break;
             case types.CIRCLE:
-                render.drawCircle(figure.x, figure.y, figure.radius);
+                this.drawCircle(figure.x, figure.y, figure.radius);
                 break;
             case types.ELLIPSE:
-                render.drawEllipse(figure.x, figure.y, figure.width, figure.height);
+                this.drawEllipse(figure.x, figure.y, figure.width, figure.height);
                 break;
             case types.ARC:
-                render.drawArc(figure.x, figure.y, figure.radius, figure.startAngle, figure.endAngle, figure.antiClockwise);
+                this.drawArc(figure.x, figure.y, figure.radius, figure.startAngle, figure.endAngle, figure.antiClockwise);
                 break;
             case types.POLY:
-                render.drawPoly(figure.points);
+                this.drawPoly(figure.points);
                 break;
         }
     }
 
-    render._setState(render._currentTransform, false, render._currentBlendMode);
-    this._setState(this.fillColor, this.lineColor, this.lineWidth);
-
-    /*this.fillColor.set(fillColor);
+    this.fillColor.set(fillColor);
     this.lineColor.set(lineColor);
     this.lineWidth = lineWidth;
 
-    render.blend = blend;
-    render.transform = world;*/
+    render._setState(worldMatrix, undefined, blendMode);
 };
 
 /**
@@ -337,7 +331,7 @@ uno.CanvasGraphics.prototype._resetState = function() {
  * @param {uno.Color} fillColor - Fill color
  * @param {uno.Color} lineColor - Line color
  * @param {Number} lineWidth - Line width
- * @param {Boolean} force - Do not check cache
+ * @param {Boolean} [force=false] - Do not check cache
  * @private
  */
 uno.CanvasGraphics.prototype._setState = function(fillColor, lineColor, lineWidth, force) {
