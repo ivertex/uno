@@ -241,39 +241,6 @@ uno.WebglGraphics.prototype.flush = function() {
 };
 
 /**
- * Set current shape fill color
- * @param {uno.Color} color - Shape fill color
- * @returns {uno.Color} - Current fill color
- */
-uno.WebglGraphics.prototype.fillColor = function(color) {
-    if (color === undefined || this.fillColor.equal(color ? color : uno.Color.TRANSPARENT))
-        return this.fillColor;
-    return this.fillColor.set(color ? color : uno.Color.TRANSPARENT);
-};
-
-/**
- * Set current shape line color
- * @param {uno.Color} color - Shape line color
- * @returns {uno.Color} - Current line color
- */
-uno.WebglGraphics.prototype.lineColor = function(color) {
-    if (color === undefined || this.lineColor.equal(color ? color : uno.Color.TRANSPARENT))
-        return this.lineColor;
-    return this.lineColor.set(color ? color : uno.Color.TRANSPARENT);
-};
-
-/**
- * Set current shape line width
- * @param {Number} width - Shape line width
- * @returns {Number} - Current line width
- */
-uno.WebglGraphics.prototype.lineWidth = function(width) {
-    if (width === undefined || width === null || width < 0)
-        return this.lineWidth;
-    return this.lineWidth = width;
-};
-
-/**
  * Start collect new shape
  * @returns {uno.Shape} - Created shape
  */
@@ -332,6 +299,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+    var alpha = render._currentAlpha;
     var blendMode = render._currentBlendMode;
 
     // If shape not made
@@ -345,6 +313,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
             item = items[i];
             source = item.shape;
             render._currentTransform.set(item.matrix ? item.matrix : identity);
+            render._currentAlpha = item.alpha;
             render._currentBlendMode = item.blendMode;
             this.fillColor = item.fillColor;
             this.lineColor = item.lineColor;
@@ -375,6 +344,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
         this.fillColor = fillColor;
         this.lineColor = lineColor;
         this.lineWidth = lineWidth;
+        render._currentAlpha = alpha;
         render._currentBlendMode = blendMode;
         render._currentTransform.set(matrix);
     }
@@ -402,8 +372,9 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
 
     if (matrix.identity()) {
         // If current matrix empty use simple copy vertices
-        while (i)
+        while (i) {
             dest[--j] = source[--i];
+        }
     } else {
         // If not, transform all vertices using current matrix
         var x, y;
@@ -460,15 +431,21 @@ uno.WebglGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
     if (this._maxVertexCount - this._vertexCount < 4)
         this.flush();
 
-    var matrix = this._render._currentTransform;
-    var blendMode = this._render._currentBlendMode;
+    var render = this._render;
+    var matrix = render._currentTransform;
+    var alpha = render._currentAlpha;
+    var blendMode = render._currentBlendMode;
+
+    if (!alpha)
+        return false;
 
     if (this._shape) {
         this._shape.add(matrix, uno.Shape.LINE,
-            new uno.Line(x1, y1, x2, y2), null, lineColor, lineWidth, blendMode);
+            new uno.Line(x1, y1, x2, y2), null, lineColor,
+            lineWidth, alpha, blendMode);
     }
 
-    var color = lineColor.packedABGR;
+    var color = lineColor.packABGR(alpha);
     var w = lineWidth * 0.5;
     var a = matrix.a, b = matrix.b, c = matrix.c, d = matrix.d, tx = matrix.tx, ty = matrix.ty;
     var vc = this._vertexCount;
@@ -537,12 +514,18 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
     if (this._maxVertexCount - this._vertexCount < 12)
         this.flush();
 
-    var matrix = this._render._currentTransform;
-    var blendMode = this._render._currentBlendMode;
+    var render = this._render;
+    var matrix = render._currentTransform;
+    var alpha = render._currentAlpha;
+    var blendMode = render._currentBlendMode;
+
+    if (!alpha)
+        return false;
 
     if (this._shape) {
         this._shape.add(matrix, uno.Shape.RECT,
-            new uno.Rect(x, y, width, height), fillColor, lineColor, lineWidth, blendMode);
+            new uno.Rect(x, y, width, height), fillColor, lineColor,
+            lineWidth, alpha, blendMode);
     }
 
     var a = matrix.a, b = matrix.b, c = matrix.c, d = matrix.d, tx = matrix.tx, ty = matrix.ty;
@@ -556,7 +539,7 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
     var w, color;
 
     if (fillColor && fillColor.a) {
-        color = fillColor.packedABGR;
+        color = fillColor.packABGR(alpha);
         i = vi;
 
         vx[vi++] = a * x + b * y + tx;
@@ -585,7 +568,7 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
     }
 
     if (lineWidth && lineColor && lineColor.a) {
-        color = lineColor.packedABGR;
+        color = lineColor.packABGR(alpha);
         w = lineWidth * 0.5;
         i = vi;
 
@@ -658,11 +641,15 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
  * @returns {Boolean} - Is circle rendered
  */
 uno.WebglGraphics.prototype.drawCircle = function(x, y, radius) {
+    if (!this._render.alpha)
+        return false;
+
     if (this._shape) {
         this._shape.add(this._render.transform, uno.Shape.CIRCLE,
             new uno.Circle(x, y, radius), this.fillColor, this.lineColor,
-            this.lineWidth, this._render.blend);
+            this.lineWidth, this._render.alpha, this._render.blend);
     }
+
     return this._drawEllipse(x, y, radius * 2, radius * 2);
 };
 
@@ -675,11 +662,15 @@ uno.WebglGraphics.prototype.drawCircle = function(x, y, radius) {
  * @returns {Boolean} - Is ellipse rendered
  */
 uno.WebglGraphics.prototype.drawEllipse = function(x, y, width, height) {
+    if (!this._render.alpha)
+        return false;
+
     if (this._shape) {
         this._shape.add(this._render.transform, uno.Shape.ELLIPSE,
             new uno.Ellipse(x, y, width, height), this.fillColor, this.lineColor,
-            this.lineWidth, this._render.blend);
+            this.lineWidth, this._render.alpha, this._render.blend);
     }
+
     return this._drawEllipse(x, y, width, height);
 };
 
@@ -717,12 +708,18 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
     if (!angle)
         return false;
 
-    var matrix = this._render._currentTransform;
-    var blendMode = this._render._currentBlendMode;
+    var render = this._render;
+    var matrix = render._currentTransform;
+    var alpha = render._currentAlpha;
+    var blendMode = render._currentBlendMode;
+
+    if (!alpha)
+        return false;
 
     if (this._shape) {
         this._shape.add(matrix, uno.Shape.ARC,
-            new uno.Arc(x, y, radius, startAngle, endAngle, antiClockwise), fillColor, lineColor, lineWidth, blendMode);
+            new uno.Arc(x, y, radius, startAngle, endAngle, antiClockwise),
+            fillColor, lineColor, lineWidth, alpha, blendMode);
     }
 
     var a = matrix.a, b = matrix.b, c = matrix.c, d = matrix.d, tx = matrix.tx, ty = matrix.ty;
@@ -749,7 +746,7 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
     }
 
     if (fillColor && fillColor.a) {
-        color = fillColor.packedABGR;
+        color = fillColor.packABGR(alpha);
         px1 = radius;
         py1 = 0;
 
@@ -788,7 +785,7 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
     }
 
     if (lineWidth && lineColor && lineColor.a) {
-        color = lineColor.packedABGR;
+        color = lineColor.packABGR(alpha);
         k = vc + segments * 2;
         lineWidth *= 0.5;
         px1 = radius - lineWidth;
@@ -899,12 +896,18 @@ uno.WebglGraphics.prototype.drawPoly = function(points) {
         vi = vc * this._vertexSize;
     }
 
-    var matrix = this._render._currentTransform;
-    var blendMode = this._render._currentBlendMode;
+    var render = this._render;
+    var matrix = render._currentTransform;
+    var alpha = render._currentAlpha;
+    var blendMode = render._currentBlendMode;
+
+    if (!alpha)
+        return false;
 
     if (this._shape) {
         this._shape.add(matrix, uno.Shape.POLY,
-            new uno.Poly(points), fillColor, lineColor, lineWidth, blendMode);
+            new uno.Poly(points), fillColor, lineColor,
+            lineWidth, alpha, blendMode);
     }
 
     var a = matrix.a, b = matrix.b, c = matrix.c, d = matrix.d, tx = matrix.tx, ty = matrix.ty;
@@ -913,7 +916,7 @@ uno.WebglGraphics.prototype.drawPoly = function(points) {
     var px1, py1, px2, py2, px3, py3, ix1, iy1, ix2, iy2, dx1, dy1, dx2, dy2, dx3, dy3, dc;
 
     if (fillColor && fillColor.a) {
-        color = fillColor.packedABGR;
+        color = fillColor.packABGR(alpha);
         l = len;
         if (points[0].equal(points[len - 1]))
             --l;
@@ -1027,7 +1030,7 @@ uno.WebglGraphics.prototype.drawPoly = function(points) {
     }
 
     if (lineWidth && lineColor && lineColor.a) {
-        color = lineColor.packedABGR;
+        color = lineColor.packABGR(alpha);
         p1 = points[0];
         p2 = points[len - 1];
         var w = lineWidth * 0.5;
@@ -1227,8 +1230,10 @@ uno.WebglGraphics.prototype._drawEllipse = function(x, y, width, height) {
     if (width === 0 || height === 0)
         return false;
 
-    var matrix = this._render._currentTransform;
-    var blendMode = this._render._currentBlendMode;
+    var render = this._render;
+    var matrix = render._currentTransform;
+    var alpha = render._currentAlpha;
+    var blendMode = render._currentBlendMode;
 
     var a = matrix.a, b = matrix.b, c = matrix.c, d = matrix.d, tx = matrix.tx, ty = matrix.ty;
     var vc = this._vertexCount;
@@ -1259,7 +1264,7 @@ uno.WebglGraphics.prototype._drawEllipse = function(x, y, width, height) {
     }
 
     if (fillColor && fillColor.a) {
-        color = fillColor.packedABGR;
+        color = fillColor.packABGR(alpha);
         scale = height / width;
 
         vx[vi++] = a * x + b * y + tx;
@@ -1290,7 +1295,7 @@ uno.WebglGraphics.prototype._drawEllipse = function(x, y, width, height) {
     }
 
     if (lineWidth && lineColor && lineColor.a) {
-        color = lineColor.packedABGR;
+        color = lineColor.packABGR(alpha);
         angle = 0;
         k = vc + segments * 2;
         w = lineWidth * 0.5;

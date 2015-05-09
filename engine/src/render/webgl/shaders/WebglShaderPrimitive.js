@@ -26,7 +26,7 @@ uno.WebglShader.PRIMITIVE = {
 
         'void main(void) {',
         '   gl_Position = vec4(aPosition / uProjection + cOffset, 0.0, 1.0);',
-        '   vColor = aColor;',
+        '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
         '}'
     ],
     attributes: {

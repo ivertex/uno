@@ -21,7 +21,7 @@ uno.Shape = function() {
  * @param {Number} [blendMode=null] - Blend mode of the figure for rendering (if null - do not change)
  * @returns {uno.Shape} - <code>this</code>
  */
-uno.Shape.prototype.add = function(matrix, type, figure, fillColor, lineColor, lineWidth, blendMode) {
+uno.Shape.prototype.add = function(matrix, type, figure, fillColor, lineColor, lineWidth, alpha, blendMode) {
     this.items.push({
         matrix: matrix.identity() ? null : matrix.clone(),
         type: type,
@@ -29,6 +29,7 @@ uno.Shape.prototype.add = function(matrix, type, figure, fillColor, lineColor, l
         fillColor: fillColor ? fillColor.clone() : null,
         lineColor: lineColor ? lineColor.clone() : null,
         lineWidth: lineWidth,
+        alpha: alpha,
         blendMode: blendMode
     });
     return this;

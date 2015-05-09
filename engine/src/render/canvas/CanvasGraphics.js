@@ -67,6 +67,7 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
     var i, items = shape.items, l = items.length, item;
     var types = uno.Shape, figure, render = this._render;
     var blendMode = render._currentBlendMode;
+    var alpha = render._currentAlpha;
     var fillColor = this._shapeFillColor.set(this.fillColor);
     var lineColor = this._shapeLineColor.set(this.lineColor);
     var lineWidth = this.lineWidth;
@@ -88,7 +89,7 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
             this.lineColor.set(item.lineColor);
         this.lineWidth = item.lineWidth;
 
-        render._setState(tempMatrix, undefined, item.blendMode);
+        render._setState(tempMatrix, item.alpha * alpha, item.blendMode);
 
         switch (item.type) {
             case types.LINE:
@@ -116,7 +117,7 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
     this.lineColor.set(lineColor);
     this.lineWidth = lineWidth;
 
-    render._setState(worldMatrix, undefined, blendMode);
+    render._setState(worldMatrix, alpha, blendMode);
 };
 
 /**
@@ -134,7 +135,8 @@ uno.CanvasGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
         return false;
     if (this._shape) {
         this._shape.add(this._render._currentTransform, uno.Shape.LINE,
-            new uno.Line(x1, y1, x2, y2), null, lineColor, lineWidth, this._render._currentBlendMode);
+            new uno.Line(x1, y1, x2, y2), null, lineColor, lineWidth,
+            this._render._currentAlpha, this._render._currentBlendMode);
         return true;
     }
     this._setState(null, lineColor, lineWidth);
@@ -162,7 +164,8 @@ uno.CanvasGraphics.prototype.drawRect = function(x, y, width, height) {
         return false;
     if (this._shape) {
         this._shape.add(this._render._currentTransform, uno.Shape.RECT,
-            new uno.Rect(x, y, width, height), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
+            new uno.Rect(x, y, width, height), fillColor, lineColor, lineWidth,
+            this._render._currentAlpha, this._render._currentBlendMode);
         return false;
     }
     this._setState(fillColor, lineColor, lineWidth);
@@ -189,7 +192,8 @@ uno.CanvasGraphics.prototype.drawCircle = function(x, y, radius) {
         return false;
     if (this._shape) {
         this._shape.add(this._render._currentTransform, uno.Shape.CIRCLE,
-            new uno.Circle(x, y, radius), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
+            new uno.Circle(x, y, radius), fillColor, lineColor, lineWidth,
+            this._render._currentAlpha, this._render._currentBlendMode);
         return true;
     }
     this._setState(fillColor, lineColor, lineWidth);
@@ -219,7 +223,8 @@ uno.CanvasGraphics.prototype.drawEllipse = function(x, y, width, height) {
         return false;
     if (this._shape) {
         this._shape.add(this._render._currentTransform, uno.Shape.ELLIPSE,
-            new uno.Ellipse(x, y, width, height), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
+            new uno.Ellipse(x, y, width, height), fillColor, lineColor, lineWidth,
+            this._render._currentAlpha, this._render._currentBlendMode);
         return true;
     }
     this._setState(fillColor, lineColor, lineWidth);
@@ -267,7 +272,8 @@ uno.CanvasGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAng
     if (this._shape) {
         this._shape.add(this._render._currentTransform, uno.Shape.ARC,
             new uno.Arc(x, y, radius, startAngle, endAngle, antiClockwise),
-            fillColor, lineColor, lineWidth, this._render._currentBlendMode);
+            fillColor, lineColor, lineWidth,
+            this._render._currentAlpha, this._render._currentBlendMode);
         return true;
     }
     this._setState(fillColor, lineColor, lineWidth);
@@ -296,7 +302,8 @@ uno.CanvasGraphics.prototype.drawPoly = function(points) {
         return false;
     if (this._shape) {
         this._shape.add(this._render._currentTransform, uno.Shape.POLY,
-            new uno.Poly(points), fillColor, lineColor, lineWidth, this._render._currentBlendMode);
+            new uno.Poly(points), fillColor, lineColor, lineWidth,
+            this._render._currentAlpha, this._render._currentBlendMode);
         return true;
     }
     this._setState(fillColor, lineColor, lineWidth);
