@@ -21,6 +21,8 @@ graphs.prototype.build = function(render) {
 graphs.prototype.render = function(render, deltaTime) {
     if (!this.object.transform)
         return;
+    render.alpha = 0.1;
+    //render.blend = uno.Render.BLEND_ADD;
     render.transform = this.object.transform.matrix;
     render.lineColor = this.groundColor;
     render.lineWidth = 10;

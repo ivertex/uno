@@ -167,29 +167,29 @@ uno.WebglBatch.prototype._restore = function() {
 
 /**
  * Add sprite to batch queue
+ * @param {uno.Matrix} transform - Current matrix transform
  * @param {uno.WebglTexture} texture - WebGL texture instance
  * @param {Number} x - The x-coordinate of the texture frame
  * @param {Number} y - The x-coordinate of the texture frame
  * @param {Number} width - The width of the texture frame
  * @param {Number} height - The height of the texture frame
  * @param {Number} alpha - Texture opacity
+ * @param {Number} blend - Texture blend mode
  * @param {uno.Color} tint - The texture tint color
  */
-uno.WebglBatch.prototype.render = function(texture, x, y, width, height, alpha, tint) {
+uno.WebglBatch.prototype.render = function(transform, texture, x, y, width, height, alpha, blend, tint) {
     var tw = texture.texture.width;
     var th = texture.texture.height;
     var render = this._render;
-    var matrix = render._currentTransform;
-    var blendMode = render._currentBlendMode;
-    var a = matrix.a;
-    var b = matrix.c;   // TODO: why we flip values?
-    var c = matrix.b;
-    var d = matrix.d;
-    var tx = matrix.tx;
-    var ty = matrix.ty;
+    var a = transform.a;
+    var b = transform.c;   // TODO: why we flip values?
+    var c = transform.b;
+    var d = transform.d;
+    var tx = transform.tx;
+    var ty = transform.ty;
 
     // Using packing ABGR (alpha and tint color)
-    var color = tint.packedABGR & 0x00ffffff | (alpha * 255 << 24);
+    var color = tint.packABGR(alpha);
     var i = this._spriteCount * this._spriteSize;
     var vp = this._positions;
     var vc = this._colors;
@@ -200,7 +200,7 @@ uno.WebglBatch.prototype.render = function(texture, x, y, width, height, alpha, 
     var uvy1;
 
     // Check for render target and flip if it is
-    if (texture.handle(render, true, false)) {
+    if (texture.hasHandle(render, true)) {
         uvx0 = x / tw;
         uvy0 = (y + height) / th;
         uvx1 = (x + width) / tw;
@@ -237,7 +237,7 @@ uno.WebglBatch.prototype.render = function(texture, x, y, width, height, alpha, 
     vc[i++] = color;
 
     ++this._spriteCount;
-    this._saveState(texture.handle(render), blendMode);
+    this._saveState(texture.handle(render), blend);
     if (this._spriteCount >= this._maxSpriteCount)
         this.flush();
 };

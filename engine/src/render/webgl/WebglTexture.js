@@ -79,14 +79,11 @@ uno.WebglTexture.prototype.destroy = function() {
  *     This function called very frequently, try avoid variable creation
  * @param {uno.WebglRender} render - The render associated with handle
  * @param {Boolean} [buffer=false] - Return render buffer handle, not texture handle
- * @param {Boolean} [create=true] - Should create texture or render buffer handle if it not exist
  * @returns {WebGLTexture|WebGLFramebuffer} - Corresponding texture or render buffer handle
  */
-uno.WebglTexture.prototype.handle = function(render, buffer, create) {
+uno.WebglTexture.prototype.handle = function(render, buffer) {
     var handles = this._handles[render.id];
     if (!handles || (buffer ? !handles.buffer : !handles.texture)) {
-        if (create === false)
-            return false;
         this._create(render);
         render._addRestore(this);
         return buffer ? this._handles[render.id].buffer : this._handles[render.id].texture;
@@ -102,6 +99,18 @@ uno.WebglTexture.prototype.handle = function(render, buffer, create) {
         handles.scaleMode = this.texture.scaleMode;
     }
     return buffer ? handles.buffer : handles.texture;
+};
+
+/**
+ * Check texture handle for render for exists<br>
+ *     This function called very frequently, try avoid variable creation
+ * @param {uno.WebglRender} render - The render associated with handle
+ * @param {Boolean} [buffer=false] - Check for render buffer or texture handle
+ * @returns {Boolean} - Handle existing
+ */
+uno.WebglTexture.prototype.hasHandle = function(render, buffer) {
+    var handles = this._handles[render.id];
+    return handles && (buffer ? handles.buffer : handles.texture);
 };
 
 /**

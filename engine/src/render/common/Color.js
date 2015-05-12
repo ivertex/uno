@@ -132,6 +132,18 @@ uno.Color.prototype.clone = function() {
 };
 
 /**
+ * Pack to unsigned int ABGR representation of the color
+ * @returns {Number} - Packed color
+ */
+uno.Color.prototype.packABGR = function(alpha) {
+    if (this._dirty)
+        this._packedABGR = (this._a * 255 << 24) | (this._b * 255 << 16) | (this._g * 255 << 8) | (this._r * 255);
+    if (alpha === undefined || alpha === 1)
+        return this._packedABGR;
+    return this._packedABGR & 0x00FFFFFF | (this._a * alpha * 255) << 24;
+};
+
+/**
  * Quantize color values
  * @param {Number} count - The values count to quantize
  * @returns {uno.Color} - <code>this</code>
@@ -286,20 +298,6 @@ Object.defineProperty(uno.Color.prototype, 'cssRGBA', {
             ',' + Math.floor(this._b * 255) + ',' + this._a + ')';
         }
         return this._cssRGBA;
-    }
-});
-
-/**
- * The packed to unsigned int ABGR representation of the color
- * @name uno.Color#packedABGR
- * @type {Number}
- * @readonly
- */
-Object.defineProperty(uno.Color.prototype, 'packedABGR', {
-    get: function() {
-        if (this._dirty)
-            this._packedABGR = (this._a * 255 << 24) | (this._b * 255 << 16) | (this._g * 255 << 8) | (this._r * 255);
-        return this._packedABGR;
     }
 });
 

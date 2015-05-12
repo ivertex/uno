@@ -17,6 +17,7 @@ graphs.id = 'graphs';
 
 graphs.prototype.build = function(render) {
     render.startShape();
+    render.alpha = 0.5;
     render.lineColor = this.groundColor;
     render.lineWidth = 10;
     render.drawLine(0, 200, 300, 200);
@@ -50,6 +51,7 @@ graphs.prototype.render = function(render, deltaTime) {
     if (!this.shape)
         this.build(render);
     render.transform = this.object.transform.matrix;
+    //render.alpha = 0.5;
     render.drawShape(this.shape);
 };
 
