@@ -305,9 +305,10 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
     if (!texture.ready || !this._currentAlpha)
         return this;
     this._graphics.flush();
-    this._batch.render(uno.WebglTexture.get(texture), frame ? frame.x : 0, frame ? frame.y : 0,
+    this._batch.render(this._currentTransform, uno.WebglTexture.get(texture),
+        frame ? frame.x : 0, frame ? frame.y : 0,
         frame ? frame.width : texture.width, frame ? frame.height : texture.height,
-        this._currentAlpha || 1, tint || uno.Color.WHITE);
+        this._currentAlpha, this._currentBlendMode, tint || uno.Color.WHITE);
     return this;
 };
 
@@ -323,7 +324,7 @@ uno.WebglRender.prototype.drawLine = function(x1, y1, x2, y2) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawLine(x1, y1, x2, y2);
+    this._graphics.drawLine(this._currentTransform, x1, y1, x2, y2, this._currentAlpha, this._currentBlendMode);
     return this;
 };
 
@@ -339,7 +340,7 @@ uno.WebglRender.prototype.drawRect = function(x, y, width, height) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawRect(x, y, width, height);
+    this._graphics.drawRect(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlendMode);
     return this;
 };
 
@@ -354,7 +355,7 @@ uno.WebglRender.prototype.drawCircle = function(x, y, radius) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawCircle(x, y, radius);
+    this._graphics.drawCircle(this._currentTransform, x, y, radius, this._currentAlpha, this._currentBlendMode);
     return this;
 };
 
@@ -370,7 +371,7 @@ uno.WebglRender.prototype.drawEllipse = function(x, y, width, height) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawEllipse(x, y, width, height);
+    this._graphics.drawEllipse(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlendMode);
     return this;
 };
 
@@ -388,7 +389,8 @@ uno.WebglRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle,
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawArc(x, y, radius, startAngle, endAngle, antiClockwise);
+    this._graphics.drawArc(this._currentTransform, x, y, radius, startAngle, endAngle, antiClockwise,
+        this._currentAlpha, this._currentBlendMode);
     return this;
 };
 
@@ -401,7 +403,7 @@ uno.WebglRender.prototype.drawPoly = function(points) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawPoly(points);
+    this._graphics.drawPoly(this._currentTransform, points, this._currentAlpha, this._currentBlendMode);
     return this;
 };
 
@@ -414,7 +416,7 @@ uno.WebglRender.prototype.drawShape = function(shape) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawShape(shape);
+    this._graphics.drawShape(this._currentTransform, shape, this._currentAlpha);
     return this;
 };
 
