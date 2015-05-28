@@ -799,7 +799,7 @@ uno.WebglRender._initBlendModes = function(ctx) {
         return;
     var result = {};
     result[uno.Render.BLEND_NONE]       = [ctx.ONE, ctx.ZERO];
-    result[uno.Render.BLEND_NORMAL]     = [ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA];
+    result[uno.Render.BLEND_NORMAL]     = [ctx.ONE, ctx.ONE_MINUS_SRC_ALPHA];
     result[uno.Render.BLEND_ADD]        = [ctx.ONE, ctx.ONE];
     result[uno.Render.BLEND_MULTIPLY]   = [ctx.DST_COLOR, ctx.ONE_MINUS_SRC_ALPHA];
     result[uno.Render.BLEND_SCREEN]     = [ctx.ONE, ctx.ONE_MINUS_SRC_COLOR];
