@@ -36,9 +36,9 @@ debug.id = 'debug';
 
 debug.prototype.input = function(event) {
     if (uno.Mouse.down(event, uno.Mouse.RIGHT)) {
-        window.render2._loseContext();
         var s = this.object.sprite;
         s.blend = s.blend > 3 ? 0 : s.blend + 1;
+        uno.log(s.blend);
     }
 };
 
@@ -50,6 +50,7 @@ function prefab1(render, texture) {
     obj.sprite.texture = texture;
     obj.sprite.tint.set(0, 1, 0);
     obj.sprite.alpha = 1;
+    obj.sprite.blend = uno.Render.BLEND_MULTIPLY;
     return obj;
 }
 
@@ -59,7 +60,7 @@ function prefab2(texture) {
     obj.rotator.rotation = 0.003;
     obj.sprite.texture = texture;
     obj.sprite.alpha = 0.5;
-    obj.sprite.blend = uno.Render.BLEND_ADD;
+    //obj.sprite.blend = uno.Render.BLEND_MULTIPLY;
     return obj;
 }
 
@@ -73,7 +74,7 @@ function create(render1, render2) {
     stage.addChild(obj1);
 
     var obj2 = prefab2(tex2);
-    obj1.addChild(obj2);
+    //obj1.addChild(obj2);
 
     tex1.load('assets/test.jpg', function() {
         obj1.transform.setPivot(tex1.width * 0.25, tex1.height * 0.25);

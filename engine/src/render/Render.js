@@ -131,35 +131,45 @@ uno.Render.create = function(settings) {
     settings = settings || {};
     var setts = {};
     var mode = settings.mode || false;
+
     if (uno.Browser.any) {
         var def = uno.Render.DEFAULT_SETTINGS;
-        setts.antialias = settings.antialias || def.antialias;
-        setts.transparent = settings.transparent || def.transparent;
-        setts.autoClear = settings.autoClear || def.autoClear;
-        setts.clearColor = settings.clearColor || def.clearColor.clone();
+
+        setts.antialias = settings.antialias === undefined ? def.antialias : settings.antialias;
+        setts.transparent = settings.transparent === undefined ? def.transparent : settings.transparent;
+        setts.autoClear = settings.autoClear === undefined ? def.autoClear : settings.autoClear;
+        setts.clearColor = settings.clearColor === undefined ? def.clearColor.clone() : settings.clearColor.clone();
         setts.width = settings.width || (def.width || uno.Screen.availWidth);
         setts.height = settings.height || (def.height || uno.Screen.availHeight);
         setts.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
         setts.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
-        setts.contextMenu = settings.contextMenu || def.contextMenu;
+        setts.contextMenu = settings.contextMenu === undefined ? def.contextMenu : settings.contextMenu;
+
         if (!settings.canvas) {
             var canvas = document.createElement('canvas');
-            if (settings.containerId)
+
+            if (settings.containerId) {
                 document.getElementById(settings.containerId).appendChild(canvas);
-            else if (settings.container)
+            } else if (settings.container) {
                 settings.container.appendChild(canvas);
-            else
+            } else {
                 document.body.appendChild(canvas);
+            }
+
             setts.canvas = canvas;
-        } else
+        } else {
             setts.canvas = settings.canvas;
+        }
+
         if (!mode) {
-            if (uno.Capabilities.webgl)
+            if (uno.Capabilities.webgl) {
                 return new uno.WebglRender(setts);
+            }
             return new uno.CanvasRender(setts);
         }
-        if (mode === uno.Render.RENDER_WEBGL)
+        if (mode === uno.Render.RENDER_WEBGL) {
             return new uno.WebglRender(setts);
+        }
         return new uno.CanvasRender(setts);
     }
     return uno.error('Only browsers currently supported');
