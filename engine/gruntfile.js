@@ -5,6 +5,7 @@ module.exports = function(grunt) {
         'src/build/Header.js',
         'src/Engine.js',
         'src/utils/Utils.js',
+        'src/math/Math.js',
         'src/math/Arc.js',
         'src/math/Circle.js',
         'src/math/Ellipse.js',
