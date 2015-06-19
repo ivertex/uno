@@ -275,8 +275,6 @@ uno.WebglRender.prototype.clear = function(color) {
     var ctx = this._context;
 
     if (this._transparent) {
-        if (!color && this.clearColor === false)
-            return;
         ctx.clearColor(0, 0, 0, 0);
         ctx.clear(ctx.COLOR_BUFFER_BIT);
         return this;
@@ -568,7 +566,8 @@ uno.WebglRender.prototype._setupProps = function() {
     this._target = null;
     this._currentTransform = new uno.Matrix();
     this._currentAlpha = 1;
-    this._currentBlendMode = -1;
+    this._currentBlendMode = uno.BLEND_NORMAL;
+    this._contextBlendMode = -1;
     this._currentShader = null;
     this._shaders = {};
 };
@@ -782,11 +781,11 @@ uno.WebglRender.prototype._resetState = function() {
  */
 uno.WebglRender.prototype._setBlendMode = function(mode) {
     mode = mode || uno.Render.BLEND_NORMAL;
-    if (mode === this._currentBlendMode || !uno.WebglRender._blendModes[mode])
+    if (mode === this._contextBlendMode  || !uno.WebglRender._blendModes[mode])
         return;
-    mode = uno.WebglRender._blendModes[mode];
-    this._context.blendFunc(mode[0], mode[1]);
-    this._currentBlendMode = mode;
+    var items = uno.WebglRender._blendModes[mode];
+    this._context.blendFunc(items[0], items[1]);
+    this._contextBlendMode = mode;
 };
 
 /**

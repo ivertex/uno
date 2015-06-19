@@ -267,8 +267,6 @@ uno.CanvasRender.prototype.clear = function(color) {
     var transform;
 
     if (this._transparent) {
-        if (!color && this.clearColor === false)
-            return this;
         transform = this._clearTransform.set(this._currentTransform);
         ctx.clearRect(0, 0, this._width, this._height);
         return this;

@@ -289,7 +289,6 @@ uno.WebglBatch.prototype.flush = function() {
     var index = 0;
     var count = 0;
     var texture, current = null;
-    var mode = render._currentBlendMode;
 
     for (var i = 0, l = this._stateCount; i < l; ++i) {
         render._setBlendMode(modes[i]);
@@ -302,8 +301,6 @@ uno.WebglBatch.prototype.flush = function() {
         ctx.drawElements(ctx.TRIANGLES, count - index, ctx.UNSIGNED_SHORT, index * 2);
         index = count;
     }
-
-    render._setBlendMode(mode);
 
     this.reset();
 };
