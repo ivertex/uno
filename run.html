@@ -20,6 +20,7 @@
         }
 
         .panel {
+            position: absolute;
             list-style-type: none;
             margin: 0;
             padding: 0;
@@ -27,8 +28,9 @@
             display: block;
             font-family: 'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
             font-size: 12px;
-            background: linear-gradient(0deg, rgb(253, 253, 253), rgb(229, 229, 229), rgb(253, 253, 253));
-            border: 1px solid #D2D2D2;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.5);
+            color: #CCC;
         }
 
         .panel li {
@@ -41,15 +43,13 @@
         }
 
         .panel li:hover {
-            border-left: 1px solid #D2D2D2;
-            border-right: 1px solid #D2D2D2;
-            background: linear-gradient(0deg, rgb(240, 240, 240), rgb(205, 205, 205), rgb(240, 240, 240));
+            background: rgba(255, 255, 255, 0.5);
+            color: black;
         }
 
         .panel .active {
-            border-left: 1px solid #D2D2D2;
-            border-right: 1px solid #D2D2D2;
-            background: linear-gradient(0deg, rgb(240, 240, 240), rgb(205, 205, 205), rgb(240, 240, 240));
+            background: rgba(255, 255, 255, 0.5);
+            color: black;
         }
     </style>
 
@@ -61,6 +61,7 @@
 </head>
 <body onload="onLoad();">
     <ul class="panel">
+        <li data-url='pause'>||</li>
         <li data-url='tint'>Tint</li>
         <li data-url='graphics'>Graphics</li>
         <li data-url='shape'>Shape</li>
