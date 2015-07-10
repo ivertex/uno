@@ -8,6 +8,7 @@ function createRenders(render1, render2) {
         clearColor: new uno.Color(0, 0.5, 0.5),
         fps: 60
     };
+
     window.render1 = render1;
     window.render2 = render2;
 
@@ -16,12 +17,13 @@ function createRenders(render1, render2) {
         settings.ups = 60;
         if (window.render2) {
             if (settings.width > settings.height)
-                settings.width /= 2;
+                settings.width = Math.floor(settings.width * 0.5);
             else
-                settings.height /= 2;
+                settings.height = Math.floor(settings.height * 0.5);
         }
         window.render1 = uno.Render.create(settings);
     }
+
     if (window.render2) {
         try {
             settings.mode = uno.Render.RENDER_WEBGL;
@@ -31,18 +33,50 @@ function createRenders(render1, render2) {
             console.log(e);
         }
     }
+
     create(window.render1, window.render2);
 }
 
-function loadTest() {
-    var match = window.location.pathname.match(/\/(.+)/i);
-    var name = 'tint';
-    if (match)
-        name = match[1];
+function onLoad(name) {
+    name = sessionStorage.getItem('current');
+    if (!name) {
+        name = 'tint';
+    }
+    createPanel(name);
     var head = document.getElementsByTagName('head')[0];
     var script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = 'tests/' + name + '.js?' + Math.random();
     script.onload = function() { init(); };
     head.appendChild(script);
+}
+
+function onClick(e) {
+    var name = e.target.attributes[0].value;
+    if (name === 'pause') {
+        for (var i in uno.Render.renders) {
+            var render = uno.Render.renders[i];
+            render.ups = render.ups ? 0 : 60;
+            render.fps = render.fps ? 0 : 60;
+        }
+        if (render.ups)
+            e.target.classList.remove('active');
+        else
+            e.target.classList.add('active');
+        return;
+    }
+    sessionStorage.setItem('current', name);
+    window.location.reload();
+}
+
+function createPanel(active) {
+    var panel = document.getElementsByClassName('panel')[0];
+    if (!panel)
+        return;
+    for (var i = 0, l = panel.children.length; i < l; ++i) {
+        var item = panel.children[i];
+        if (item.attributes[0].value === active)
+            item.classList.add('active');
+        item.onclick = onClick;
+    }
 }

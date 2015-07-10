@@ -14,9 +14,9 @@ resize.prototype.update = function() {
         var w = uno.Screen.availWidth;
         var h = uno.Screen.availHeight;
         if (w > h)
-            w /= 2;
+            w = Math.floor(w * 0.5);
         else
-            h /= 2;
+            h = Math.floor(h * 0.5);
         for (var i in uno.Render.renders)
             uno.Render.renders[i].resize(w, h);
         this._size.set(uno.Screen.availWidth, uno.Screen.availHeight);

@@ -20,8 +20,10 @@ uno.CanvasRender = function(settings) {
     this._setupSettings(settings);
     this._setupProps();
     this._setupBounds();
+
     if (!this._createContext())
         return;
+
     this._setupManagers();
     this._setupViewport(settings);
     this._resetState();
@@ -108,7 +110,7 @@ Object.defineProperty(uno.CanvasRender.prototype, 'target', {
         } else if (this._target !== value) {
             this._target = value;
             var extension = uno.CanvasTexture.get(value);
-            this._canvas = extension.handle(this);
+            this._canvas = extension.handle();
             this._context = extension.context();
             this._setState(this._currentTransform, this._currentAlpha, this._currentBlendMode, this._currentScaleMode, true);
         }
@@ -229,11 +231,14 @@ uno.CanvasRender.prototype.resize = function(width, height) {
     this._canvas.width = width;
     this._canvas.height = height;
     this._updateBounds();
+
     // Canvas context is reset we should set states
     this._resetState();
+
     // Canvas is cleared we should rerender frame
     if (this.root)
         this.root.render(this, this._lastRenderTime);
+
     return this;
 };
 
@@ -285,15 +290,19 @@ uno.CanvasRender.prototype.clear = function(color) {
     var fill = ctx.fillStyle;
 
     this._setState(uno.Matrix.IDENTITY, 1, uno.Render.BLEND_NORMAL);
+
     if (line)
         ctx.lineWidth = 0;
     if (fill !== color.cssRGBA)
         ctx.fillStyle = color.cssRGBA;
+
     ctx.fillRect(0, 0, this._width, this._height);
+
     if (line)
         ctx.lineWidth = line;
     if (fill !== color.cssRGBA)
         ctx.fillStyle = fill;
+
     this._setState(transform, alpha, blend);
 
     return this;
@@ -309,12 +318,35 @@ uno.CanvasRender.prototype.clear = function(color) {
 uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint) {
     if (!texture.ready || !this._currentAlpha)
         return this;
-    var ctx = this._context;
+
     this._setState(this._currentTransform, this._currentAlpha, this._currentBlendMode, texture.scaleMode);
-    ctx.drawImage((!tint || tint.equal(uno.Color.WHITE)) ? uno.CanvasTexture.get(texture).handle() : uno.CanvasTexture.get(texture).tint(tint),
-        frame ? frame.x : 0, frame ? frame.y : 0,
-        frame ? frame.width : texture.width, frame ? frame.height : texture.height,
-        0, 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height);
+
+    var ctx = this._context;
+    var tex = uno.CanvasTexture.get(texture);
+
+    if (!frame ||
+        (frame.x >= 0 && frame.x <= texture.width - frame.width &&
+        frame.y >= 0 && frame.y <= texture.height - frame.height)) {
+        ctx.drawImage(tex.handle(tint), frame ? frame.x : 0, frame ? frame.y : 0,
+            frame ? frame.width : texture.width, frame ? frame.height : texture.height,
+            0, 0, frame ? frame.width : texture.width, frame ? frame.height : texture.height);
+        return this;
+    }
+
+    // Tiled version here
+    ctx.fillStyle = tex.pattern(this, tint);
+
+    var px = frame.x % texture.width;
+    var py = frame.y % texture.height;
+
+    if (px !== 0 || py !== 0)
+        ctx.translate(-px, -py);
+
+    ctx.fillRect(px, py, frame.width, frame.height);
+
+    if (px !== 0 || py !== 0)
+        ctx.translate(px, py);
+
     return this;
 };
 
@@ -456,8 +488,10 @@ uno.CanvasRender.prototype.setPixels = function(texture, data, x, y, width, heig
  */
 uno.CanvasRender.prototype._setupSettings = function(settings) {
     var def = uno.Render.DEFAULT_SETTINGS;
+
     if (!settings.canvas)
         return uno.error('Can not create render, settings.canvas is not defined');
+
     this.clearColor = settings.clearColor ? settings.clearColor.clone() : def.clearColor.clone();
     this.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
     this.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
@@ -465,10 +499,12 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
     this._transparent = settings.transparent !== undefined ? !!settings.transparent : def.transparent;
     this._autoClear = settings.autoClear !== undefined ? !!settings.autoClear : def.autoClear;
     this._antialias = settings.antialias !== undefined ? !!settings.antialias : def.antialias;
+
     if (uno.Browser.ie) {
         this._canvas.style['-ms-content-zooming'] = 'none';
         this._canvas.style['-ms-touch-action'] = 'none';
     }
+
     if (!this._contextMenu)
         this._canvas.oncontextmenu = function() { return false; };
 };
@@ -517,12 +553,16 @@ uno.CanvasRender.prototype._createContext = function() {
     var options = {
         alpha: this._transparent
     };
+
     this._displayContext = this._context = this._canvas.getContext ? this._canvas.getContext('2d', options) : null;
+
     if (!this._context)
         return uno.error('This browser does not support canvas. Try using another browser');
+
     this._hasResetTransform = !!this._context.resetTransform;
     uno.CanvasRender._initSmoothing(this._context);
     uno.CanvasRender._initBlendModes();
+
     return true;
 };
 
@@ -573,15 +613,19 @@ uno.CanvasRender.prototype._setupFrame = function() {
 uno.CanvasRender.prototype._onFrame = function(time) {
     if (!this._frameBind)
         return;
+
     requestAnimationFrame(this._frameBind, this._canvas);
+
     var root = this.root;
     var udelta = time - this._lastUpdateTime;
     var rdelta = time - this._lastRenderTime;
+
     if (this.ups && root && root.update &&
         (this.ups === 60 || udelta >= (1 / this.ups) * 900)) {  // 90% percent of time per update and maximum for 60 ups
         root.update(this, udelta);
         this._lastUpdateTime = time;
     }
+
     if (this.fps && root && root.render &&
         (this.fps === 60 || rdelta >= (1 / this.fps) * 900)) { // 90% percent of time per render and maximum for 60 fps
         this._resetState();
@@ -620,6 +664,7 @@ uno.CanvasRender.prototype._resetState = function() {
  */
 uno.CanvasRender.prototype._setState = function(transform, alpha, blendMode, scaleMode, force) {
     var context = this._context;
+
     if (transform && (force || !this._contextTransform.equal(transform))) {
         if (this._hasResetTransform && transform.identity())
             context.resetTransform();
@@ -627,14 +672,17 @@ uno.CanvasRender.prototype._setState = function(transform, alpha, blendMode, sca
             context.setTransform(transform.a, transform.c, transform.b, transform.d, transform.tx, transform.ty);
         this._contextTransform.set(transform);
     }
+
     if (alpha !== undefined && (force || this._contextAlpha !== alpha)) {
         context.globalAlpha = alpha;
         this._contextAlpha = alpha;
     }
+
     if (blendMode !== undefined && (force || this._contextBlendMode !== blendMode)) {
         context.globalCompositeOperation = uno.CanvasRender._blendModes[blendMode];
         this._contextBlendMode = blendMode;
     }
+
     if (scaleMode !== undefined && (force || this._contextScaleMode !== scaleMode)) {
         context[uno.CanvasRender._smoothProperty] = scaleMode === uno.Render.SCALE_LINEAR;
         this._contextScaleMode = scaleMode;
@@ -649,9 +697,11 @@ uno.CanvasRender.prototype._setState = function(transform, alpha, blendMode, sca
 uno.CanvasRender._blendModesSupported = function() {
     if (uno.CanvasRender._blendModesSupport !== undefined)
         return uno.CanvasRender._blendModesSupport;
+
     var canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
+
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, 1, 1);
@@ -659,6 +709,7 @@ uno.CanvasRender._blendModesSupported = function() {
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, 1, 1);
     uno.CanvasRender._blendModesSupport = ctx.getImageData(0, 0, 1, 1).data[0] === 0;
+
     return uno.CanvasRender._blendModesSupport;
 };
 
@@ -669,13 +720,16 @@ uno.CanvasRender._blendModesSupported = function() {
 uno.CanvasRender._initBlendModes = function() {
     if (uno.CanvasRender._blendModes)
         return;
+
     var supported = this._blendModesSupported();
     var result = {};
+
     result[uno.Render.BLEND_NONE]       = 'source-over';
     result[uno.Render.BLEND_NORMAL]     = 'source-over';
     result[uno.Render.BLEND_ADD]        = 'lighter';
     result[uno.Render.BLEND_MULTIPLY]   = supported ? 'multiply' : 'source-over';
     result[uno.Render.BLEND_SCREEN]     = supported ? 'screen' : 'source-over';
+
     uno.CanvasRender._blendModes = result;
 };
 
@@ -687,8 +741,10 @@ uno.CanvasRender._initBlendModes = function() {
 uno.CanvasRender._initSmoothing = function(ctx) {
     if (uno.CanvasRender._smoothProperty !== undefined)
         return;
+
     uno.CanvasRender._smoothProperty = false;
     var vendor = ['', 'webkit', 'moz', 'o'];
+
     for (var i = 0, l = vendor.length; i < l && !this._smoothProperty; ++i) {
         var property = vendor[i] + 'imageSmoothingEnabled';
         if (property in ctx)

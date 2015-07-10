@@ -305,7 +305,7 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
     this._graphics.flush();
     this._batch.render(this._currentTransform, uno.WebglTexture.get(texture),
         frame ? frame.x : 0, frame ? frame.y : 0,
-        frame ? frame.width : texture.width, frame ? frame.height : texture.height,
+        frame ? frame.width / texture.width : 1, frame ? frame.height / texture.height : 1,
         this._currentAlpha, this._currentBlendMode, tint || uno.Color.WHITE);
     return this;
 };

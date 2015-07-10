@@ -194,46 +194,47 @@ uno.WebglBatch.prototype.render = function(transform, texture, x, y, width, heig
     var vp = this._positions;
     var vc = this._colors;
 
-    var uvx0;
-    var uvy0;
-    var uvx1;
-    var uvy1;
+    var u0;
+    var v0;
+    var u1;
+    var v1;
 
-    // Check for render target and flip if it is
+    u0 = x / tw;
+    u1 = u0 + width;
+
     if (texture.hasHandle(render, true)) {
-        uvx0 = x / tw;
-        uvy0 = (y + height) / th;
-        uvx1 = (x + width) / tw;
-        uvy1 = y / th;
+        v1 = y / th;
+        v0 = v1 + height;
     } else {
-        uvx0 = x / tw;
-        uvy0 = y / th;
-        uvx1 = (x + width) / tw;
-        uvy1 = (y + height) / th;
+        v0 = y / th;
+        v1 = v0 + height;
     }
+
+    width *= tw;
+    height *= th;
 
     vp[i++] = tx;
     vp[i++] = ty;
-    vp[i++] = uvx0;
-    vp[i++] = uvy0;
+    vp[i++] = u0;
+    vp[i++] = v0;
     vc[i++] = color;
 
     vp[i++] = a * width + tx;
     vp[i++] = b * width + ty;
-    vp[i++] = uvx1;
-    vp[i++] = uvy0;
+    vp[i++] = u1;
+    vp[i++] = v0;
     vc[i++] = color;
 
     vp[i++] = a * width + c * height + tx;
     vp[i++] = d * height + b * width + ty;
-    vp[i++] = uvx1;
-    vp[i++] = uvy1;
+    vp[i++] = u1;
+    vp[i++] = v1;
     vc[i++] = color;
 
     vp[i++] = c * height + tx;
     vp[i++] = d * height + ty;
-    vp[i++] = uvx0;
-    vp[i++] = uvy1;
+    vp[i++] = u0;
+    vp[i++] = v1;
     vc[i++] = color;
 
     ++this._spriteCount;

@@ -26,6 +26,13 @@ uno.CanvasTexture = function(texture) {
     this._context = null;
 
     /**
+     * Texture pattern if texture used in tiling draw
+     * @type {Object}
+     * @private
+     */
+    this._patternCache = {};
+
+    /**
      * Cache for texture tinting
      * @type {Object}
      * @private
@@ -48,16 +55,8 @@ uno.CanvasTexture.prototype.destroy = function() {
     this.texture = null;
     this._source = null;
     this._context = null;
-    this._tintCache = null;
-};
-
-/**
- * Tint texture using {@link uno.CanvasTinter}
- * @param {uno.Color} tint - Tint color
- * @returns {canvas}
- */
-uno.CanvasTexture.prototype.tint = function(tint) {
-    return uno.CanvasTinter.tint(this, tint);
+    this._patternCache = {};
+    this._imageData = null;
 };
 
 /**
@@ -74,16 +73,34 @@ uno.CanvasTexture.prototype.context = function() {
 /**
  * Get texture handle for render<br>
  *     This function called very frequently, try avoid variable creation
+ * @param {uno.Color} [tint] - Tint color
  * @returns {Image|canvas} - Texture canvas
  */
-uno.CanvasTexture.prototype.handle = function() {
+uno.CanvasTexture.prototype.handle = function(tint) {
     if (this._source === null && this.texture.width && this.texture.height) {
         var source = document.createElement('canvas');
         source.width = this.texture.width;
         source.height = this.texture.height;
         this._source = source;
     }
-    return this._source;
+
+    if (!tint || tint.equal(uno.Color.WHITE))
+        return this._source;
+
+    return uno.CanvasTinter.tint(this, tint);
+};
+
+/**
+ * Get texture pattern for render
+ * @param {uno.CanvasRender} render - Render that used texture pattern
+ * @param {uno.Color} tint - Tint color
+ * @returns {CanvasPattern} - Texture pattern
+ */
+uno.CanvasTexture.prototype.pattern = function(render, tint) {
+    var handle = this.handle(tint);
+    if (!this._patternCache[handle])
+        this._patternCache[handle] = render._context.createPattern(handle, 'repeat');
+    return this._patternCache[handle];
 };
 
 /**
@@ -150,8 +167,12 @@ uno.CanvasTexture.prototype.setPixels = function(data, x, y, width, height) {
  * @param {Boolean} [cache=true] - Should the texture cached
  */
 uno.CanvasTexture.prototype.load = function(url, complete, cache) {
+    if (url === this._url)
+        return this._source;
     if (uno.CanvasTexture._cache[url]) {
         this._source = uno.CanvasTexture._cache[url];
+        uno.CanvasTinter.removeCache(this);
+        this._patternCache = {};
         complete(url, true, this._source.width, this._source.height);
         return;
     }
@@ -161,6 +182,8 @@ uno.CanvasTexture.prototype.load = function(url, complete, cache) {
         if (cache !== false)
             uno.CanvasTexture._cache[url] = cache;
         self._source = source;
+        uno.CanvasTinter.removeCache(self);
+        self._patternCache = {};
         complete(url, true, source.width, source.height);
     });
     source.addEventListener('error', function() {

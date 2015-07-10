@@ -18,6 +18,39 @@
             padding: 0;
             line-height: 0;
         }
+
+        .panel {
+            position: absolute;
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            background: blue;
+            display: block;
+            font-family: 'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.5);
+            color: #CCC;
+        }
+
+        .panel li {
+            display: inline-block;
+            padding: 10px 5px;
+            text-align: center;
+            cursor: pointer;
+            border-left: 1px solid transparent;
+            border-right: 1px solid transparent;
+        }
+
+        .panel li:hover {
+            background: rgba(255, 255, 255, 0.5);
+            color: black;
+        }
+
+        .panel .active {
+            background: rgba(255, 255, 255, 0.5);
+            color: black;
+        }
     </style>
     
     <script src="engine/src/Engine.js"></script>
@@ -68,6 +101,15 @@
     <script src="tests/helpers/resize.js"></script>
     <script src="tests/helpers/drag.js"></script>
 </head>
-<body onload="loadTest();">
+<body onload="onLoad();">
+    <ul class="panel">
+        <li data-url='pause'>||</li>
+        <li data-url='tint'>Tint</li>
+        <li data-url='graphics'>Graphics</li>
+        <li data-url='shape'>Shape</li>
+        <li data-url='target'>Target</li>
+        <li data-url='tile'>Tile</li>
+        <li data-url='perf'>Perf</li>
+    </ul>
 </body>
 </html>

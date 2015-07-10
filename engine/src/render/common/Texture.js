@@ -77,7 +77,7 @@ uno.Texture._uid = 0;
 /**
  * Load texture from URL
  * @param {String} url - The image URL
- * @param {Function} complete - Function to call after loading
+ * @param {Function} complete - Function to call after loading (with one argument - loaded texture)
  * @param {Boolean} [cache=true] - Should the texture cached
  * @returns {uno.Texture} - <code>this</code>
  */
@@ -190,4 +190,17 @@ uno.Texture.prototype._onLoad = function(complete, url, success, width, height) 
     this._ready = true;
     if (complete)
         complete(this);
+};
+
+/**
+ * Create and load texture from URL
+ * @param {String} url - The image URL
+ * @param {Function} complete - Function to call after loading (with one argument - loaded texture)
+ * @param {Boolean} [cache=true] - Should the texture cached
+ * @returns {uno.Texture} - New texture
+ */
+uno.Texture.load = function(url, complete, cache) {
+    var texture = new uno.Texture();
+    texture.load(url, complete, cache);
+    return texture;
 };
