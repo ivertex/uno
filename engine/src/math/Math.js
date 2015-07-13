@@ -41,9 +41,24 @@ uno.Math = {
 
 /**
  * Is number power of two
- * @param {Number} x - Number to check
+ * @param {Number} value - Number to check
  * @returns {Boolean}
  */
-uno.Math.isPOT = function(x) {
-    return (x & (x - 1)) === 0;
+uno.Math.isPOT = function(value) {
+    return (value & (value - 1)) === 0;
+};
+
+/**
+ * Given a number, this function returns the closest number that is a power of two
+ * @param value {Number}
+ * @return {Number} the closest number that is a power of two
+ */
+uno.Math.nextPOT = function(value) {
+    if (value > 0 && (value & (value - 1)) === 0) {
+        return value;
+    }
+    var result = 1;
+    while (result < value)
+        result <<= 1;
+    return result;
 };

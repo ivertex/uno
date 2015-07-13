@@ -82,6 +82,12 @@ uno.CanvasTexture.prototype.handle = function(tint) {
         source.width = this.texture.width;
         source.height = this.texture.height;
         this._source = source;
+
+        if (uno.WebglTexture.has(this.texture)) {
+            var tex = uno.WebglTexture.get(this.texture);
+            // TODO: Here we hope that we have only one webgl texture handle
+            this.setPixels(tex.getPixels(tex._renders[0]));
+        }
     }
 
     if (!tint || tint.equal(uno.Color.WHITE))
@@ -121,7 +127,7 @@ uno.CanvasTexture.prototype.getPixels = function(x, y, width, height) {
     height = height || h;
 
     if (x < 0 || y < 0 || x + width > w || y + height > h)
-        return this;
+        return null;
 
     this._imageData = this.context().getImageData(x, y, width, height);
 
@@ -152,10 +158,15 @@ uno.CanvasTexture.prototype.setPixels = function(data, x, y, width, height) {
     if (x < 0 || y < 0 || x + width > w || y + height > h)
         return this;
 
-    if (this._imageData.data !== data)
-        this._imageData.set(data);
+    var idata = this._imageData;
 
-    this.context().putImageData(this._imageData, x, y);
+    if (!idata)
+        idata = this._imageData = this.context().getImageData(x, y, width, height);
+
+    if (idata.data !== data)
+        idata.data.set(data);
+
+    this.context().putImageData(idata, x, y);
 
     return this;
 };
@@ -203,6 +214,15 @@ uno.CanvasTexture.get = function(texture) {
     if (!texture._extensions.canvas)
         texture._extensions.canvas = new uno.CanvasTexture(texture);
     return texture._extensions.canvas;
+};
+
+/**
+ * Texture extension check
+ * @param {uno.Texture} texture
+ * @returns {Boolean}
+ */
+uno.CanvasTexture.has = function(texture) {
+    return !!texture._extensions.canvas;
 };
 
 /**

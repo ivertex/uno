@@ -121,8 +121,8 @@ uno.WebglBatch = function(render) {
 uno.WebglBatch.prototype.destroy = function() {
     this._render._removeRestore(this);
     var ctx = this._render._context;
-    ctx.destroyBuffer(this._vertexBuffer);
-    ctx.destroyBuffer(this._indexBuffer);
+    ctx.deleteBuffer(this._vertexBuffer);
+    ctx.deleteBuffer(this._indexBuffer);
     this.texture = null;
     this._indices = null;
     this._vertices = null;

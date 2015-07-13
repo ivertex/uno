@@ -1,4 +1,4 @@
-function createRenders(render1, render2) {
+function createRenders(render1, render2, type) {
     var settings = {
         container: document.body,
         width: uno.Screen.availWidth,
@@ -13,7 +13,7 @@ function createRenders(render1, render2) {
     window.render2 = render2;
 
     if (window.render1) {
-        settings.mode = uno.Render.RENDER_CANVAS;
+        settings.mode = type || uno.Render.RENDER_CANVAS;
         settings.ups = 60;
         if (window.render2) {
             if (settings.width > settings.height)
@@ -26,7 +26,7 @@ function createRenders(render1, render2) {
 
     if (window.render2) {
         try {
-            settings.mode = uno.Render.RENDER_WEBGL;
+            settings.mode = type || uno.Render.RENDER_WEBGL;
             settings.ups = 60;
             window.render2 = uno.Render.create(settings);
         } catch (e) {

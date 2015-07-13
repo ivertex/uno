@@ -240,26 +240,43 @@ uno.WebglRender.prototype.resize = function(width, height) {
  * Free all allocated resources and destroy render
  */
 uno.WebglRender.prototype.destroy = function() {
+    if (!uno.Render.renders[this.id])
+        return;
     delete uno.Render.renders[this.id];
+
+    // Free managers
     this._batch.destroy();
     this._batch = null;
     this._graphics.destroy();
     this._graphics = null;
+
+    // Free all owned shaders
     for (var i in this._shaders)
         this._shaders[i].destroy();
     this._currentShader = null;
     this._currentTransform = null;
-    this._shaders = {};
+    this._shaders = null;
+
+    // Free all owned texture handles
+    var restores = this._restoreObjects, l = restores.length;
+    for (i = 0; i < l; ++i)
+        if (restores[i] instanceof uno.WebglTexture)
+            restores[i].destroyHandle(this);
+    this._restoreObjects = null;
+
     this._canvas.removeEventListener('webglcontextlost', this._contextLostHandle);
     this._canvas.removeEventListener('webglcontextrestored', this._contextRestoredHandle);
     this._contextLostHandle = null;
     this._contextRestoredHandle = null;
+
     this._context = null;
     this._target = null;
     this._canvas = null;
     this._projection = null;
     this._bounds = null;
     this._boundsScroll = null;
+    this._frameBind = null;
+
     this.root = null;
 };
 
@@ -302,11 +319,18 @@ uno.WebglRender.prototype.clear = function(color) {
 uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
     if (!texture.ready || !this._currentAlpha)
         return this;
+
+    if (!texture.pot && frame && (frame.width > texture.width || frame.height > texture.height)) {
+        uno.error('Repeating non power of two textures are not supported');
+        return this;
+    }
+
     this._graphics.flush();
     this._batch.render(this._currentTransform, uno.WebglTexture.get(texture),
         frame ? frame.x : 0, frame ? frame.y : 0,
         frame ? frame.width / texture.width : 1, frame ? frame.height / texture.height : 1,
         this._currentAlpha, this._currentBlendMode, tint || uno.Color.WHITE);
+
     return this;
 };
 

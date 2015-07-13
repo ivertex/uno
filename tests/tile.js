@@ -40,6 +40,16 @@ function create(render1, render2) {
     var h = render1 ? render1.height : render2.height;
 
     var tex = uno.Texture.load('assets/test.png', function() {
+        /*var tex2 = new uno.Texture(uno.Math.nextPOT(tex.width), uno.Math.nextPOT(tex.height));
+
+        render2.target = tex2;
+        render2.transform.reset();
+        render2.drawTexture(tex);
+        render2.target = null;
+
+        tex = tex2;
+        */
+
         var obj = uno.Object.create(uno.Transform, tiles, drag);
         var frame = obj.tiles.frame;
         obj.tiles.tex = tex;

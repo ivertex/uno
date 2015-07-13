@@ -17,18 +17,18 @@ graphs.id = 'graphs';
 
 graphs.prototype.build = function(render) {
     render.startShape();
-    render.alpha = 0.5;
-    render.lineColor = this.groundColor;
+    //render.alpha = 0.5;
+    render.lineColor = this.roofColor;
     render.lineWidth = 10;
     render.drawLine(0, 200, 300, 200);
-    render.lineColor = this.wallColor;
+    /*render.lineColor = this.wallColor;
     render.fillColor = this.wallColor1;
     render.lineWidth = 5;
-    render.drawRect(90, 70, 125, 125);
-    render.lineColor = this.roofColor;
+    render.drawRect(90, 70, 125, 125);*/
+    /*render.lineColor = this.roofColor;
     render.fillColor = this.roofColor1;
-    render.drawPoly(this.points);
-    render.lineColor = uno.Color.RED;
+    render.drawPoly(this.points);*/
+    /*render.lineColor = uno.Color.RED;
     render.fillColor = uno.Color.GREEN;
     render.lineWidth = 10;
     render.blend = uno.Render.BLEND_ADD;
@@ -36,12 +36,12 @@ graphs.prototype.build = function(render) {
     render.fillColor = this.sunColor;
     render.lineWidth = 0;
     render.blend = uno.Render.BLEND_NORMAL;
-    render.drawCircle(50, 0, 30);
-    render.fillColor = null;
+    render.drawCircle(50, 0, 30);*/
+    /*render.fillColor = null;
     render.lineColor = uno.Color.BLUE;
     render.lineWidth = 30;
     render.blend = uno.Render.BLEND_ADD;
-    render.drawArc(150, 200, 200, 0, uno.Math.PI, true);
+    render.drawArc(150, 200, 200, 0, uno.Math.PI, true);*/
     this.shape = render.endShape();
 };
 
@@ -51,7 +51,8 @@ graphs.prototype.render = function(render, deltaTime) {
     if (!this.shape)
         this.build(render);
     render.transform = this.object.transform.matrix;
-    //render.alpha = 0.5;
+    render.alpha = 0.5;
+    //render.blend = uno.Render.BLEND_ADD;
     render.drawShape(this.shape);
 };
 

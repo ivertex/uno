@@ -246,7 +246,14 @@ uno.CanvasRender.prototype.resize = function(width, height) {
  * Free all allocated resources and destroy render
  */
 uno.CanvasRender.prototype.destroy = function() {
+    if (!uno.Render.renders[this.id])
+        return;
     delete uno.Render.renders[this.id];
+
+    // Free managers
+    this._graphics.destroy();
+    this._graphics = null;
+
     this._context = null;
     this._canvas = null;
     this._target = null;
@@ -257,8 +264,7 @@ uno.CanvasRender.prototype.destroy = function() {
     this._bounds = null;
     this._boundsScroll = null;
     this._frameBind = null;
-    this._graphics.destroy();
-    this._graphics = null;
+
     this.root = null;
 };
 
@@ -334,6 +340,11 @@ uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint) {
     }
 
     // Tiled version here
+    if (!texture.pot) {
+        uno.error('Repeating non power of two textures are not supported');
+        return this;
+    }
+
     ctx.fillStyle = tex.pattern(this, tint);
 
     var px = frame.x % texture.width;
@@ -698,17 +709,25 @@ uno.CanvasRender._blendModesSupported = function() {
     if (uno.CanvasRender._blendModesSupport !== undefined)
         return uno.CanvasRender._blendModesSupport;
 
-    var canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
+    var pngHead = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAABAQMAAADD8p2OAAAAA1BMVEX/';
+    var pngEnd = 'AAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==';
 
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, 1, 1);
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, 1, 1);
-    uno.CanvasRender._blendModesSupport = ctx.getImageData(0, 0, 1, 1).data[0] === 0;
+    var magenta = new Image();
+    magenta.src = pngHead + 'AP804Oa6' + pngEnd;
+
+    var yellow = new Image();
+    yellow.src = pngHead + '/wCKxvRF' + pngEnd;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = 6;
+    canvas.height = 1;
+    var context = canvas.getContext('2d');
+    context.globalCompositeOperation = 'multiply';
+    context.drawImage(magenta, 0, 0);
+    context.drawImage(yellow, 2, 0);
+
+    var data = context.getImageData(2, 0, 1, 1).data;
+    uno.CanvasRender._blendModesSupport = (data[0] === 255 && data[1] === 0 && data[2] === 0);
 
     return uno.CanvasRender._blendModesSupport;
 };

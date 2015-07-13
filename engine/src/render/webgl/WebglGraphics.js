@@ -30,7 +30,7 @@ uno.WebglGraphics = function(render) {
      * @type {Number}
      * @private
      */
-    this._maxVertexCount = 6000;
+    this._maxVertexCount = 60;
 
     /**
      * Current count of vertices in batch
@@ -158,8 +158,8 @@ uno.WebglGraphics = function(render) {
 uno.WebglGraphics.prototype.destroy = function() {
     this._render._removeRestore(this);
     var ctx = this._render._context;
-    ctx.destroyBuffer(this._vertexBuffer);
-    ctx.destroyBuffer(this._indexBuffer);
+    ctx.deleteBuffer(this._vertexBuffer);
+    ctx.deleteBuffer(this._indexBuffer);
     this._indices = null;
     this._vertices = null;
     this._currentShader = null;
@@ -375,7 +375,8 @@ uno.WebglGraphics.prototype.drawShape = function(transform, shape, alpha) {
         var a = transform.a, b = transform.b, c = transform.c, d = transform.d, tx = transform.tx, ty = transform.ty;
 
         while (i > 0) {
-            dest[--j] = source[--i];
+            var color = source[--i];
+            dest[--j] = color;
             y = source[--i];
             x = source[--i];
             dest[--j] = c * x + d * y + ty;

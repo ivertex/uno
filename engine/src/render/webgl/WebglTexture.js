@@ -20,6 +20,14 @@ uno.WebglTexture = function(texture) {
      */
     this._handles = {};
 
+
+    /**
+     * List of linked renders
+     * @type {Array}
+     * @private
+     */
+    this._renders = [];
+
     /**
      * Image data buffer for methods getPixels/setPixels
      * @type {ArrayBuffer}
@@ -47,31 +55,44 @@ uno.WebglTexture = function(texture) {
      * @private
      */
     this._imageData32 = null;
-
-    /**
-     * Pixel data for method getPixel
-     * @type {Uint8Array}
-     * @private
-     */
-    this._pixelData = null;
 };
 
 /**
  * Free all allocated resources and destroy texture extension
  */
 uno.WebglTexture.prototype.destroy = function() {
-    if (!this._handles)
+    var count = this._renders.length;
+    if (!count)
         return;
-    for (var id in this._handles) {
-        var render = uno.Render.renders[id];
-        var handle = this._handles[id];
+    for (var i = 0; i < count; ++i) {
+        var render = this._renders[i];
+        var handle = this._handles[render.id];
         render._removeRestore(this);
         render._context.deleteTexture(handle.texture);
         if (handle.buffer)
             render._context.deleteFramebuffer(handle.buffer);
     }
     this._handles = null;
+    this._renders = null;
+    this._imageBuffer = null;
+    this._imageData = null;
+    this._imageDataClamped = null;
+    this._imageData32 = null;
     this.texture = null;
+};
+
+/**
+ * Free only render allocated resources (used when render destroyed)
+ */
+uno.WebglTexture.prototype.destroyHandle = function(render) {
+    var handle = this._handles[render.id];
+    if (!handle)
+        return;
+    render._context.deleteTexture(handle.texture);
+    if (handle.buffer)
+        render._context.deleteFramebuffer(handle.buffer);
+    delete this._handles[render.id];
+    this._renders.splice(this._renders.indexOf(render), 1);
 };
 
 /**
@@ -132,13 +153,13 @@ uno.WebglTexture.prototype.getPixels = function(render, x, y, width, height) {
     height = height || h;
 
     if (x < 0 || y < 0 || x + width > w || y + height > h)
-        return this;
+        return null;
 
     y = h - y - height;
 
     var len = width * height * 4;
     var ctx = render._context;
-    var buffer = this.handle(render, true, true);
+    var buffer = this.handle(render, true);
 
     if (!this._imageData || this._imageData.length !== len) {
         this._imageBuffer = new ArrayBuffer(len);
@@ -219,8 +240,10 @@ uno.WebglTexture.prototype.setPixels = function(data, render, x, y, width, heigh
  * @private
  */
 uno.WebglTexture.prototype._restore = function(render) {
-    if (this._handles[render.id])
+    if (this._handles[render.id]) {
         delete this._handles[render.id];
+        this._renders.splice(this._renders.indexOf(render), 1);
+    }
 };
 
 /**
@@ -239,12 +262,15 @@ uno.WebglTexture.prototype._create = function(render) {
 
     ctx.bindTexture(ctx.TEXTURE_2D, textureHandle);
 
-    // Check is texture render target or not
-    if (texture.url) {
+    // Has texture canvas data?
+    if (uno.CanvasTexture.has(texture)) {
         ctx.pixelStorei(ctx.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-        // Here we should get image from CanvasTexture
         ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, uno.CanvasTexture.get(texture).handle());
+        // Canvas data is render buffer
+        if (!texture.url)
+            bufferHandle = this._createBuffer(ctx, textureHandle, texture.width, texture.height);
     } else {
+        // Only webgl buffer
         ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, texture.width, texture.height, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, null);
         bufferHandle = this._createBuffer(ctx, textureHandle, texture.width, texture.height);
     }
@@ -263,6 +289,7 @@ uno.WebglTexture.prototype._create = function(render) {
     ctx.bindTexture(ctx.TEXTURE_2D, null);
 
     this._handles[render.id] = { texture: textureHandle, buffer: bufferHandle, scaleMode: texture.scaleMode };
+    this._renders.push(render);
 };
 
 /**
@@ -294,4 +321,13 @@ uno.WebglTexture.get = function(texture) {
     if (!texture._extensions.webgl)
         texture._extensions.webgl = new uno.WebglTexture(texture);
     return texture._extensions.webgl;
+};
+
+/**
+ * Texture extension check
+ * @param {uno.Texture} texture
+ * @returns {Boolean}
+ */
+uno.WebglTexture.has = function(texture) {
+    return !!texture._extensions.webgl;
 };
