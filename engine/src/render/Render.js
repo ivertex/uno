@@ -106,9 +106,9 @@ uno.Render = {
 
     /**
      * @memberof uno.Render
-     * @member {Object} renders - List of all created renders
+     * @member {Array} renders - List of all created renders
      */
-    renders: {},
+    renders: [],
 
     /**
      * @memberof uno.Render

@@ -79,6 +79,7 @@ uno.Screen.prototype._initialize = function() {
             var resize = function() {
                 self.availWidth = document.documentElement.clientWidth;
                 self.availHeight = document.documentElement.clientHeight;
+
                 // TODO: Hack, need to investigate
                 if (uno.Browser.chrome || uno.Browser.safari || uno.Browser.opera)
                     self.availHeight -= 4;

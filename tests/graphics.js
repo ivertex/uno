@@ -11,6 +11,8 @@ var graphs = function(object) {
     this.points.push(new uno.Point(150, 10));
     this.points.push(new uno.Point(230, 70));
     this.points.push(new uno.Point(70, 70));
+    this.alpha = 1;
+    this.delta = 0.001;
 };
 
 graphs.id = 'graphs';
@@ -21,8 +23,10 @@ graphs.prototype.build = function(render) {
 graphs.prototype.render = function(render, deltaTime) {
     if (!this.object.transform)
         return;
-    render.alpha = 0.5;
-    //render.blend = uno.Render.BLEND_ADD;
+    this.alpha -= this.delta;
+    if (this.alpha < 0 || this.alpha > 1)
+        this.delta = -this.delta;
+    render.alpha = this.alpha;
     render.transform = this.object.transform.matrix;
     render.lineColor = this.groundColor;
     render.lineWidth = 10;

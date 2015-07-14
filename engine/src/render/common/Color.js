@@ -257,10 +257,10 @@ Object.defineProperty(uno.Color.prototype, 'hex', {
         return this._hex;
     },
     set: function(value) {
+        this.a = value > 0xFFFFFF ? (value >> 24 & 0xFF) / 255 : 1;
         this.r = (value >> 16 & 0xFF) / 255;
         this.g = (value >> 8 & 0xFF) / 255;
         this.b = (value & 0xFF) / 255;
-        this.a = 1;
         this._dirty = true;
     }
 });

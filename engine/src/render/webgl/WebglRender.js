@@ -738,7 +738,7 @@ uno.WebglRender.prototype._setupManagers = function() {
  */
 uno.WebglRender.prototype._registerRender = function() {
     this.id = uno.Render._uid++;
-    uno.Render.renders[this.id] = this;
+    uno.Render.renders.push(this);
 };
 
 /**

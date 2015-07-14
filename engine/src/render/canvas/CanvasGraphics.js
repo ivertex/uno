@@ -78,6 +78,14 @@ uno.CanvasGraphics.prototype.drawShape = function(transform, shape, alpha) {
     var emptyTransform = transform.identity();
     var itemAlpha;
 
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
+
+    if (!alpha)
+        return false;
+
     for (i = 0; i < l; ++i) {
         item = items[i];
         figure = item.shape;
@@ -122,6 +130,8 @@ uno.CanvasGraphics.prototype.drawShape = function(transform, shape, alpha) {
     this.lineWidth = savedLineWidth;
 
     render._setState(savedTransform, savedAlpha, savedBlend);
+
+    return true;
 };
 
 /**
@@ -138,6 +148,11 @@ uno.CanvasGraphics.prototype.drawShape = function(transform, shape, alpha) {
 uno.CanvasGraphics.prototype.drawLine = function(transform, x1, y1, x2, y2, alpha, blend) {
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha || !lineColor || !lineColor.a)
         return false;
@@ -175,6 +190,11 @@ uno.CanvasGraphics.prototype.drawRect = function(transform, x, y, width, height,
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha)
         return false;
@@ -214,6 +234,11 @@ uno.CanvasGraphics.prototype.drawCircle = function(transform, x, y, radius, alph
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha)
         return false;
@@ -256,6 +281,11 @@ uno.CanvasGraphics.prototype.drawEllipse = function(transform, x, y, width, heig
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha)
         return false;
@@ -316,6 +346,11 @@ uno.CanvasGraphics.prototype.drawArc = function(transform, x, y, radius, startAn
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
 
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
+
     if (!alpha)
         return false;
 
@@ -358,6 +393,11 @@ uno.CanvasGraphics.prototype.drawPoly = function(transform, points, alpha, blend
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha)
         return false;

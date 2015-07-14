@@ -174,7 +174,7 @@ uno.Mouse.prototype._callInput = function(type) {
     var renders = uno.Render.renders;
     var event = this._event;
     var prevent = false;
-    for (var i in renders) {
+    for (var i = 0, l = renders.length; i < l; ++i) {
         var render = renders[i];
         var bounds = render.bounds;
         var pointer = this._position;

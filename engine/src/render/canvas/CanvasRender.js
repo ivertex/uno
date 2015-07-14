@@ -246,9 +246,10 @@ uno.CanvasRender.prototype.resize = function(width, height) {
  * Free all allocated resources and destroy render
  */
 uno.CanvasRender.prototype.destroy = function() {
-    if (!uno.Render.renders[this.id])
+    var index = uno.Render.renders.indexOf(this);
+    if (index === -1)
         return;
-    delete uno.Render.renders[this.id];
+    uno.Render.renders.splice(index, 1);
 
     // Free managers
     this._graphics.destroy();
@@ -602,7 +603,7 @@ uno.CanvasRender.prototype._setupManagers = function() {
  */
 uno.CanvasRender.prototype._registerRender = function() {
     this.id = uno.Render._uid++;
-    uno.Render.renders[this.id] = this;
+    uno.Render.renders.push(this);
 };
 
 /**

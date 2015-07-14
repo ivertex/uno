@@ -30,7 +30,7 @@ uno.WebglGraphics = function(render) {
      * @type {Number}
      * @private
      */
-    this._maxVertexCount = 60;
+    this._maxVertexCount = 6000;
 
     /**
      * Current count of vertices in batch
@@ -68,11 +68,11 @@ uno.WebglGraphics = function(render) {
     this._positions = new Float32Array(this._vertices);
 
     /**
-     * View for tint colors array with uint32 type (for abgr pack - alpha and tint color)
+     * View for tint colors array with uint32 type (for ABGR pack - alpha and tint color)
      * @type {Uint32Array}
      * @private
      */
-    this._colors = new Uint32Array(this._vertices);
+    this._colors = new Int32Array(this._vertices);
 
     /**
      * Min size in vertices of shape (line, rect)
@@ -123,9 +123,19 @@ uno.WebglGraphics = function(render) {
      */
     this._shape = null;
 
+    /**
+     * Current shape start index at indices
+     * @type {Number}
+     * @private
+     */
     this._shapeIndex = 0;
+
+    /**
+     * Current shape start index in vertexes
+     * @type {Number}
+     * @private
+     */
     this._shapeVertex = 0;
-    this._shapeTransform = new uno.Matrix();
 
     /**
      * Current fill color
@@ -166,7 +176,6 @@ uno.WebglGraphics.prototype.destroy = function() {
     this._render = null;
     this._states = null;
     this._stateBlendModes = null;
-    this._shapeTransform = null;
     this.fillColor = null;
     this.lineColor = null;
 };
@@ -257,6 +266,7 @@ uno.WebglGraphics.prototype.endShape = function() {
     var shape = this._shape;
     if (!shape)
         return null;
+
     if (this._vertexCount - this._shapeVertex === 0) {
         this._shape = null;
         this._shapeIndex = 0;
@@ -264,13 +274,27 @@ uno.WebglGraphics.prototype.endShape = function() {
         this._shapeState = 0;
         return shape;
     }
+
     var ic = this._indexCount - this._shapeIndex;
     var vc = this._vertexCount - this._shapeVertex;
     var sc = this._stateCount - this._shapeState;
+
     shape._indices = new Uint16Array(this._indices.subarray(this._shapeIndex, ic));
-    shape._vertices = new Float32Array(this._positions.subarray(this._shapeVertex, vc * this._vertexSize));
     shape._states = new Uint16Array(this._states.subarray(this._shapeState, sc));
     shape._blends = new Uint8Array(this._stateBlendModes.subarray(this._shapeState, sc));
+
+    shape._vertices = new ArrayBuffer(vc * this._vertexSize * 4);
+    shape._colors = new Int32Array(shape._vertices);
+    shape._positions = new Float32Array(shape._vertices);
+
+    var source = this._colors;
+    var dest = shape._colors;
+    var start = this._shapeVertex;
+    var i = vc * this._vertexSize;
+
+    while (--i)
+        dest[i] = source[i - start];
+
     this._indexCount -= ic;
     this._vertexCount -= vc;
     this._stateCount -= sc;
@@ -278,6 +302,7 @@ uno.WebglGraphics.prototype.endShape = function() {
     this._shapeIndex = 0;
     this._shapeVertex = 0;
     this._shapeState = 0;
+
     return shape;
 };
 
@@ -289,10 +314,15 @@ uno.WebglGraphics.prototype.endShape = function() {
  * @returns {Boolean} - Is shape rendered
  */
 uno.WebglGraphics.prototype.drawShape = function(transform, shape, alpha) {
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
+
     if (!shape.items || !shape.items.length || !alpha)
         return false;
 
-    var i, l, source;
+    var i, j, l, source, dest;
     var emptyTransform = uno.Matrix.IDENTITY;
     var itemTransform;
     var fillColor = this.fillColor;
@@ -347,7 +377,6 @@ uno.WebglGraphics.prototype.drawShape = function(transform, shape, alpha) {
         this.flush();
 
     // Copy all indices
-    var j, dest;
     dest = this._indices;
     source = shape._indices;
     i = source.length + 1;
@@ -358,25 +387,31 @@ uno.WebglGraphics.prototype.drawShape = function(transform, shape, alpha) {
 
     // Copy all vertices
     dest = this._positions;
-    source = shape._vertices;
+    source = shape._positions;
+    var cdest = this._colors;
+    var csource = shape._colors;
+
     i = source.length;
     j = this._vertexCount + i;
     this._vertexCount = j;
 
-    // TODO: Transform alpha value if argument alpha is not equal to 1
-    if (transform.identity()) {
-        // If current matrix empty use simple copy vertices
-        while (i) {
-            dest[--j] = source[--i];
-        }
-    } else {
-        // If not, transform all vertices using current matrix
-        var x, y;
-        var a = transform.a, b = transform.b, c = transform.c, d = transform.d, tx = transform.tx, ty = transform.ty;
+    var x, y, color;
+    var a = transform.a, b = transform.b, c = transform.c, d = transform.d, tx = transform.tx, ty = transform.ty;
+    var identity = transform.identity();
 
-        while (i > 0) {
-            var color = source[--i];
-            dest[--j] = color;
+    while (i > 0) {
+        // If alpha equal 1 simple copy vertex color else multiply with vertex alpha
+        if (alpha === 1) {
+            cdest[--j] = csource[--i];
+        } else {
+            color = csource[--i];
+            cdest[--j] = color & 0x00FFFFFF | ((color >> 24 & 0xFF) / 255 * alpha) * 255 << 24;
+        }
+        // If transform is empty simple copy position else multiply with vertex position
+        if (identity) {
+            dest[--j] = source[--i];
+            dest[--j] = source[--i];
+        } else {
             y = source[--i];
             x = source[--i];
             dest[--j] = c * x + d * y + ty;
@@ -420,6 +455,11 @@ uno.WebglGraphics.prototype.drawShape = function(transform, shape, alpha) {
 uno.WebglGraphics.prototype.drawLine = function(transform, x1, y1, x2, y2, alpha, blend) {
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha || !lineWidth || !lineColor || !lineColor.a)
         return false;
@@ -498,6 +538,11 @@ uno.WebglGraphics.prototype.drawRect = function(transform, x, y, width, height, 
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha)
         return false;
@@ -632,6 +677,11 @@ uno.WebglGraphics.prototype.drawRect = function(transform, x, y, width, height, 
  * @returns {Boolean} - Is circle rendered
  */
 uno.WebglGraphics.prototype.drawCircle = function(transform, x, y, radius, alpha, blend) {
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
+
     if (!alpha)
         return false;
 
@@ -655,6 +705,11 @@ uno.WebglGraphics.prototype.drawCircle = function(transform, x, y, radius, alpha
  * @returns {Boolean} - Is ellipse rendered
  */
 uno.WebglGraphics.prototype.drawEllipse = function(transform, x, y, width, height, alpha, blend) {
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
+
     if (!alpha)
         return false;
 
@@ -683,6 +738,11 @@ uno.WebglGraphics.prototype.drawArc = function(transform, x, y, radius, startAng
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha)
         return false;
@@ -861,6 +921,11 @@ uno.WebglGraphics.prototype.drawPoly = function(transform, points, alpha, blend)
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (len < 2 || !alpha)
         return false;
@@ -1215,6 +1280,11 @@ uno.WebglGraphics.prototype._drawEllipse = function(transform, x, y, width, heig
     var fillColor = this.fillColor;
     var lineColor = this.lineColor;
     var lineWidth = this.lineWidth;
+
+    if (alpha < 0)
+        alpha = 0;
+    if (alpha > 1)
+        alpha = 1;
 
     if (!alpha)
         return false;

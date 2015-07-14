@@ -11,24 +11,25 @@ var graphs = function(object) {
     this.points.push(new uno.Point(150, 10));
     this.points.push(new uno.Point(230, 70));
     this.points.push(new uno.Point(70, 70));
+    this.alpha = 1;
+    this.delta = 0.001;
 };
 
 graphs.id = 'graphs';
 
 graphs.prototype.build = function(render) {
     render.startShape();
-    //render.alpha = 0.5;
-    render.lineColor = this.roofColor;
+    render.lineColor = this.groundColor;
     render.lineWidth = 10;
     render.drawLine(0, 200, 300, 200);
-    /*render.lineColor = this.wallColor;
+    render.lineColor = this.wallColor;
     render.fillColor = this.wallColor1;
     render.lineWidth = 5;
-    render.drawRect(90, 70, 125, 125);*/
-    /*render.lineColor = this.roofColor;
+    render.drawRect(90, 70, 125, 125);
+    render.lineColor = this.roofColor;
     render.fillColor = this.roofColor1;
-    render.drawPoly(this.points);*/
-    /*render.lineColor = uno.Color.RED;
+    render.drawPoly(this.points);
+    render.lineColor = uno.Color.RED;
     render.fillColor = uno.Color.GREEN;
     render.lineWidth = 10;
     render.blend = uno.Render.BLEND_ADD;
@@ -36,12 +37,12 @@ graphs.prototype.build = function(render) {
     render.fillColor = this.sunColor;
     render.lineWidth = 0;
     render.blend = uno.Render.BLEND_NORMAL;
-    render.drawCircle(50, 0, 30);*/
-    /*render.fillColor = null;
+    render.drawCircle(50, 0, 30);
+    render.fillColor = null;
     render.lineColor = uno.Color.BLUE;
     render.lineWidth = 30;
     render.blend = uno.Render.BLEND_ADD;
-    render.drawArc(150, 200, 200, 0, uno.Math.PI, true);*/
+    render.drawArc(150, 200, 200, 0, uno.Math.PI, true);
     this.shape = render.endShape();
 };
 
@@ -51,14 +52,16 @@ graphs.prototype.render = function(render, deltaTime) {
     if (!this.shape)
         this.build(render);
     render.transform = this.object.transform.matrix;
-    render.alpha = 0.5;
-    //render.blend = uno.Render.BLEND_ADD;
+    this.alpha -= this.delta;
+    if (this.alpha < 0 || this.alpha > 1)
+        this.delta = -this.delta;
+    render.alpha = this.alpha;
     render.drawShape(this.shape);
 };
 
 
 function create(render1, render2) {
-    window.stage = uno.Object.create();
+    window.stage = uno.Object.create(resize);
 
     var obj = uno.Object.create(uno.Transform, graphs, drag);
     obj.transform.position.set(100, 100);

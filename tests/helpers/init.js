@@ -77,6 +77,7 @@ function createPanel(active) {
         var item = panel.children[i];
         if (item.attributes[0].value === active)
             item.classList.add('active');
-        item.onclick = onClick;
+        item.addEventListener('click', onClick);
+        item.addEventListener('touchend', onClick);
     }
 }

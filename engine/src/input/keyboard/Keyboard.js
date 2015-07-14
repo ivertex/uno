@@ -188,7 +188,7 @@ uno.Keyboard.prototype._callInput = function(type, key, char) {
     var renders = uno.Render.renders;
     var event = this._event;
     event._set(type, key, char, this._alt, this._control, this._shift, this._command);
-    for (var i in renders) {
+    for (var i = 0, l = renders.length; i < l; ++i) {
         var render = renders[i];
         if (render.root)
             render.root.input(event, render);
