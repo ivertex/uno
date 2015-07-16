@@ -370,6 +370,7 @@ uno.CanvasGraphics.prototype.drawArc = function(transform, x, y, radius, startAn
     var ctx = this._render._context;
     ctx.beginPath();
     ctx.arc(x, y, radius, startAngle, endAngle, antiClockwise);
+
     if (fillColor && fillColor.a)
         ctx.fill();
     if (lineWidth && lineColor && lineColor.a)
@@ -417,10 +418,13 @@ uno.CanvasGraphics.prototype.drawPoly = function(transform, points, alpha, blend
     var ctx = this._render._context;
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
+
     for (var i = 1, l = points.length; i < l; ++i)
         ctx.lineTo(points[i].x, points[i].y);
+
     if (points[0].equal(points[i - 1]))
         ctx.closePath();
+
     if (fillColor && fillColor.a)
         ctx.fill();
     if (lineWidth && lineColor && lineColor.a)

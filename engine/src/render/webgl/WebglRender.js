@@ -317,7 +317,7 @@ uno.WebglRender.prototype.clear = function(color) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
-    if (!texture.ready || !this._currentAlpha)
+    if (!texture ||  !texture.ready || !this._currentAlpha)
         return this;
 
     if (!texture.pot && frame && (frame.width > texture.width || frame.height > texture.height)) {
@@ -326,7 +326,7 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
     }
 
     this._graphics.flush();
-    this._batch.render(this._currentTransform, uno.WebglTexture.get(texture),
+    this._batch.draw(this._currentTransform, uno.WebglTexture.get(texture),
         frame ? frame.x : 0, frame ? frame.y : 0,
         frame ? frame.width / texture.width : 1, frame ? frame.height / texture.height : 1,
         this._currentAlpha, this._currentBlendMode, tint || uno.Color.WHITE);
@@ -468,9 +468,61 @@ uno.WebglRender.prototype.endShape = function() {
  * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
  */
 uno.WebglRender.prototype.getPixels = function(texture, x, y, width, height) {
+    var w = texture ? texture.width : this.width;
+    var h = texture ? texture.height : this.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return null;
+
     this._graphics.flush();
     this._batch.flush();
-    return uno.WebglTexture.get(texture).getPixels(this, x, y, width, height);
+
+    y = h - y - height;
+
+    var source = texture ? uno.WebglTexture.get(texture) : this;
+
+    if (!source._imageData || source._imageData.length !== width * height * 4) {
+        source._imageBuffer = new ArrayBuffer(width * height * 4);
+        source._imageData = new Uint8Array(source._imageBuffer);
+        source._imageDataClamped = new Uint8ClampedArray(source._imageBuffer);
+        source._imageData32 = new Uint32Array(source._imageBuffer);
+    }
+
+    var ctx = this._context;
+
+    if (texture || this._target)
+        ctx.bindFramebuffer(ctx.FRAMEBUFFER, texture ? source.handle(this, true) : null);
+    if (texture)
+        ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, source.handle(this), 0);
+    ctx.readPixels(x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, source._imageData);
+
+    var target = this._target;
+    if (target === null)
+        ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+    else
+        this.target = target;
+
+    // Flip by Y
+    if (height > 1) {
+        var tmp = 0;
+        var data = source._imageData32;
+
+        h = height * 0.5;
+        for (y = 0; y < h; ++y) {
+            for (x = 0; x < width; ++x) {
+                tmp = data[y * width + x];
+                data[y * width + x] = data[(height - y - 1) * width + x];
+                data[(height - y - 1) * width + x] = tmp;
+            }
+        }
+    }
+
+    return source._imageDataClamped;
 };
 
 /**
@@ -484,7 +536,38 @@ uno.WebglRender.prototype.getPixels = function(texture, x, y, width, height) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.setPixels = function(texture, data, x, y, width, height) {
-    uno.WebglTexture.get(texture).setPixels(data, this, x, y, width, height);
+    if (!texture) {
+        uno.error('Set pixels to screen not supported, try to use texture');
+        return this;
+    }
+
+    var w = texture.width;
+    var h = texture.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (!data || width * height * 4 !== data.length)
+        return this;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return this;
+
+    y = h - y - height;
+
+    var tex = uno.WebglTexture.get(texture);
+
+    if (data !== tex._imageDataClamped)
+        tex._imageDataClamped.set(data);
+
+    var ctx = this._context;
+    ctx.bindTexture(ctx.TEXTURE_2D, tex.handle(this));
+    ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
+    ctx.texSubImage2D(ctx.TEXTURE_2D, 0, x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, tex._imageData);
+    ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, false);
+
     return this;
 };
 

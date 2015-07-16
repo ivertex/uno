@@ -323,7 +323,7 @@ uno.CanvasRender.prototype.clear = function(color) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint) {
-    if (!texture.ready || !this._currentAlpha)
+    if (!texture || !texture.ready || !this._currentAlpha)
         return this;
 
     this._setState(this._currentTransform, this._currentAlpha, this._currentBlendMode, texture.scaleMode);
@@ -445,7 +445,7 @@ uno.CanvasRender.prototype.drawPoly = function(points) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.drawShape = function(shape) {
-    this._graphics.drawShape(this._currentTransform, shape, this._currentAlpha, this._currentBlendMode);
+    this._graphics.drawShape(this._currentTransform, shape, this._currentAlpha);
     return this;
 };
 
@@ -475,7 +475,25 @@ uno.CanvasRender.prototype.endShape = function() {
  * @returns {Uint8ClampedArray} - Don't save data, it is internal buffer, copy if need
  */
 uno.CanvasRender.prototype.getPixels = function(texture, x, y, width, height) {
-    return uno.CanvasTexture.get(texture).getPixels(x, y, width, height);
+    var w = texture ? texture.width : this.width;
+    var h = texture ? texture.height : this.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return null;
+
+    var source = texture ? uno.CanvasTexture.get(texture) : this;
+
+    if (texture)
+        source._imageData = source.context().getImageData(x, y, width, height);
+    else
+        source._imageData = this._context.getImageData(x, y, width, height);
+
+    return source._imageData.data;
 };
 
 /**
@@ -489,7 +507,37 @@ uno.CanvasRender.prototype.getPixels = function(texture, x, y, width, height) {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.setPixels = function(texture, data, x, y, width, height) {
-    uno.CanvasTexture.get(texture).setPixels(data, x, y, width, height);
+    if (!texture) {
+        uno.error('Set pixels to screen not supported, try to use texture');
+        return this;
+    }
+
+    var w = texture.width;
+    var h = texture.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (!data || width * height * 4 !== data.length)
+        return this;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return this;
+
+    texture = uno.CanvasTexture.get(texture);
+
+    var idata = texture._imageData;
+
+    if (!idata)
+        idata = texture._imageData = texture.context().getImageData(x, y, width, height);
+
+    if (idata.data !== data)
+        idata.data.set(data);
+
+    texture.context().putImageData(idata, x, y);
+
     return this;
 };
 

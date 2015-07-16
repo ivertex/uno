@@ -9,6 +9,7 @@ var target = function(object) {
     this.filterOffset = 0.001;
     //this.matrix.rotate(uno.Math.HALF_PI);
     //this.matrix.translate(300, 300);
+    this.data = new Uint8Array(4);
 };
 
 target.id = 'target';
@@ -53,6 +54,13 @@ target.prototype.render = function(render) {
     //render.fillColor = uno.Color.RED;
     render.transform = this.object.transform.matrix;
     render.drawTexture(this.filter ? this.target : this.texture);
+
+    if (render.type === uno.Render.RENDER_WEBGL) {
+        render._batch.flush();
+        //render._context.readPixels(uno.Mouse.x, render.height - uno.Mouse.y, 1, 1, render._context.RGBA, render._context.UNSIGNED_BYTE, this.data);
+        //console.log(this.data);
+
+    }
 };
 
 target.prototype.input = function(event) {

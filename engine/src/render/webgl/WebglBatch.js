@@ -177,7 +177,7 @@ uno.WebglBatch.prototype._restore = function() {
  * @param {Number} blend - Texture blend mode
  * @param {uno.Color} tint - The texture tint color
  */
-uno.WebglBatch.prototype.render = function(transform, texture, x, y, width, height, alpha, blend, tint) {
+uno.WebglBatch.prototype.draw = function(transform, texture, x, y, width, height, alpha, blend, tint) {
     var tw = texture.texture.width;
     var th = texture.texture.height;
     var render = this._render;

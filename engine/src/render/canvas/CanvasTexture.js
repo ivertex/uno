@@ -110,68 +110,6 @@ uno.CanvasTexture.prototype.pattern = function(render, tint) {
 };
 
 /**
- * Get or set texture pixels
- * @param {Number} [x=0] - The x-coordinate of the extracted rect
- * @param {Number} [y=0] - The y-coordinate of the extracted rect
- * @param {Number} [width=Texture width] - The width of the extracted rect
- * @param {Number} [height=Texture height] - The height of the extracted rect
- * @returns {Uint8ClampedArray}
- */
-uno.CanvasTexture.prototype.getPixels = function(x, y, width, height) {
-    var w = this.texture.width;
-    var h = this.texture.height;
-
-    x = x || 0;
-    y = y || 0;
-    width = width || w;
-    height = height || h;
-
-    if (x < 0 || y < 0 || x + width > w || y + height > h)
-        return null;
-
-    this._imageData = this.context().getImageData(x, y, width, height);
-
-    return this._imageData.data;
-};
-
-/**
- * Get or set texture pixels
- * @param {Uint8ClampedArray} data - Pixels data
- * @param {Number} [x=0] - The x-coordinate of the extracted rect
- * @param {Number} [y=0] - The y-coordinate of the extracted rect
- * @param {Number} [width=Texture width] - The width of the extracted rect
- * @param {Number} [height=Texture height] - The height of the extracted rect
- * @returns {uno.CanvasTexture} - <code>this</code>
- */
-uno.CanvasTexture.prototype.setPixels = function(data, x, y, width, height) {
-    var w = this.texture.width;
-    var h = this.texture.height;
-
-    x = x || 0;
-    y = y || 0;
-    width = width || w;
-    height = height || h;
-
-    if (!data || width * height * 4 !== data.length)
-        return this;
-
-    if (x < 0 || y < 0 || x + width > w || y + height > h)
-        return this;
-
-    var idata = this._imageData;
-
-    if (!idata)
-        idata = this._imageData = this.context().getImageData(x, y, width, height);
-
-    if (idata.data !== data)
-        idata.data.set(data);
-
-    this.context().putImageData(idata, x, y);
-
-    return this;
-};
-
-/**
  * Load texture
  * @param {String} url - URL of the image
  * @param {Function} complete - Call function after load
@@ -202,6 +140,68 @@ uno.CanvasTexture.prototype.load = function(url, complete, cache) {
     });
     source.src = url;
     return source;
+};
+
+/**
+ * Get or set texture pixels
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
+ * @returns {Uint8ClampedArray}
+ */
+uno.CanvasTexture.getPixels = function(x, y, width, height) {
+    var w = this.texture.width;
+    var h = this.texture.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return null;
+
+    this._imageData = this.context().getImageData(x, y, width, height);
+
+    return this._imageData.data;
+};
+
+/**
+ * Get or set texture pixels
+ * @param {Uint8ClampedArray} data - Pixels data
+ * @param {Number} [x=0] - The x-coordinate of the extracted rect
+ * @param {Number} [y=0] - The y-coordinate of the extracted rect
+ * @param {Number} [width=Texture width] - The width of the extracted rect
+ * @param {Number} [height=Texture height] - The height of the extracted rect
+ * @returns {uno.CanvasTexture} - <code>this</code>
+ */
+uno.CanvasTexture.setPixels = function(data, x, y, width, height) {
+    var w = this.texture.width;
+    var h = this.texture.height;
+
+    x = x || 0;
+    y = y || 0;
+    width = width || w;
+    height = height || h;
+
+    if (!data || width * height * 4 !== data.length)
+        return this;
+
+    if (x < 0 || y < 0 || x + width > w || y + height > h)
+        return this;
+
+    var idata = this._imageData;
+
+    if (!idata)
+        idata = this._imageData = this.context().getImageData(x, y, width, height);
+
+    if (idata.data !== data)
+        idata.data.set(data);
+
+    this.context().putImageData(idata, x, y);
+
+    return this;
 };
 
 /**
