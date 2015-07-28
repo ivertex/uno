@@ -11,7 +11,7 @@ uno.CanvasGraphics = function(render) {
     this._shapeFillColor = new uno.Color();
     this._shapeLineColor = new uno.Color();
 
-    var defaults = uno.Render.DEFAULT_GRAPHICS;
+    var defaults = uno.Render.DEFAULT;
     this.fillColor = defaults.fillColor.clone();
     this.lineColor = defaults.lineColor.clone();
     this.lineWidth = defaults.lineWidth;
@@ -438,7 +438,7 @@ uno.CanvasGraphics.prototype.drawPoly = function(transform, points, alpha, blend
  * @private
  */
 uno.CanvasGraphics.prototype._resetState = function() {
-    var defaults = uno.Render.DEFAULT_GRAPHICS;
+    var defaults = uno.Render.DEFAULT;
     this._setState(defaults.fillColor, defaults.lineColor, defaults.lineWidth);
     this._currentFillColor.set(defaults.fillColor);
     this._currentLineColor.set(defaults.lineColor);

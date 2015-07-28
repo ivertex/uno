@@ -1,6 +1,6 @@
 /**
  * WebGL render
- * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
+ * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @constructor
  */
 uno.WebglRender = function(settings) {
@@ -282,7 +282,7 @@ uno.WebglRender.prototype.destroy = function() {
 
 /**
  * Clear viewport with color
- * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
+ * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.background} used
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.clear = function(color) {
@@ -291,17 +291,15 @@ uno.WebglRender.prototype.clear = function(color) {
 
     var ctx = this._context;
 
-    if (this._transparent) {
-        ctx.clearColor(0, 0, 0, 0);
+    if (!color)
+        color = this.background;
+
+    if (!color) {
+        ctx.colorMask(false, false, false, false);
         ctx.clear(ctx.COLOR_BUFFER_BIT);
+        ctx.colorMask(true, true, true, true);
         return this;
     }
-
-    if (!color)
-        color = this.clearColor;
-
-    if (!color || !color.a)
-        return this;
 
     ctx.clearColor(color.r, color.g, color.b, color.a);
     ctx.clear(ctx.COLOR_BUFFER_BIT);
@@ -640,25 +638,31 @@ uno.WebglRender.prototype._loseContext = function(restoreAfter) {
 
 /**
  * Initialize settings properties helper
- * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
+ * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @private
  */
 uno.WebglRender.prototype._setupSettings = function(settings) {
-    var def = uno.Render.DEFAULT_SETTINGS;
+    var def = uno.Render.DEFAULT;
+
     if (!settings.canvas)
-        return uno.error('Can\'t create render, settings.canvas is not defined');
-    this.clearColor = settings.clearColor ? settings.clearColor.clone() : def.clearColor.clone();
+        return uno.error('Can not create render, settings.canvas is not defined');
+
+    if (settings.background === false)
+        this.background = false;
+    else
+        this.background = settings.background === undefined ? def.background.clone() : settings.background.clone();
+
     this.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
     this.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
+
     this._canvas = settings.canvas;
-    this._transparent = settings.transparent !== undefined ? !!settings.transparent : def.transparent;
-    this._autoClear = settings.autoClear !== undefined ? !!settings.autoClear : def.autoClear;
-    this._antialias = settings.antialias !== undefined ? !!settings.antialias : def.antialias;
+
     if (uno.Browser.ie) {
         this._canvas.style['-ms-content-zooming'] = 'none';
         this._canvas.style['-ms-touch-action'] = 'none';
     }
-    if (!this._contextMenu)
+
+    if (!settings.contextMenu)
         this._canvas.oncontextmenu = function() { return false; };
 };
 
@@ -768,12 +772,13 @@ uno.WebglRender.prototype._updateBounds = function() {
 uno.WebglRender.prototype._createContext = function() {
     var options = {
         depth: false,
-        alpha: this._transparent,
-        premultipliedAlpha: this._transparent,
-        antialias: this._antialias,
+        antialias: true,
         stencil: false,
-        preserveDrawingBuffer: !this.autoClear
+        alpha: this.background === false || !this.background.a,
+        premultipliedAlpha: true,
+        preserveDrawingBuffer: this.background === false
     };
+
     var error = 'This browser does not support webGL. Try using the canvas render';
     try {
         this._context = this._canvas.getContext('experimental-webgl', options) ||
@@ -783,12 +788,15 @@ uno.WebglRender.prototype._createContext = function() {
     }
     if (!this._context)
         return uno.error(error);
+
     var ctx = this._context;
     ctx.disable(ctx.DEPTH_TEST);
     ctx.disable(ctx.CULL_FACE);
     ctx.enable(ctx.BLEND);
     ctx.colorMask(true, true, true, true);
+
     uno.WebglRender._initBlendModes(ctx);
+
     this._currentShader = null;
     this._setBlendMode();
     this._restore();
@@ -797,7 +805,7 @@ uno.WebglRender.prototype._createContext = function() {
 
 /**
  * Initialize viewport size
- * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
+ * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @private
  */
 uno.WebglRender.prototype._setupViewport = function(settings) {
@@ -872,13 +880,12 @@ uno.WebglRender.prototype._resetState = function() {
     this.alpha = 1;
     this.blend = uno.Render.BLEND_NORMAL;
 
-    var defaults = uno.Render.DEFAULT_GRAPHICS;
+    var defaults = uno.Render.DEFAULT;
     this.fillColor = defaults.fillColor;
     this.lineColor = defaults.lineColor;
     this.lineWidth = defaults.lineWidth;
 
-    if (this._autoClear)
-        this.clear();
+    this.clear();
 };
 
 /**

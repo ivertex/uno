@@ -142,21 +142,21 @@ uno.WebglGraphics = function(render) {
      * @type {uno.Color}
      * @private
      */
-    this.fillColor = uno.Render.DEFAULT_GRAPHICS.fillColor.clone();
+    this.fillColor = uno.Render.DEFAULT.fillColor.clone();
 
     /**
      * Current line color
      * @type {uno.Color}
      * @private
      */
-    this.lineColor = uno.Render.DEFAULT_GRAPHICS.lineColor.clone();
+    this.lineColor = uno.Render.DEFAULT.lineColor.clone();
 
     /**
      * Current line width
      * @type {uno.Color}
      * @private
      */
-    this.lineWidth = uno.Render.DEFAULT_GRAPHICS.lineWidth;
+    this.lineWidth = uno.Render.DEFAULT.lineWidth;
 
     this._restore();
     render._addRestore(this);

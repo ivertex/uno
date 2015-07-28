@@ -1,118 +1,107 @@
 /**
  * Render creation module
- * @namespace
+ * @namespace uno.Render
  */
 uno.Render = {
 
     /**
-     * @memberof uno.Render
-     * @member {Number} RENDER_CANVAS - Canvas mode rendering
+     * Canvas mode rendering
+     * @const {Number}
      */
     RENDER_CANVAS: 1,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} RENDER_WEBGL - WebGL mode rendering
+     * WebGL mode rendering
+     * @const {Number}
      */
     RENDER_WEBGL: 2,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} SCALE_DEFAULT - Default texture scaling mode
+     * Default texture scaling mode
+     * @const {Number}
      */
     SCALE_DEFAULT: 0,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} SCALE_LINEAR - Smooth texture scaling mode
+     * Smooth texture scaling mode
+     * @const {Number}
      */
     SCALE_LINEAR: 0,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} SCALE_NEAREST - Pixelating texture scaling mode
+     * Pixelating texture scaling mode
+     * @const {Number}
      */
     SCALE_NEAREST: 1,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} BLEND_NONE - Normal blend mode with optimization for opaque textures in GL mode
+     * Normal blend mode with optimization for opaque textures in GL mode
+     * @const {Number}
      */
     BLEND_NONE: 0,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} BLEND_NORMAL - This is the standard blend mode which uses the top layer alone, without mixing its colors with the layer beneath it
+     * This is the standard blend mode which uses the top layer alone, without mixing its colors with the layer beneath it
+     * @const {Number}
      */
     BLEND_NORMAL: 1,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} BLEND_ADD - This blend mode simply adds pixel values of one layer with the other
+     * This blend mode simply adds pixel values of one layer with the other
+     * @const {Number}
      */
     BLEND_ADD: 2,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} BLEND_MULTIPLY - This blend mode multiplies the numbers for each pixel of the top layer with the corresponding pixel for the bottom layer
+     * This blend mode multiplies the numbers for each pixel of the top layer with the corresponding pixel for the bottom layer
+     * @const {Number}
      */
     BLEND_MULTIPLY: 3,
 
     /**
-     * @memberof uno.Render
-     * @member {Number} BLEND_SCREEN - This blend mode inverts both layers, multiplies them, and then inverts that result
+     * This blend mode inverts both layers, multiplies them, and then inverts that result
+     * @const {Number}
      */
     BLEND_SCREEN: 4,
 
     /**
-     * @memberof uno.Render
-     * @member {Object} DEFAULT_SETTINGS - Default rates for render creation
-     * @property {Boolean} antialias - Enable antialiasing while rendering
-     * @property {Boolean} transparent - Enable transparent background in browser mode
-     * @property {Boolean} autoClear - Enable clearing viewport every frame
-     * @property {uno.Color} clearColor - Color for clearing viewport
+     * Default settings for render
+     * @const {Object}
+     * @property {uno.Color} background - Color for clearing viewport
      * @property {Number} width - Width of render viewport (0 - fullscreen)
      * @property {Number} height - Height of render viewport (0 - fullscreen)
      * @property {Number} fps - Maximum frame per second (0 - stop rendering)
      * @property {Number} ups - Maximum updates per second (0 - stop updating)
-     * @property {Object} canvas - For browser mode canvas element for render
+     * @property {uno.Color} fillColor - Default fill color
+     * @property {uno.Color} lineColor - Default line color
+     * @property {Number} lineWidth - Default line width
+     * @property {HTMLCanvasElement} canvas - For browser mode canvas element for render
+     * @property {Object|String} container - For browser mode ID or HTML element to add new canvas to it if settings.canvas is null
      * @property {Boolean} contextMenu - For browser mode disable or enable right click context menu
      */
-    DEFAULT_SETTINGS: {
-        antialias: true,
-        transparent: false,
-        autoClear: true,
-        clearColor: uno.Color.WHITE.clone(),
+    DEFAULT: {
+        background: uno.Color.WHITE.clone(),
         width: 0,
         height: 0,
         fps: 60,
         ups: 60,
+        fillColor: uno.Color.WHITE.clone(),
+        lineColor: uno.Color.BLACK.clone(),
+        lineWidth: 1,
         canvas: null,
+        container: null,
         contextMenu: false
     },
 
     /**
-     * @memberof uno.Render
-     * @member {Object} DEFAULT_GRAPHICS - Default settings for rendering graphics
-     * @property {uno.Color} fillColor - Default fill color
-     * @property {uno.Color} lineColor - Default line color
-     * @property {Number} lineWidth - Default line width
-     */
-    DEFAULT_GRAPHICS: {
-        fillColor: uno.Color.WHITE.clone(),
-        lineColor: uno.Color.BLACK.clone(),
-        lineWidth: 1
-    },
-
-    /**
-     * @memberof uno.Render
-     * @member {Array} renders - List of all created renders
+     * List of all created renders
+     * @type {Array}
      */
     renders: [],
 
     /**
-     * @memberof uno.Render
-     * @member {Number} _uid - Counter for render unique id
+     * Counter for render unique id
+     * @type {Number}
      * @private
      */
     _uid: 0
@@ -121,10 +110,7 @@ uno.Render = {
 /**
  * Create new render with settings
  * @param {Object} settings - Settings for the new render<br>
- *     See uno.Render.DEFAULT_SETTINGS<br>
- *     Also settings extended with:<br>
- *     settings.container - HTML element to add new canvas to it if settings.canvas is null<br>
- *     settings.containerId - ID for HTML element to add new canvas to it if settings.canvas is null<br>
+ *     See uno.Render.DEFAULT<br>
  * @returns {uno.CanvasRender|uno.WebglRender}
  */
 uno.Render.create = function(settings) {
@@ -133,12 +119,10 @@ uno.Render.create = function(settings) {
     var mode = settings.mode || false;
 
     if (uno.Browser.any) {
-        var def = uno.Render.DEFAULT_SETTINGS;
+        var def = uno.Render.DEFAULT;
 
         setts.antialias = settings.antialias === undefined ? def.antialias : settings.antialias;
-        setts.transparent = settings.transparent === undefined ? def.transparent : settings.transparent;
-        setts.autoClear = settings.autoClear === undefined ? def.autoClear : settings.autoClear;
-        setts.clearColor = settings.clearColor === undefined ? def.clearColor.clone() : settings.clearColor.clone();
+        setts.background = settings.background === undefined ? def.background : settings.background;
         setts.width = settings.width || (def.width || uno.Screen.availWidth);
         setts.height = settings.height || (def.height || uno.Screen.availHeight);
         setts.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
@@ -148,10 +132,10 @@ uno.Render.create = function(settings) {
         if (!settings.canvas) {
             var canvas = document.createElement('canvas');
 
-            if (settings.containerId) {
-                document.getElementById(settings.containerId).appendChild(canvas);
-            } else if (settings.container) {
+            if (settings.container instanceof Object) {
                 settings.container.appendChild(canvas);
+            } else if (settings.container instanceof String) {
+                document.getElementById(settings.container).appendChild(canvas);
             } else {
                 document.body.appendChild(canvas);
             }

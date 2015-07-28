@@ -253,6 +253,7 @@ uno.Keyboard.DOWN = 201;
 
 /**
  * Key constants
+ * TODO: fix this docs
  * @readonly
  * @property {Number} A - 'A' button key code
  * @property {Number} B - 'B' button key code

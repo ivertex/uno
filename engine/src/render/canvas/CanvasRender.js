@@ -1,6 +1,6 @@
 /**
  * Canvas render
- * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
+ * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @constructor
  */
 uno.CanvasRender = function(settings) {
@@ -278,16 +278,16 @@ uno.CanvasRender.prototype.clear = function(color) {
     var ctx = this._context;
     var transform;
 
-    if (this._transparent) {
+    if (!color)
+        color = this.background;
+
+    if (color && !color.a) {
         transform = this._clearTransform.set(this._currentTransform);
         ctx.clearRect(0, 0, this._width, this._height);
         return this;
     }
 
     if (!color)
-        color = this.clearColor;
-
-    if (!color || !color.a)
         return this;
 
     transform = this._clearTransform.set(this._currentTransform);
@@ -465,6 +465,32 @@ uno.CanvasRender.prototype.endShape = function() {
     return this._graphics.endShape();
 };
 
+uno.CanvasRender.prototype.startMask = function() {
+    if (!this._maskBuffer) {
+        this._maskBuffer = new uno.Texture(this._width, this._height);
+        this._maskCount = 1;
+    } else {
+        ++this._maskCount;
+    }
+    this.target = this._maskBuffer;
+    if (this._maskCount === 1) {
+        this.clear(uno.Color.TRANSPARENT);
+        this._context.globalCompositeOperation = 'source-over';
+    } else
+        this._context.globalCompositeOperation = 'source-in';
+};
+
+uno.CanvasRender.prototype.clearMask = function() {
+    if (!this._maskBuffer || !this._maskCount)
+        return;
+    this._context.globalCompositeOperation = 'source-over';
+    this.target = null;
+    this._maskCount = 0;
+    this._setState(uno.Matrix.IDENTITY);
+    this.drawTexture(this._maskBuffer);
+    this._setState(this._currentTransform);
+};
+
 /**
  * Get texture pixels
  * @param {uno.Texture} texture - The texture to process
@@ -543,29 +569,31 @@ uno.CanvasRender.prototype.setPixels = function(texture, data, x, y, width, heig
 
 /**
  * Initialize settings properties helper
- * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
+ * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @private
  */
 uno.CanvasRender.prototype._setupSettings = function(settings) {
-    var def = uno.Render.DEFAULT_SETTINGS;
+    var def = uno.Render.DEFAULT;
 
     if (!settings.canvas)
         return uno.error('Can not create render, settings.canvas is not defined');
 
-    this.clearColor = settings.clearColor ? settings.clearColor.clone() : def.clearColor.clone();
+    if (settings.background === false)
+        this.background = false;
+    else
+        this.background = settings.background === undefined ? def.background.clone() : settings.background.clone();
+
     this.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
     this.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
+
     this._displayCanvas = this._canvas = settings.canvas;
-    this._transparent = settings.transparent !== undefined ? !!settings.transparent : def.transparent;
-    this._autoClear = settings.autoClear !== undefined ? !!settings.autoClear : def.autoClear;
-    this._antialias = settings.antialias !== undefined ? !!settings.antialias : def.antialias;
 
     if (uno.Browser.ie) {
         this._canvas.style['-ms-content-zooming'] = 'none';
         this._canvas.style['-ms-touch-action'] = 'none';
     }
 
-    if (!this._contextMenu)
+    if (!settings.contextMenu)
         this._canvas.oncontextmenu = function() { return false; };
 };
 
@@ -628,7 +656,7 @@ uno.CanvasRender.prototype._createContext = function() {
 
 /**
  * Initialize viewport size
- * @param {Object} settings - See {@link uno.Render.DEFAULT_SETTINGS}
+ * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @private
  */
 uno.CanvasRender.prototype._setupViewport = function(settings) {
@@ -709,7 +737,7 @@ uno.CanvasRender.prototype._resetState = function() {
     if (this._graphics)
         this._graphics._resetState();
 
-    if (this._autoClear)
+    if (this.background)
         this.clear();
 };
 

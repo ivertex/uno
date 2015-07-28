@@ -51,7 +51,7 @@ uno.CanvasTinter._cacheTextures = [];
  * Tint texture in canvas mode that not supported it native
  * @param {uno.CanvasTexture} canvasTexture - Source texture
  * @param {uno.Color} color - Tint color
- * @returns {canvas} - Result tinted texture
+ * @returns {HTMLCanvasElement} - Result tinted texture
  */
 uno.CanvasTinter.tint = function(canvasTexture, color) {
     if (color.equal(uno.Color.WHITE))
@@ -126,7 +126,7 @@ uno.CanvasTinter._checkCache = function() {
 /**
  * Tint texture using multiply blend mode
  * @param {CanvasRenderingContext2D} ctx - Canvas context
- * @param {canvas} image - Source image
+ * @param {HTMLCanvasElement} image - Source image
  * @param {uno.Color} color - Tint color
  * @private
  */
@@ -142,7 +142,7 @@ uno.CanvasTinter._tintMultiply = function(ctx, image, color) {
 /**
  * Tint texture using per pixel method (slow)
  * @param {CanvasRenderingContext2D} ctx - Canvas context
- * @param {canvas} image - Source image
+ * @param {HTMLCanvasElement} image - Source image
  * @param {uno.Color} color - Tint color
  * @private
  */

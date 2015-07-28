@@ -3,10 +3,10 @@ function createRenders(render1, render2, type) {
         container: document.body,
         width: uno.Screen.availWidth,
         height: uno.Screen.availHeight,
-        transparent: false,
-        autoClear: true,
-        clearColor: new uno.Color(0, 0.5, 0.5),
-        fps: 60
+        fps: 60,
+        //background: false
+        //background: new uno.Color(0, 0, 0, 0)
+        background: new uno.Color(0, 0.5, 0.5)
     };
 
     window.render1 = render1;
