@@ -204,3 +204,13 @@ uno.Texture.load = function(url, complete, cache) {
     texture.load(url, complete, cache);
     return texture;
 };
+
+/**
+ * Create and load texture from URL
+ * @param {Number} width - Width of the texture
+ * @param {Number} height - Height of the texture
+ * @returns {uno.Texture} - New texture
+ */
+uno.Texture.create = function(width, height) {
+    return new uno.Texture(width, height);
+};

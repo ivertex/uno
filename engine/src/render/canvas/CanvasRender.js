@@ -230,6 +230,8 @@ uno.CanvasRender.prototype.resize = function(width, height) {
     this._height = height;
     this._canvas.width = width;
     this._canvas.height = height;
+    this._clip.set(0, 0, width, height);
+
     this._updateBounds();
 
     // Canvas context is reset we should set states
@@ -261,7 +263,7 @@ uno.CanvasRender.prototype.destroy = function() {
     this._displayCanvas = null;
     this._displayContext = null;
     this._currentTransform = null;
-    this._clearTransform = null;
+    this._tempTransform = null;
     this._bounds = null;
     this._boundsScroll = null;
     this._frameBind = null;
@@ -282,7 +284,7 @@ uno.CanvasRender.prototype.clear = function(color) {
         color = this.background;
 
     if (color && !color.a) {
-        transform = this._clearTransform.set(this._currentTransform);
+        transform = this._tempTransform.set(this._currentTransform);
         ctx.clearRect(0, 0, this._width, this._height);
         return this;
     }
@@ -290,7 +292,7 @@ uno.CanvasRender.prototype.clear = function(color) {
     if (!color)
         return this;
 
-    transform = this._clearTransform.set(this._currentTransform);
+    transform = this._tempTransform.set(this._currentTransform);
     var alpha = this._currentAlpha;
     var blend = this._currentBlendMode;
     var line = ctx.lineWidth;
@@ -311,6 +313,46 @@ uno.CanvasRender.prototype.clear = function(color) {
         ctx.fillStyle = fill;
 
     this._setState(transform, alpha, blend);
+
+    return this;
+};
+
+/**
+ * Clip viewport rect
+ * @param {Number} x - The x-coordinate of the left-top point of the clip rect
+ * @param {Number} y - The y-coordinate of the left-top point of the clip rect
+ * @param {Number} width - The clip rectangle width
+ * @param {Number} height - The clip rectangle height
+ * @returns {uno.CanvasRender}
+ */
+uno.CanvasRender.prototype.clip = function(x, y, width, height) {
+    var ctx = this._context;
+    var clip = this._clip;
+    var full = clip.x === 0 && clip.y === 0 && clip.width === this._width && clip.height === this._height;
+
+    if (clip.x === x && clip.y === y && clip.width === width && clip.height === height) {
+        return this;
+    }
+
+    if (x === undefined || x === false) {
+        if (full)
+            return this;
+        clip.set(0, 0, this._width, this._height);
+        ctx.restore();
+        this._setState(this._currentTransform, this._currentAlpha, this._currentBlendMode, this._currentScaleMode, true);
+        return this;
+    }
+
+    if (!full) {
+        ctx.restore();
+        this._setState(this._currentTransform, this._currentAlpha, this._currentBlendMode, this._currentScaleMode, true);
+    }
+
+    clip.set(x, y, width, height);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.clip();
 
     return this;
 };
@@ -465,32 +507,6 @@ uno.CanvasRender.prototype.endShape = function() {
     return this._graphics.endShape();
 };
 
-uno.CanvasRender.prototype.startMask = function() {
-    if (!this._maskBuffer) {
-        this._maskBuffer = new uno.Texture(this._width, this._height);
-        this._maskCount = 1;
-    } else {
-        ++this._maskCount;
-    }
-    this.target = this._maskBuffer;
-    if (this._maskCount === 1) {
-        this.clear(uno.Color.TRANSPARENT);
-        this._context.globalCompositeOperation = 'source-over';
-    } else
-        this._context.globalCompositeOperation = 'source-in';
-};
-
-uno.CanvasRender.prototype.clearMask = function() {
-    if (!this._maskBuffer || !this._maskCount)
-        return;
-    this._context.globalCompositeOperation = 'source-over';
-    this.target = null;
-    this._maskCount = 0;
-    this._setState(uno.Matrix.IDENTITY);
-    this.drawTexture(this._maskBuffer);
-    this._setState(this._currentTransform);
-};
-
 /**
  * Get texture pixels
  * @param {uno.Texture} texture - The texture to process
@@ -604,7 +620,7 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
 uno.CanvasRender.prototype._setupProps = function() {
     this._currentTransform = new uno.Matrix();
     this._contextTransform = new uno.Matrix();
-    this._clearTransform = new uno.Matrix();
+    this._tempTransform = new uno.Matrix();
     this._currentBlendMode = uno.Render.BLEND_NORMAL;
     this._contextBlendMode = uno.Render.BLEND_NORMAL;
     this._currentScaleMode = uno.Render.SCALE_DEFAULT;
@@ -612,6 +628,7 @@ uno.CanvasRender.prototype._setupProps = function() {
     this._currentAlpha = 1;
     this._contextAlpha = 1;
     this._target = null;
+    this._clip = new uno.Rect(0, 0, this._width, this._height);
 };
 
 /**
@@ -739,6 +756,8 @@ uno.CanvasRender.prototype._resetState = function() {
 
     if (this.background)
         this.clear();
+
+    this.clip();
 };
 
 /**

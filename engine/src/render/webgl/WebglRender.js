@@ -231,8 +231,11 @@ uno.WebglRender.prototype.resize = function(width, height) {
     this._projection.x = width / 2;
     this._projection.y = -height / 2;
     this._context.viewport(0, 0, width, height);
+    this._clip.set(0, 0, width, height);
+
     this._updateBounds();
     this._updateShaders();
+
     return this;
 };
 
@@ -303,6 +306,45 @@ uno.WebglRender.prototype.clear = function(color) {
 
     ctx.clearColor(color.r, color.g, color.b, color.a);
     ctx.clear(ctx.COLOR_BUFFER_BIT);
+
+    return this;
+};
+
+/**
+ * Clip viewport rect
+ * @param {Number} x - The x-coordinate of the left-top point of the clip rect
+ * @param {Number} y - The y-coordinate of the left-top point of the clip rect
+ * @param {Number} width - The clip rectangle width
+ * @param {Number} height - The clip rectangle height
+ * @returns {uno.WebglRender}
+ */
+uno.WebglRender.prototype.clip = function(x, y, width, height) {
+    var ctx = this._context;
+    var clip = this._clip;
+    var full = clip.x === 0 && clip.y === 0 && clip.width === this._width && clip.height === this._height;
+
+    if (clip.x === x && clip.y === y && clip.width === width && clip.height === height) {
+        return this;
+    }
+
+    if (x === undefined || x === false) {
+        if (!full) {
+            this._graphics.flush();
+            this._batch.flush();
+        }
+        clip.set(0, 0, this._width, this._height);
+        ctx.disable(ctx.SCISSOR_TEST);
+        return this;
+    }
+
+    if (!full) {
+        this._graphics.flush();
+        this._batch.flush();
+    }
+
+    clip.set(x, y, width, height);
+    ctx.enable(ctx.SCISSOR_TEST);
+    ctx.scissor(x, this._height - y - height, width, height);
 
     return this;
 };
@@ -681,6 +723,7 @@ uno.WebglRender.prototype._setupProps = function() {
     this._contextBlendMode = -1;
     this._currentShader = null;
     this._shaders = {};
+    this._clip = new uno.Rect(0, 0, this._width, this._height);
 };
 
 /**
