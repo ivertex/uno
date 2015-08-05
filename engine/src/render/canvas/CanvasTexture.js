@@ -66,7 +66,7 @@ uno.CanvasTexture.prototype.destroy = function() {
  */
 uno.CanvasTexture.prototype.context = function() {
     if (!this._context)
-        this._context = this._source.getContext('2d');
+        this._context = this.handle().getContext('2d');
     return this._context;
 };
 

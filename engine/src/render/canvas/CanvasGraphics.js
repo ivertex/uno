@@ -16,9 +16,11 @@ uno.CanvasGraphics = function(render) {
     this.lineColor = defaults.lineColor.clone();
     this.lineWidth = defaults.lineWidth;
 
-    this._currentFillColor = new uno.Color();
-    this._currentLineColor = new uno.Color();
-    this._currentLineWidth = 0;
+    this._contextFillColor = new uno.Color();
+    this._contextLineColor = new uno.Color();
+    this._contextLineWidth = 0;
+
+    this._resetState(true);
 };
 
 /**
@@ -35,8 +37,8 @@ uno.CanvasGraphics.prototype.destroy = function() {
     this.fillColor = null;
     this.lineColor = null;
 
-    this._currentFillColor = null;
-    this._currentLineColor = null;
+    this._contextFillColor = null;
+    this._contextLineColor = null;
 };
 
 /**
@@ -437,12 +439,12 @@ uno.CanvasGraphics.prototype.drawPoly = function(transform, points, alpha, blend
  * Reset graphics style
  * @private
  */
-uno.CanvasGraphics.prototype._resetState = function() {
+uno.CanvasGraphics.prototype._resetState = function(force) {
     var defaults = uno.Render.DEFAULT;
-    this._setState(defaults.fillColor, defaults.lineColor, defaults.lineWidth);
-    this._currentFillColor.set(defaults.fillColor);
-    this._currentLineColor.set(defaults.lineColor);
-    this._currentLineWidth = defaults.lineWidth;
+    this._setState(defaults.fillColor, defaults.lineColor, defaults.lineWidth, force);
+    this._contextFillColor.set(defaults.fillColor);
+    this._contextLineColor.set(defaults.lineColor);
+    this._contextLineWidth = defaults.lineWidth;
 };
 
 /**
@@ -454,16 +456,16 @@ uno.CanvasGraphics.prototype._resetState = function() {
  * @private
  */
 uno.CanvasGraphics.prototype._setState = function(fillColor, lineColor, lineWidth, force) {
-    if (fillColor && (force || !this._currentFillColor.equal(fillColor))) {
+    if (fillColor && (force || !this._contextFillColor.equal(fillColor))) {
         this._render._context.fillStyle = fillColor.cssRGBA;
-        this._currentFillColor.set(fillColor);
+        this._contextFillColor.set(fillColor);
     }
-    if (lineColor && (force || !this._currentLineColor.equal(lineColor))) {
+    if (lineColor && (force || !this._contextLineColor.equal(lineColor))) {
         this._render._context.strokeStyle = lineColor.cssRGBA;
-        this._currentLineColor.set(lineColor);
+        this._contextLineColor.set(lineColor);
     }
-    if (force || this._currentLineWidth !== lineWidth) {
+    if (force || this._contextLineWidth !== lineWidth) {
         this._render._context.lineWidth = lineWidth;
-        this._currentLineWidth = lineWidth;
+        this._contextLineWidth = lineWidth;
     }
 };

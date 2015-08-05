@@ -152,12 +152,12 @@ Object.defineProperty(uno.WebglRender.prototype, 'alpha', {
  */
 Object.defineProperty(uno.WebglRender.prototype, 'blend', {
     get: function() {
-        return this._currentBlendMode;
+        return this._currentBlend;
     },
     set: function(value) {
-        if (this._currentBlendMode === value || !uno.WebglRender._blendModes[value])
+        if (this._currentBlend === value || !uno.WebglRender._blendModes[value])
             return;
-        this._currentBlendMode = value;
+        this._currentBlend = value;
     }
 });
 
@@ -369,7 +369,7 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
     this._batch.draw(this._currentTransform, uno.WebglTexture.get(texture),
         frame ? frame.x : 0, frame ? frame.y : 0,
         frame ? frame.width / texture.width : 1, frame ? frame.height / texture.height : 1,
-        this._currentAlpha, this._currentBlendMode, tint || uno.Color.WHITE);
+        this._currentAlpha, this._currentBlend, tint || uno.Color.WHITE);
 
     return this;
 };
@@ -386,7 +386,7 @@ uno.WebglRender.prototype.drawLine = function(x1, y1, x2, y2) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawLine(this._currentTransform, x1, y1, x2, y2, this._currentAlpha, this._currentBlendMode);
+    this._graphics.drawLine(this._currentTransform, x1, y1, x2, y2, this._currentAlpha, this._currentBlend);
     return this;
 };
 
@@ -402,7 +402,7 @@ uno.WebglRender.prototype.drawRect = function(x, y, width, height) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawRect(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlendMode);
+    this._graphics.drawRect(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlend);
     return this;
 };
 
@@ -417,7 +417,7 @@ uno.WebglRender.prototype.drawCircle = function(x, y, radius) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawCircle(this._currentTransform, x, y, radius, this._currentAlpha, this._currentBlendMode);
+    this._graphics.drawCircle(this._currentTransform, x, y, radius, this._currentAlpha, this._currentBlend);
     return this;
 };
 
@@ -433,7 +433,7 @@ uno.WebglRender.prototype.drawEllipse = function(x, y, width, height) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawEllipse(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlendMode);
+    this._graphics.drawEllipse(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlend);
     return this;
 };
 
@@ -452,7 +452,7 @@ uno.WebglRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle,
         return this;
     this._batch.flush();
     this._graphics.drawArc(this._currentTransform, x, y, radius, startAngle, endAngle, antiClockwise,
-        this._currentAlpha, this._currentBlendMode);
+        this._currentAlpha, this._currentBlend);
     return this;
 };
 
@@ -465,7 +465,7 @@ uno.WebglRender.prototype.drawPoly = function(points) {
     if (!this._currentAlpha)
         return this;
     this._batch.flush();
-    this._graphics.drawPoly(this._currentTransform, points, this._currentAlpha, this._currentBlendMode);
+    this._graphics.drawPoly(this._currentTransform, points, this._currentAlpha, this._currentBlend);
     return this;
 };
 
@@ -719,8 +719,8 @@ uno.WebglRender.prototype._setupProps = function() {
     this._target = null;
     this._currentTransform = new uno.Matrix();
     this._currentAlpha = 1;
-    this._currentBlendMode = uno.BLEND_NORMAL;
-    this._contextBlendMode = -1;
+    this._currentBlend = uno.BLEND_NORMAL;
+    this._contextBlend = -1;
     this._currentShader = null;
     this._shaders = {};
     this._clip = new uno.Rect(0, 0, this._width, this._height);
@@ -914,7 +914,7 @@ uno.WebglRender.prototype._onFrame = function(time) {
 };
 
 /**
- * Reset render state after frame
+ * Reset render state before each frame
  * @private
  */
 uno.WebglRender.prototype._resetState = function() {
@@ -938,11 +938,11 @@ uno.WebglRender.prototype._resetState = function() {
  */
 uno.WebglRender.prototype._setBlendMode = function(mode) {
     mode = mode || uno.Render.BLEND_NORMAL;
-    if (mode === this._contextBlendMode  || !uno.WebglRender._blendModes[mode])
+    if (mode === this._contextBlend  || !uno.WebglRender._blendModes[mode])
         return;
     var items = uno.WebglRender._blendModes[mode];
     this._context.blendFunc(items[0], items[1]);
-    this._contextBlendMode = mode;
+    this._contextBlend = mode;
 };
 
 /**
