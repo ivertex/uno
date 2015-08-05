@@ -100,48 +100,13 @@ Object.defineProperty(uno.CanvasRender.prototype, 'target', {
         return this._target;
     },
     set: function(value) {
-        if (this.mask)
-            this.mask = false;
-        if (!value) {
-            if (this._target) {
-                this._target = null;
-                this._changeTarget(null);
-            }
-        } else if (this._target !== value) {
+        if (this._target !== value) {
+            if (this._mask)
+                this.mask(null);
             this._target = value;
+            this.clip();
             this._changeTarget(value);
         }
-    }
-});
-
-/**
- * Set or reset mask texture
- * @name uno.CanvasRender#target
- * @type {uno.Texture}
- */
-Object.defineProperty(uno.CanvasRender.prototype, 'mask', {
-    get: function() {
-        return this._mask;
-    },
-    set: function(value) {
-        if (!value) {
-            this._applyMask();
-            return;
-        }
-        if (this._mask && value !== this._mask) {
-            this._applyMask();
-        }
-        if (value.ready === false || value === this._mask) {
-            this._maskTransform.set(this._currentTransform);
-            this._maskAlpha = this._currentAlpha;
-            return;
-        }
-        if (!this._maskBuffer)
-            this._maskBuffer = new uno.Texture.create(this._width, this._height);
-        this._mask = value;
-        this._maskTransform.set(this._currentTransform);
-        this._maskAlpha = this._currentAlpha;
-        this._changeTarget(this._maskBuffer);
     }
 });
 
@@ -311,20 +276,30 @@ uno.CanvasRender.prototype.destroy = function() {
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.clear = function(color) {
-    var ctx = this._context;
-
     if (!color)
         color = this.background;
 
     if (color && !color.a) {
+        if (this._mask)
+            this._changeTarget(this._target);
+
         this._tempState(uno.Matrix.IDENTITY, 1, uno.Render.BLEND_NORMAL);
-        ctx.clearRect(0, 0, this._width, this._height);
+        this._context.clearRect(0, 0, this._width, this._height);
         this._restoreState();
+
+        if (this._mask)
+            this._changeTarget(this._maskBuffer);
+
         return this;
     }
 
     if (!color)
         return this;
+
+    if (this._mask)
+        this._changeTarget(this._target);
+
+    var ctx = this._context;
 
     var line = ctx.lineWidth;
     var fill = ctx.fillStyle;
@@ -345,6 +320,9 @@ uno.CanvasRender.prototype.clear = function(color) {
 
     this._restoreState();
 
+    if (this._mask)
+        this._changeTarget(this._maskBuffer);
+
     return this;
 };
 
@@ -357,7 +335,6 @@ uno.CanvasRender.prototype.clear = function(color) {
  * @returns {uno.CanvasRender}
  */
 uno.CanvasRender.prototype.clip = function(x, y, width, height) {
-    var ctx = this._context;
     var clip = this._clip;
     var full = clip.x === 0 && clip.y === 0 && clip.width === this._width && clip.height === this._height;
 
@@ -368,15 +345,30 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
     if (x === undefined || x === false) {
         if (full)
             return this;
+
+        if (this._mask)
+            this._changeTarget(this._target);
+
         clip.set(0, 0, this._width, this._height);
-        ctx.restore();
+        this._context.restore();
         this._setState(this._currentTransform, this._currentAlpha, this._currentBlend, this._currentScale, true);
+        this._graphics._setState(this.fillColor, this.lineColor, this.lineWidth, true);
+
+        if (this._mask)
+            this._changeTarget(this._maskBuffer);
+
         return this;
     }
+
+    if (this._mask)
+        this._changeTarget(this._target);
+
+    var ctx = this._context;
 
     if (!full) {
         ctx.restore();
         this._setState(this._currentTransform, this._currentAlpha, this._currentBlend, this._currentScale, true);
+        this._graphics._setState(this.fillColor, this.lineColor, this.lineWidth, true);
     }
 
     clip.set(x, y, width, height);
@@ -384,6 +376,44 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.clip();
+
+    if (this._mask)
+        this._changeTarget(this._maskBuffer);
+
+    return this;
+};
+
+/**
+ * Set or reset mask texture
+ * @param {uno.Texture} texture - Alpha mask texture
+ * @param {uno.Matrix} transform - Transform for texture
+ * @param {Number} alpha - Alpha multiplier for alpha mask
+ */
+uno.CanvasRender.prototype.mask = function(texture, transform, alpha) {
+    if (!texture) {
+        this._applyMask();
+        return this;
+    }
+
+    if (this._mask && texture !== this._mask) {
+        this._applyMask();
+    }
+
+    if (transform !== undefined)
+        this._maskTransform.set(transform);
+    else
+        this._maskTransform.reset();
+
+    this._maskAlpha = alpha !== undefined ? alpha : 1;
+
+    if (texture.ready === false || texture === this._mask)
+        return this;
+
+    this._mask = texture;
+
+    if (!this._maskBuffer)
+        this._maskBuffer = new uno.Texture.create(this._width, this._height);
+    this._changeTarget(this._maskBuffer);
 
     return this;
 };
@@ -773,7 +803,7 @@ uno.CanvasRender.prototype._onFrame = function(time) {
         (this.fps === 60 || rdelta >= (1 / this.fps) * 900)) { // 90% percent of time per render and maximum for 60 fps
         this._resetState();
         root.render(this, rdelta);
-        this.mask = false;
+        this.mask(null);
         this._lastRenderTime = time;
     }
 };
@@ -897,10 +927,10 @@ uno.CanvasRender.prototype._applyMask = function() {
     this._tempState(uno.Matrix.IDENTITY, 1, uno.Render.BLEND_NORMAL);
     this.drawTexture(this._maskBuffer);
     this._restoreState();
+    this._mask = null;
     this._changeTarget(this._maskBuffer);
     this.clear(uno.Color.TRANSPARENT);
     this._changeTarget(this._target);
-    this._mask = null;
 };
 
 /**
