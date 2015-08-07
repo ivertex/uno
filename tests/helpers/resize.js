@@ -1,23 +1,23 @@
 var resize = function(object) {
     this.object = object;
-    this._size = new uno.Point(uno.Screen.availWidth, uno.Screen.availHeight);
+    this._size = new uno.Point(uno.Screen.width, uno.Screen.height);
     this._timer = 0;
 };
 
 resize.id = 'resize';
 
 resize.prototype.update = function() {
-    if (!this._size.equal(uno.Screen.availWidth, uno.Screen.availHeight)) {
+    if (!this._size.equal(uno.Screen.width, uno.Screen.height)) {
         if (this._timer)
             clearTimeout(this._timer);
         this._timer = setTimeout(this.resize.bind(this), 50);
-        this._size.set(uno.Screen.availWidth, uno.Screen.availHeight);
+        this._size.set(uno.Screen.width, uno.Screen.height);
     }
 };
 
 resize.prototype.resize = function() {
-    var w = uno.Screen.availWidth;
-    var h = uno.Screen.availHeight;
+    var w = uno.Screen.width;
+    var h = uno.Screen.height;
     var renders = uno.Render.renders;
     if (renders.length == 1) {
         renders[0].resize(w, h);

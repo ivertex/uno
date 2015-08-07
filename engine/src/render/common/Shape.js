@@ -15,21 +15,21 @@ uno.Shape = function() {
  * @param {uno.Matrix} transform - Transformation of the figure
  * @param {Number} type - The type of the figure
  * @param {uno.Point|uno.Line|uno.Rect|uno.Circle|uno.Ellipse|uno.Arc|uno.Poly} figure - The figure to add
- * @param {uno.Color} fillColor - Shape fill color
- * @param {uno.Color} lineColor - Shape line color
- * @param {Number} lineWidth - Shape line width
+ * @param {uno.Color} fill - Shape fill color
+ * @param {uno.Color} stroke - Shape stroke color
+ * @param {Number} thickness - Shape line width
  * @param {Number} alpha - Shape alpha
  * @param {Number} blend - Shape blend mode
  * @returns {uno.Shape} - <code>this</code>
  */
-uno.Shape.prototype.add = function(transform, type, figure, fillColor, lineColor, lineWidth, alpha, blend) {
+uno.Shape.prototype.add = function(transform, type, figure, fill, stroke, thickness, alpha, blend) {
     this.items.push({
         transform: transform.identity() ? null : transform.clone(),
         type: type,
         shape: figure,
-        fillColor: fillColor ? fillColor.clone() : null,
-        lineColor: lineColor ? lineColor.clone() : null,
-        lineWidth: lineWidth,
+        fill: fill ? fill.clone() : null,
+        stroke: stroke ? stroke.clone() : null,
+        thickness: thickness,
         alpha: alpha,
         blend: blend
     });

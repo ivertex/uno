@@ -17,22 +17,16 @@ uno.Render = {
     RENDER_WEBGL: 2,
 
     /**
-     * Default texture scaling mode
+     * Pixelating texture scaling mode
      * @const {Number}
      */
-    SCALE_DEFAULT: 0,
+    SCALE_NEAREST: 0,
 
     /**
      * Smooth texture scaling mode
      * @const {Number}
      */
-    SCALE_LINEAR: 0,
-
-    /**
-     * Pixelating texture scaling mode
-     * @const {Number}
-     */
-    SCALE_NEAREST: 1,
+    SCALE_LINEAR: 1,
 
     /**
      * Normal blend mode with optimization for opaque textures in GL mode
@@ -85,9 +79,9 @@ uno.Render = {
         height: 0,
         fps: 60,
         ups: 60,
-        fillColor: uno.Color.WHITE.clone(),
-        lineColor: uno.Color.BLACK.clone(),
-        lineWidth: 1,
+        fill: uno.Color.WHITE.clone(),
+        stroke: uno.Color.BLACK.clone(),
+        thickness: 1,
         canvas: null,
         container: null,
         contextMenu: false
@@ -123,8 +117,8 @@ uno.Render.create = function(settings) {
 
         setts.antialias = settings.antialias === undefined ? def.antialias : settings.antialias;
         setts.background = settings.background === undefined ? def.background : settings.background;
-        setts.width = settings.width || (def.width || uno.Screen.availWidth);
-        setts.height = settings.height || (def.height || uno.Screen.availHeight);
+        setts.width = settings.width || (def.width || uno.Screen.width);
+        setts.height = settings.height || (def.height || uno.Screen.height);
         setts.fps = settings.fps === 0 ? 0 : (settings.fps || def.fps);
         setts.ups = settings.ups === 0 ? 0 : (settings.ups || def.ups);
         setts.contextMenu = settings.contextMenu === undefined ? def.contextMenu : settings.contextMenu;

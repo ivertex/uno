@@ -79,14 +79,14 @@ uno.WebglBatch = function(render) {
      * @type {Uint8Array}
      * @private
      */
-    this._stateBlendModes = new Uint8Array(this._maxSpriteCount);
+    this._stateBlends = new Uint8Array(this._maxSpriteCount);
 
     /**
      * Last blend mode added to states
      * @type {Number}
      * @private
      */
-    this._stateBlendModeLast = -1;
+    this._stateBlendLast = -1;
 
     /**
      * Textures for each state of the batch
@@ -120,9 +120,11 @@ uno.WebglBatch = function(render) {
  */
 uno.WebglBatch.prototype.destroy = function() {
     this._render._removeRestore(this);
+
     var ctx = this._render._context;
     ctx.deleteBuffer(this._vertexBuffer);
     ctx.deleteBuffer(this._indexBuffer);
+
     this.texture = null;
     this._indices = null;
     this._vertices = null;
@@ -130,7 +132,7 @@ uno.WebglBatch.prototype.destroy = function() {
     this._colors = null;
     this._render = null;
     this._states = null;
-    this._stateBlendModes = null;
+    this._stateBlends = null;
     this._stateTextures = null;
 };
 
@@ -167,17 +169,16 @@ uno.WebglBatch.prototype._restore = function() {
 
 /**
  * Add sprite to batch queue
- * @param {uno.Matrix} transform - Current matrix transform
  * @param {uno.WebglTexture} texture - WebGL texture instance
  * @param {Number} x - The x-coordinate of the texture frame
  * @param {Number} y - The x-coordinate of the texture frame
  * @param {Number} width - The width of the texture frame
  * @param {Number} height - The height of the texture frame
- * @param {Number} alpha - Texture opacity
- * @param {Number} blend - Texture blend mode
  * @param {uno.Color} tint - The texture tint color
  */
-uno.WebglBatch.prototype.draw = function(transform, texture, x, y, width, height, alpha, blend, tint) {
+uno.WebglBatch.prototype.draw = function(texture, x, y, width, height, tint) {
+    var state = this._render._state;
+    var transform = state.transform;
     var tw = texture.texture.width;
     var th = texture.texture.height;
     var render = this._render;
@@ -189,7 +190,7 @@ uno.WebglBatch.prototype.draw = function(transform, texture, x, y, width, height
     var ty = transform.ty;
 
     // Using packing ABGR (alpha and tint color)
-    var color = tint.packABGR(alpha);
+    var color = tint.packABGR(state.alpha);
     var i = this._spriteCount * this._spriteSize;
     var vp = this._positions;
     var vc = this._colors;
@@ -238,7 +239,7 @@ uno.WebglBatch.prototype.draw = function(transform, texture, x, y, width, height
     vc[i++] = color;
 
     ++this._spriteCount;
-    this._saveState(texture.handle(render), blend);
+    this._saveState(texture.handle(render), state.blend);
     if (this._spriteCount >= this._maxSpriteCount)
         this.flush();
 };
@@ -255,7 +256,7 @@ uno.WebglBatch.prototype.reset = function() {
 
     this._stateTextureLast = null;
 
-    this._stateBlendModeLast = uno.Render.BLEND_NORMAL;
+    this._stateBlendLast = uno.Render.BLEND_NORMAL;
     this._stateCount = 0;
     this._spriteCount = 0;
 };
@@ -269,6 +270,7 @@ uno.WebglBatch.prototype.flush = function() {
         return false;
 
     var render = this._render;
+    var state = render._state;
     var ctx = render._context;
 
     ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
@@ -277,6 +279,7 @@ uno.WebglBatch.prototype.flush = function() {
     var shader = render._getShader(uno.WebglShader.SPRITE);
     render._setShader(shader);
 
+    // TODO: Check perfomance
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)
         ctx.bufferSubData(ctx.ARRAY_BUFFER, 0, this._vertices);
@@ -284,7 +287,7 @@ uno.WebglBatch.prototype.flush = function() {
         ctx.bufferSubData(ctx.ARRAY_BUFFER, 0, this._positions.subarray(0, this._spriteCount * this._spriteSize));
 
     var states = this._states;
-    var modes = this._stateBlendModes;
+    var modes = this._stateBlends;
     var textures = this._stateTextures;
     var sampler = shader.uSampler;
     var index = 0;
@@ -292,7 +295,8 @@ uno.WebglBatch.prototype.flush = function() {
     var texture, current = null;
 
     for (var i = 0, l = this._stateCount; i < l; ++i) {
-        render._setBlendMode(modes[i]);
+        state.blend = modes[i];
+        state.sync();
         texture = textures[i];
         if (texture !== current) {
             sampler.texture(0, texture);
@@ -309,19 +313,19 @@ uno.WebglBatch.prototype.flush = function() {
 /**
  * Save texture and blend mode state for batching
  * @param {WebGLTexture} texture - Changed texture
- * @param {Number} blendMode - Changed blend mode. See {@link uno.Render} constants
+ * @param {Number} blend - Changed blend mode. See {@link uno.Render} constants
  * @private
  */
-uno.WebglBatch.prototype._saveState = function(texture, blendMode) {
+uno.WebglBatch.prototype._saveState = function(texture, blend) {
     if (texture === this._stateTextureLast &&
-        blendMode === this._stateBlendModeLast && this._stateCount) {
+        blend === this._stateBlendLast && this._stateCount) {
         this._states[this._stateCount - 1] = this._spriteCount * 6;
         return;
     }
     this._states[this._stateCount] = this._spriteCount * 6;
     this._stateTextures[this._stateCount] = texture;
     this._stateTextureLast = texture;
-    this._stateBlendModes[this._stateCount] = blendMode;
-    this._stateBlendModeLast = blendMode;
+    this._stateBlends[this._stateCount] = blend;
+    this._stateBlendLast = blend;
     ++this._stateCount;
 };

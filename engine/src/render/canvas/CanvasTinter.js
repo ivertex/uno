@@ -57,7 +57,7 @@ uno.CanvasTinter.tint = function(canvasTexture, color) {
     if (color.equal(uno.Color.WHITE))
         return canvasTexture.texture._source;
     if (uno.CanvasTinter.multiplyMode === undefined)
-        uno.CanvasTinter.multiplyMode = uno.CanvasRender._blendModesSupported();
+        uno.CanvasTinter.multiplyMode = uno.CanvasState.BLEND_EXTENDED;
     if (!uno.CanvasTinter._color)
         uno.CanvasTinter._color = color.clone();
     else

@@ -123,10 +123,10 @@ Object.defineProperty(uno.WebglRender.prototype, 'target', {
  */
 Object.defineProperty(uno.WebglRender.prototype, 'transform', {
     get: function() {
-        return this._currentTransform;
+        return this._state.transform;
     },
     set: function(value) {
-        this._currentTransform.set(value);
+        this._state.transform.set(value);
     }
 });
 
@@ -137,10 +137,10 @@ Object.defineProperty(uno.WebglRender.prototype, 'transform', {
  */
 Object.defineProperty(uno.WebglRender.prototype, 'alpha', {
     get: function() {
-        return this._currentAlpha;
+        return this._state.alpha;
     },
     set: function(value) {
-        this._currentAlpha = value;
+        this._state.alpha = value < 0 ? 0 : (value > 1 ? 1 : value);
     }
 });
 
@@ -152,32 +152,26 @@ Object.defineProperty(uno.WebglRender.prototype, 'alpha', {
  */
 Object.defineProperty(uno.WebglRender.prototype, 'blend', {
     get: function() {
-        return this._currentBlend;
+        return this._state.blend;
     },
     set: function(value) {
-        if (this._currentBlend === value || !uno.WebglRender._blendModes[value])
+        if (this._state.blend === value || !uno.WebglState.BLEND_MODES[value])
             return;
-        this._currentBlend = value;
+        this._state.blend = value;
     }
 });
 
 /**
  * Current fill color
- * @name uno.WebglRender#fillColor
+ * @name uno.WebglRender#fill
  * @type {uno.Color}
  */
-Object.defineProperty(uno.WebglRender.prototype, 'fillColor', {
+Object.defineProperty(uno.WebglRender.prototype, 'fill', {
     get: function() {
-        return this._graphics.fillColor;
+        return this._state.fill;
     },
     set: function(value) {
-        if (!value) {
-            this._graphics.fillColor.set(uno.Color.TRANSPARENT);
-            return;
-        }
-        if (this._graphics.fillColor.equal(value))
-            return;
-        this._graphics.fillColor.set(value);
+        this._state.fill.set(value || uno.Color.TRANSPARENT);
     }
 });
 
@@ -186,18 +180,12 @@ Object.defineProperty(uno.WebglRender.prototype, 'fillColor', {
  * @name uno.WebglRender#lineColor
  * @type {uno.Color}
  */
-Object.defineProperty(uno.WebglRender.prototype, 'lineColor', {
+Object.defineProperty(uno.WebglRender.prototype, 'stroke', {
     get: function() {
-        return this._graphics.lineColor;
+        return this._state.stroke;
     },
     set: function(value) {
-        if (!value) {
-            this._graphics.lineColor.set(uno.Color.TRANSPARENT);
-            return;
-        }
-        if (this._graphics.lineColor.equal(value))
-            return;
-        this._graphics.lineColor.set(value);
+        this._state.stroke.set(value || uno.Color.TRANSPARENT);
     }
 });
 
@@ -206,14 +194,12 @@ Object.defineProperty(uno.WebglRender.prototype, 'lineColor', {
  * @name uno.WebglRender#lineWidth
  * @type {Number}
  */
-Object.defineProperty(uno.WebglRender.prototype, 'lineWidth', {
+Object.defineProperty(uno.WebglRender.prototype, 'thickness', {
     get: function() {
-        return this._graphics.lineWidth;
+        return this._state.thickness;
     },
     set: function(value) {
-        if (!value || value < 0)
-            value = 0;
-        this._graphics.lineWidth = value;
+        this._state.thickness = !value || value < 0 ? 0 : value;
     }
 });
 
@@ -252,12 +238,13 @@ uno.WebglRender.prototype.destroy = function() {
     this._batch = null;
     this._graphics.destroy();
     this._graphics = null;
+    this._state.destroy();
+    this._state = null;
 
     // Free all owned shaders
     for (var i in this._shaders)
         this._shaders[i].destroy();
     this._currentShader = null;
-    this._currentTransform = null;
     this._shaders = null;
 
     // Free all owned texture handles
@@ -316,7 +303,7 @@ uno.WebglRender.prototype.clear = function(color) {
  * @param {Number} y - The y-coordinate of the left-top point of the clip rect
  * @param {Number} width - The clip rectangle width
  * @param {Number} height - The clip rectangle height
- * @returns {uno.WebglRender}
+ * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.clip = function(x, y, width, height) {
     var ctx = this._context;
@@ -350,6 +337,24 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
 };
 
 /**
+ * Set or reset mask texture
+ * @param {uno.Color} fill - Fill color
+ * @param {uno.Color} stroke - Stroke color
+ * @param {Number} thickness - Line width
+ * @returns {uno.WebglRender} - <code>this</code>
+ */
+uno.WebglRender.prototype.style = function(fill, stroke, thickness) {
+    var state = this._state;
+    if (fill !== null && fill !== undefined && fill !== false)
+        state.fill.set(fill);
+    if (stroke !== null && stroke !== undefined && stroke !== false)
+        state.stroke.set(stroke);
+    if (thickness !== null && thickness !== undefined && thickness !== false)
+        state.thickness = thickness;
+    return this;
+};
+
+/**
  * Draw texture
  * @param {uno.Texture} texture - The texture to render
  * @param {uno.Rect} [frame] - The frame to render rect of the texture (default full texture)
@@ -357,7 +362,7 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
-    if (!texture ||  !texture.ready || !this._currentAlpha)
+    if (!texture ||  !texture.ready || !this._state.alpha)
         return this;
 
     if (!texture.pot && frame && (frame.width > texture.width || frame.height > texture.height)) {
@@ -366,10 +371,10 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
     }
 
     this._graphics.flush();
-    this._batch.draw(this._currentTransform, uno.WebglTexture.get(texture),
+    this._batch.draw(uno.WebglTexture.get(texture),
         frame ? frame.x : 0, frame ? frame.y : 0,
         frame ? frame.width / texture.width : 1, frame ? frame.height / texture.height : 1,
-        this._currentAlpha, this._currentBlend, tint || uno.Color.WHITE);
+        tint || uno.Color.WHITE);
 
     return this;
 };
@@ -383,10 +388,11 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawLine = function(x1, y1, x2, y2) {
-    if (!this._currentAlpha)
+    var state = this._state;
+    if (!state.alpha || !state.stroke.a)
         return this;
     this._batch.flush();
-    this._graphics.drawLine(this._currentTransform, x1, y1, x2, y2, this._currentAlpha, this._currentBlend);
+    this._graphics.drawLine(x1, y1, x2, y2);
     return this;
 };
 
@@ -399,10 +405,11 @@ uno.WebglRender.prototype.drawLine = function(x1, y1, x2, y2) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawRect = function(x, y, width, height) {
-    if (!this._currentAlpha)
+    var state = this._state;
+    if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawRect(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlend);
+    this._graphics.drawRect(x, y, width, height);
     return this;
 };
 
@@ -414,10 +421,11 @@ uno.WebglRender.prototype.drawRect = function(x, y, width, height) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawCircle = function(x, y, radius) {
-    if (!this._currentAlpha)
+    var state = this._state;
+    if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawCircle(this._currentTransform, x, y, radius, this._currentAlpha, this._currentBlend);
+    this._graphics.drawCircle(x, y, radius);
     return this;
 };
 
@@ -430,10 +438,11 @@ uno.WebglRender.prototype.drawCircle = function(x, y, radius) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawEllipse = function(x, y, width, height) {
-    if (!this._currentAlpha)
+    var state = this._state;
+    if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawEllipse(this._currentTransform, x, y, width, height, this._currentAlpha, this._currentBlend);
+    this._graphics.drawEllipse(x, y, width, height);
     return this;
 };
 
@@ -448,11 +457,11 @@ uno.WebglRender.prototype.drawEllipse = function(x, y, width, height) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
-    if (!this._currentAlpha)
+    var state = this._state;
+    if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawArc(this._currentTransform, x, y, radius, startAngle, endAngle, antiClockwise,
-        this._currentAlpha, this._currentBlend);
+    this._graphics.drawArc(x, y, radius, startAngle, endAngle, antiClockwise);
     return this;
 };
 
@@ -462,10 +471,11 @@ uno.WebglRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle,
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawPoly = function(points) {
-    if (!this._currentAlpha)
+    var state = this._state;
+    if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawPoly(this._currentTransform, points, this._currentAlpha, this._currentBlend);
+    this._graphics.drawPoly(points);
     return this;
 };
 
@@ -475,10 +485,11 @@ uno.WebglRender.prototype.drawPoly = function(points) {
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.drawShape = function(shape) {
-    if (!this._currentAlpha)
+    var state = this._state;
+    if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawShape(this._currentTransform, shape, this._currentAlpha);
+    this._graphics.drawShape(shape);
     return this;
 };
 
@@ -717,10 +728,6 @@ uno.WebglRender.prototype._setupProps = function() {
     this._boundsScroll = new uno.Point();
     this._projection = new uno.Point();
     this._target = null;
-    this._currentTransform = new uno.Matrix();
-    this._currentAlpha = 1;
-    this._currentBlend = uno.BLEND_NORMAL;
-    this._contextBlend = -1;
     this._currentShader = null;
     this._shaders = {};
     this._clip = new uno.Rect(0, 0, this._width, this._height);
@@ -814,8 +821,8 @@ uno.WebglRender.prototype._updateBounds = function() {
  */
 uno.WebglRender.prototype._createContext = function() {
     var options = {
-        depth: false,
         antialias: true,
+        depth: false,
         stencil: false,
         alpha: this.background === false || !this.background.a,
         premultipliedAlpha: true,
@@ -838,10 +845,6 @@ uno.WebglRender.prototype._createContext = function() {
     ctx.enable(ctx.BLEND);
     ctx.colorMask(true, true, true, true);
 
-    uno.WebglRender._initBlendModes(ctx);
-
-    this._currentShader = null;
-    this._setBlendMode();
     this._restore();
     this._contextLost = false;
 };
@@ -852,8 +855,8 @@ uno.WebglRender.prototype._createContext = function() {
  * @private
  */
 uno.WebglRender.prototype._setupViewport = function(settings) {
-    var width = settings.width || uno.Screen.availWidth;
-    var height = settings.height || uno.Screen.availHeight;
+    var width = settings.width || uno.Screen.width;
+    var height = settings.height || uno.Screen.height;
     this.resize(width, height);
 };
 
@@ -862,6 +865,7 @@ uno.WebglRender.prototype._setupViewport = function(settings) {
  * @private
  */
 uno.WebglRender.prototype._setupManagers = function() {
+    this._state = new uno.WebglState(this);
     this._batch = new uno.WebglBatch(this);
     this._graphics = new uno.WebglGraphics(this);
 };
@@ -919,45 +923,6 @@ uno.WebglRender.prototype._onFrame = function(time) {
  */
 uno.WebglRender.prototype._resetState = function() {
     this.target = null;
-    this.transform.reset();
-    this.alpha = 1;
-    this.blend = uno.Render.BLEND_NORMAL;
-
-    var defaults = uno.Render.DEFAULT;
-    this.fillColor = defaults.fillColor;
-    this.lineColor = defaults.lineColor;
-    this.lineWidth = defaults.lineWidth;
-
+    this._state.reset().sync();
     this.clear();
-};
-
-/**
- * Blend mode apply helper
- * @param {Number} [mode=uno.Render.BLEND_NORMAL] - New blend mode
- * @private
- */
-uno.WebglRender.prototype._setBlendMode = function(mode) {
-    mode = mode || uno.Render.BLEND_NORMAL;
-    if (mode === this._contextBlend  || !uno.WebglRender._blendModes[mode])
-        return;
-    var items = uno.WebglRender._blendModes[mode];
-    this._context.blendFunc(items[0], items[1]);
-    this._contextBlend = mode;
-};
-
-/**
- * Initialize WebGL blend modes
- * @param {WebGLRenderingContext} ctx - WebGL context
- * @private
- */
-uno.WebglRender._initBlendModes = function(ctx) {
-    if (uno.WebglRender._blendModes !== undefined)
-        return;
-    var result = {};
-    result[uno.Render.BLEND_NONE]       = [ctx.ONE, ctx.ZERO];
-    result[uno.Render.BLEND_NORMAL]     = [ctx.ONE, ctx.ONE_MINUS_SRC_ALPHA];
-    result[uno.Render.BLEND_ADD]        = [ctx.ONE, ctx.ONE];
-    result[uno.Render.BLEND_MULTIPLY]   = [ctx.DST_COLOR, ctx.ONE_MINUS_SRC_ALPHA];
-    result[uno.Render.BLEND_SCREEN]     = [ctx.ONE, ctx.ONE_MINUS_SRC_COLOR];
-    uno.WebglRender._blendModes = result;
 };

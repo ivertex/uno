@@ -20,7 +20,7 @@ mask.prototype.render = function(render, deltaTime) {
     render.mask(this.mask1, this.object.transform.matrix);
 
     render.drawTexture(this.tex, this.tile);
-    render.fillColor = uno.Color.GREEN;
+    render.fill = uno.Color.GREEN;
     render.blend = uno.Render.BLEND_ADD;
     render.drawCircle(300, 300, 200);
     render.blend = uno.Render.BLEND_NORMAL;
@@ -32,7 +32,7 @@ mask.prototype.render = function(render, deltaTime) {
 
     render.clip(100, 100, 100, 100);
     if (this.mask2.ready) {
-        render.fillColor = uno.Color.BLUE;
+        render.fill = uno.Color.BLUE;
         render.drawRect(0, 0, 300, 300);
     }
 

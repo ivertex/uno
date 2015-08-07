@@ -1,8 +1,8 @@
 function createRenders(render1, render2, type) {
     var settings = {
         container: document.body,
-        width: uno.Screen.availWidth,
-        height: uno.Screen.availHeight,
+        width: uno.Screen.width,
+        height: uno.Screen.height,
         fps: 60,
         //background: false
         //background: new uno.Color(0, 0, 0, 0)

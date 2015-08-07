@@ -19,31 +19,31 @@ uno.Screen = function() {
 
     /**
      * @memberof uno.Screen
-     * @member {Number} width - Total width of the screen
+     * @member {Number} width - The amount of horizontal space in pixels available to the render
      * @readonly
      */
     this.width = 0;
 
     /**
      * @memberof uno.Screen
-     * @member {Number} height - Total height of the screen
+     * @member {Number} height - The amount of vertical space in pixels available to the render
      * @readonly
      */
     this.height = 0;
 
     /**
      * @memberof uno.Screen
-     * @member {Number} availWidth - The amount of horizontal space in pixels available to the render
+     * @member {Number} totalWidth - Total width of the screen
      * @readonly
      */
-    this.availWidth = 0;
+    this.totalWidth = 0;
 
     /**
      * @memberof uno.Screen
-     * @member {Number} availHeight - The amount of vertical space in pixels available to the render
+     * @member {Number} totalHeight - Total height of the screen
      * @readonly
      */
-    this.availHeight = 0;
+    this.totalHeight = 0;
 
     /**
      * @memberof uno.Screen
@@ -71,18 +71,18 @@ uno.Screen.prototype._initialize = function() {
     if (window) {
         this.ratio = window.devicePixelRatio || 1;
         if (window.screen) {
-            this.width = window.screen.width;
-            this.height = window.screen.height;
+            this.totalWidth = window.screen.width;
+            this.totalHeight = window.screen.height;
             this.depth = window.screen.pixelDepth;
         }
         if (document) {
             var resize = function() {
-                self.availWidth = document.documentElement.clientWidth;
-                self.availHeight = document.documentElement.clientHeight;
+                self.width = document.documentElement.clientWidth;
+                self.height = document.documentElement.clientHeight;
 
                 // TODO: Hack, need to investigate
                 if (uno.Browser.chrome || uno.Browser.safari || uno.Browser.opera)
-                    self.availHeight -= 4;
+                    self.height -= 4;
             };
             var scroll = function() {
                 self.scrollX = window.pageXOffset;

@@ -110,14 +110,14 @@ uno.WebglTexture.prototype.handle = function(render, buffer) {
         return buffer ? this._handles[render.id].buffer : this._handles[render.id].texture;
     }
     // Scale mode changed
-    if (handles.scaleMode !== this.texture.scaleMode) {
+    if (handles.scale !== this.texture.scale) {
         var ctx = render._context;
-        var mode = this.texture.scaleMode === uno.Render.SCALE_LINEAR ? ctx.LINEAR : ctx.NEAREST;
+        var mode = this.texture.scale === uno.Render.SCALE_LINEAR ? ctx.LINEAR : ctx.NEAREST;
         ctx.bindTexture(ctx.TEXTURE_2D, handles.texture);
         ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, mode);
         ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, mode);
         ctx.bindTexture(ctx.TEXTURE_2D, null);
-        handles.scaleMode = this.texture.scaleMode;
+        handles.scale = this.texture.scale;
     }
     return buffer ? handles.buffer : handles.texture;
 };
@@ -155,7 +155,7 @@ uno.WebglTexture.prototype._restore = function(render) {
 uno.WebglTexture.prototype._create = function(render) {
     var ctx = render._context;
     var texture = this.texture;
-    var mode = texture.scaleMode === uno.Render.SCALE_LINEAR ? ctx.LINEAR : ctx.NEAREST;
+    var mode = texture.scale === uno.Render.SCALE_LINEAR ? ctx.LINEAR : ctx.NEAREST;
     var textureHandle = ctx.createTexture();
     var bufferHandle = null;
 
@@ -187,7 +187,7 @@ uno.WebglTexture.prototype._create = function(render) {
 
     ctx.bindTexture(ctx.TEXTURE_2D, null);
 
-    this._handles[render.id] = { texture: textureHandle, buffer: bufferHandle, scaleMode: texture.scaleMode };
+    this._handles[render.id] = { texture: textureHandle, buffer: bufferHandle, scale: texture.scale };
     this._renders.push(render);
 };
 

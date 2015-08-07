@@ -14,9 +14,9 @@ uno.Texture = function(width, height) {
      * The texture scale mode<br>
      *     See {@link uno.Render} constants
      * @type {Number}
-     * @default uno.Render.SCALE_DEFAULT
+     * @default uno.Render.DEFAULT.scale
      */
-    this.scaleMode = uno.Render.SCALE_DEFAULT;
+    this.scale = uno.Render.DEFAULT.scale;
 
     /**
      * Width of the texture
@@ -99,7 +99,7 @@ uno.Texture.prototype.load = function(url, complete, cache) {
 uno.Texture.prototype.destroy = function() {
     for (var i in this._extensions)
         this._extensions[i].destroy();
-    this.scaleMode = uno.Render.SCALE_DEFAULT;
+    this.scale = uno.Render.DEFAULT.scale;
     this._pot = false;
     this._ready = false;
     this._url = null;
