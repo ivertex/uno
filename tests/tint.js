@@ -37,7 +37,7 @@ debug.id = 'debug';
 debug.prototype.input = function(event) {
     if (uno.Mouse.down(event, uno.Mouse.RIGHT)) {
         var s = this.object.sprite;
-        s.blend = s.blend > 3 ? 0 : s.blend + 1;
+        s.blend = s.blend > 2 ? 0 : s.blend + 1;
         uno.log(s.blend);
     }
 };
@@ -58,7 +58,7 @@ function prefab2(texture) {
     obj.transform.setScale(0.5, 0.5);
     obj.rotator.rotation = 0.003;
     obj.sprite.texture = texture;
-    obj.sprite.alpha = 0.5;
+    //obj.sprite.alpha = 0.5;
     obj.sprite.blend = uno.Render.BLEND_ADD;
     return obj;
 }

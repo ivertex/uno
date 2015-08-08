@@ -218,7 +218,6 @@ uno.CanvasState._initBlending = function() {
     var supported = this._blendExtended();
     var result = [];
 
-    result[uno.Render.BLEND_NONE]       = 'source-over';
     result[uno.Render.BLEND_NORMAL]     = 'source-over';
     result[uno.Render.BLEND_ADD]        = 'lighter';
     result[uno.Render.BLEND_MULTIPLY]   = supported ? 'multiply' : 'source-over';

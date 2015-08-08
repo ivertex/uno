@@ -29,34 +29,28 @@ uno.Render = {
     SCALE_LINEAR: 1,
 
     /**
-     * Normal blend mode with optimization for opaque textures in GL mode
-     * @const {Number}
-     */
-    BLEND_NONE: 0,
-
-    /**
      * This is the standard blend mode which uses the top layer alone, without mixing its colors with the layer beneath it
      * @const {Number}
      */
-    BLEND_NORMAL: 1,
+    BLEND_NORMAL: 0,
 
     /**
      * This blend mode simply adds pixel values of one layer with the other
      * @const {Number}
      */
-    BLEND_ADD: 2,
+    BLEND_ADD: 1,
 
     /**
      * This blend mode multiplies the numbers for each pixel of the top layer with the corresponding pixel for the bottom layer
      * @const {Number}
      */
-    BLEND_MULTIPLY: 3,
+    BLEND_MULTIPLY: 2,
 
     /**
      * This blend mode inverts both layers, multiplies them, and then inverts that result
      * @const {Number}
      */
-    BLEND_SCREEN: 4,
+    BLEND_SCREEN: 3,
 
     /**
      * Default settings for render
