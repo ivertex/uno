@@ -21,21 +21,22 @@ building.prototype.render = function(render, deltaTime) {
 
     render.alpha = this.alpha;
     render.transform = this.object.transform.matrix;
+
     render.style(null, 0x00D025, 10);
-    render.drawLine(0, 200, 300, 200);
+    render.line(0, 200, 300, 200);
     render.style(0xA35B00, 0xDFA700, 5);
-    render.drawRect(90, 70, 125, 125);
+    render.rect(90, 70, 125, 125);
     render.style(0xFF0000, 0x0038DF);
-    render.drawPoly(this.points);
+    render.poly(this.points);
     render.style(uno.Color.GREEN, uno.Color.RED, 10);
     render.blend = uno.Render.BLEND_ADD;
-    render.drawEllipse(150, 130, 50, 70);
+    render.ellipse(150, 130, 50, 70);
     render.style(0xFFE51E, null, 0);
     render.blend = uno.Render.BLEND_NORMAL;
-    render.drawCircle(50, 0, 30);
+    render.circle(50, 0, 30);
     render.style(uno.Color.TRANSPARENT, uno.Color.BLUE, 30);
     render.blend = uno.Render.BLEND_ADD;
-    render.drawArc(150, 200, 200, 0, uno.Math.PI, true);
+    render.arc(150, 200, 200, 0, uno.Math.PI, true);
 };
 
 function create(render1, render2) {

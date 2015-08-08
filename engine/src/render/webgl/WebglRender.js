@@ -361,7 +361,7 @@ uno.WebglRender.prototype.style = function(fill, stroke, thickness) {
  * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
+uno.WebglRender.prototype.texture = function(texture, frame, tint) {
     if (!texture ||  !texture.ready || !this._state.alpha)
         return this;
 
@@ -387,12 +387,12 @@ uno.WebglRender.prototype.drawTexture = function(texture, frame, tint) {
  * @param {Number} y2 - The y-coordinate of the second point of the line
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawLine = function(x1, y1, x2, y2) {
+uno.WebglRender.prototype.line = function(x1, y1, x2, y2) {
     var state = this._state;
     if (!state.alpha || !state.stroke.a)
         return this;
     this._batch.flush();
-    this._graphics.drawLine(x1, y1, x2, y2);
+    this._graphics.line(x1, y1, x2, y2);
     return this;
 };
 
@@ -404,12 +404,12 @@ uno.WebglRender.prototype.drawLine = function(x1, y1, x2, y2) {
  * @param {Number} height - The rectangle height
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawRect = function(x, y, width, height) {
+uno.WebglRender.prototype.rect = function(x, y, width, height) {
     var state = this._state;
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawRect(x, y, width, height);
+    this._graphics.rect(x, y, width, height);
     return this;
 };
 
@@ -420,12 +420,12 @@ uno.WebglRender.prototype.drawRect = function(x, y, width, height) {
  * @param {Number} radius - The radius of the circle
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawCircle = function(x, y, radius) {
+uno.WebglRender.prototype.circle = function(x, y, radius) {
     var state = this._state;
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawCircle(x, y, radius);
+    this._graphics.circle(x, y, radius);
     return this;
 };
 
@@ -437,12 +437,12 @@ uno.WebglRender.prototype.drawCircle = function(x, y, radius) {
  * @param {Number} height - The width of the ellipse
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawEllipse = function(x, y, width, height) {
+uno.WebglRender.prototype.ellipse = function(x, y, width, height) {
     var state = this._state;
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawEllipse(x, y, width, height);
+    this._graphics.ellipse(x, y, width, height);
     return this;
 };
 
@@ -456,12 +456,12 @@ uno.WebglRender.prototype.drawEllipse = function(x, y, width, height) {
  * @param {Boolean} antiClockwise - Specifies whether the drawing should be counterclockwise or clockwise
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
+uno.WebglRender.prototype.arc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
     var state = this._state;
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawArc(x, y, radius, startAngle, endAngle, antiClockwise);
+    this._graphics.arc(x, y, radius, startAngle, endAngle, antiClockwise);
     return this;
 };
 
@@ -470,12 +470,12 @@ uno.WebglRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle,
  * @param {uno.Point[]} points - The points of the polyline
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawPoly = function(points) {
+uno.WebglRender.prototype.poly = function(points) {
     var state = this._state;
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawPoly(points);
+    this._graphics.poly(points);
     return this;
 };
 
@@ -484,12 +484,12 @@ uno.WebglRender.prototype.drawPoly = function(points) {
  * @param {uno.Shape} shape - The shape created before
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.drawShape = function(shape) {
+uno.WebglRender.prototype.shape = function(shape) {
     var state = this._state;
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
     this._batch.flush();
-    this._graphics.drawShape(shape);
+    this._graphics.shape(shape);
     return this;
 };
 

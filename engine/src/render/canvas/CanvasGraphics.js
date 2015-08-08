@@ -41,7 +41,7 @@ uno.CanvasGraphics.prototype.endShape = function() {
  * @param {uno.Shape} shape - The shape for rendering
  * @returns {Boolean} - Is shape rendered
  */
-uno.CanvasGraphics.prototype.drawShape = function(shape) {
+uno.CanvasGraphics.prototype.shape = function(shape) {
     var i, figure, item;
     var items = shape.items;
     var l = items.length;
@@ -81,22 +81,22 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
 
         switch (item.type) {
             case types.LINE:
-                this.drawLine(figure.x1, figure.y1, figure.x2, figure.y2);
+                this.line(figure.x1, figure.y1, figure.x2, figure.y2);
                 break;
             case types.RECT:
-                this.drawRect(figure.x, figure.y, figure.width, figure.height);
+                this.rect(figure.x, figure.y, figure.width, figure.height);
                 break;
             case types.CIRCLE:
-                this.drawCircle(figure.x, figure.y, figure.radius);
+                this.circle(figure.x, figure.y, figure.radius);
                 break;
             case types.ELLIPSE:
-                this.drawEllipse(figure.x, figure.y, figure.width, figure.height);
+                this.ellipse(figure.x, figure.y, figure.width, figure.height);
                 break;
             case types.ARC:
-                this.drawArc(figure.x, figure.y, figure.radius, figure.startAngle, figure.endAngle, figure.antiClockwise);
+                this.arc(figure.x, figure.y, figure.radius, figure.startAngle, figure.endAngle, figure.antiClockwise);
                 break;
             case types.POLY:
-                this.drawPoly(figure.points);
+                this.poly(figure.points);
                 break;
         }
     }
@@ -114,7 +114,7 @@ uno.CanvasGraphics.prototype.drawShape = function(shape) {
  * @param {Number} y2 - The y-coordinate of the second point of the line
  * @returns {Boolean} - Is line rendered
  */
-uno.CanvasGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
+uno.CanvasGraphics.prototype.line = function(x1, y1, x2, y2) {
     var state = this._render._state;
 
     if (!state.alpha || !state.stroke.a || !state.thickness)
@@ -143,7 +143,7 @@ uno.CanvasGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
  * @param {Number} height - The rectangle height
  * @returns {Boolean} - Is rectangle rendered
  */
-uno.CanvasGraphics.prototype.drawRect = function(x, y, width, height) {
+uno.CanvasGraphics.prototype.rect = function(x, y, width, height) {
     var state = this._render._state;
 
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
@@ -171,7 +171,7 @@ uno.CanvasGraphics.prototype.drawRect = function(x, y, width, height) {
  * @param {Number} radius - The radius of the circle
  * @returns {Boolean} - Is circle rendered
  */
-uno.CanvasGraphics.prototype.drawCircle = function(x, y, radius) {
+uno.CanvasGraphics.prototype.circle = function(x, y, radius) {
     var state = this._render._state;
 
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
@@ -203,7 +203,7 @@ uno.CanvasGraphics.prototype.drawCircle = function(x, y, radius) {
  * @param {Number} height - The width of the ellipse
  * @returns {Boolean} - Is ellipse rendered
  */
-uno.CanvasGraphics.prototype.drawEllipse = function(x, y, width, height) {
+uno.CanvasGraphics.prototype.ellipse = function(x, y, width, height) {
     var state = this._render._state;
 
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
@@ -252,7 +252,7 @@ uno.CanvasGraphics.prototype.drawEllipse = function(x, y, width, height) {
  * @param {Boolean} antiClockwise - Specifies whether the drawing should be counterclockwise or clockwise
  * @returns {Boolean} - Is arc rendered
  */
-uno.CanvasGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
+uno.CanvasGraphics.prototype.arc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
     var state = this._render._state;
 
     if (!state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
@@ -281,7 +281,7 @@ uno.CanvasGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAng
  * @param {uno.Point[]} points - The points of the polyline
  * @returns {Boolean} - Is polyline rendered
  */
-uno.CanvasGraphics.prototype.drawPoly = function(points) {
+uno.CanvasGraphics.prototype.poly = function(points) {
     if (!points || points.length < 2)
         return false;
 

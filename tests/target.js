@@ -36,15 +36,15 @@ target.prototype.render = function(render) {
     if (!this.texture || !this.texture.ready)
         return;
     render.fill = uno.Color.BLUE;
-    render.drawCircle(200, 200, 100);
+    render.circle(200, 200, 100);
     if (this.filter) {
         render.target = this.target;
         render.clear(uno.Color.WHITE);
         render.transform = this.matrix;
-        render.drawTexture(this.texture);
+        render.texture(this.texture);
         render.transform = this.m1;
         render.fill = uno.Color.GREEN;
-        render.drawRect(100, 100, 100, 100);
+        render.rect(100, 100, 100, 100);
         this.filterTexture(render, this.target);
         //console.log(render.type, render.getPixels(this.target, 100, 100, 1, 1));
         render.target = null;
@@ -52,7 +52,7 @@ target.prototype.render = function(render) {
     //render.clear();
     //render.fill = uno.Color.RED;
     render.transform = this.object.transform.matrix;
-    render.drawTexture(this.filter ? this.target : this.texture);
+    render.texture(this.filter ? this.target : this.texture);
 };
 
 target.prototype.input = function(event) {

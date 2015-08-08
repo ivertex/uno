@@ -293,7 +293,7 @@ uno.WebglGraphics.prototype.endShape = function() {
  * @param {uno.Shape} shape - The shape for rendering
  * @returns {Boolean} - Is shape rendered
  */
-uno.WebglGraphics.prototype.drawShape = function(shape) {
+uno.WebglGraphics.prototype.shape = function(shape) {
     var state = this._render._state;
     var transform = state.transform;
     var alpha = state.alpha;
@@ -331,22 +331,22 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
 
             switch (item.type) {
                 case types.LINE:
-                    this.drawLine(source.x1, source.y1, source.x2, source.y2);
+                    this.line(source.x1, source.y1, source.x2, source.y2);
                     break;
                 case types.RECT:
-                    this.drawRect(source.x, source.y, source.width, source.height);
+                    this.rect(source.x, source.y, source.width, source.height);
                     break;
                 case types.CIRCLE:
-                    this.drawCircle(source.x, source.y, source.radius);
+                    this.circle(source.x, source.y, source.radius);
                     break;
                 case types.ELLIPSE:
-                    this.drawEllipse(source.x, source.y, source.width, source.height);
+                    this.ellipse(source.x, source.y, source.width, source.height);
                     break;
                 case types.ARC:
-                    this.drawArc(source.x, source.y, source.radius, source.startAngle, source.endAngle, source.antiClockwise);
+                    this.arc(source.x, source.y, source.radius, source.startAngle, source.endAngle, source.antiClockwise);
                     break;
                 case types.POLY:
-                    this.drawPoly(source.points);
+                    this.poly(source.points);
                     break;
             }
         }
@@ -434,7 +434,7 @@ uno.WebglGraphics.prototype.drawShape = function(shape) {
  * @param {Number} y2 - The y-coordinate of the second point of the line
  * @returns {Boolean} - Is line rendered
  */
-uno.WebglGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
+uno.WebglGraphics.prototype.line = function(x1, y1, x2, y2) {
     var state = this._render._state;
     var transform = state.transform;
     var alpha = state.alpha;
@@ -513,7 +513,7 @@ uno.WebglGraphics.prototype.drawLine = function(x1, y1, x2, y2) {
  * @param {Number} blend - Rectangle blend mode
  * @returns {Boolean} - Is rectangle rendered
  */
-uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
+uno.WebglGraphics.prototype.rect = function(x, y, width, height) {
     var state = this._render._state;
     var transform = state.transform;
     var alpha = state.alpha;
@@ -649,7 +649,7 @@ uno.WebglGraphics.prototype.drawRect = function(x, y, width, height) {
  * @param {Number} radius - The radius of the circle
  * @returns {Boolean} - Is circle rendered
  */
-uno.WebglGraphics.prototype.drawCircle = function(x, y, radius) {
+uno.WebglGraphics.prototype.circle = function(x, y, radius) {
     if (this._shape) {
         var state = this._render._state;
 
@@ -671,7 +671,7 @@ uno.WebglGraphics.prototype.drawCircle = function(x, y, radius) {
  * @param {Number} height - The width of the ellipse
  * @returns {Boolean} - Is ellipse rendered
  */
-uno.WebglGraphics.prototype.drawEllipse = function(x, y, width, height) {
+uno.WebglGraphics.prototype.ellipse = function(x, y, width, height) {
     if (this._shape) {
         var state = this._render._state;
 
@@ -695,7 +695,7 @@ uno.WebglGraphics.prototype.drawEllipse = function(x, y, width, height) {
  * @param {Boolean} antiClockwise - Specifies whether the drawing should be counterclockwise or clockwise
  * @returns {Boolean} - Is arc rendered
  */
-uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
+uno.WebglGraphics.prototype.arc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
     var state = this._render._state;
     var transform = state.transform;
     var alpha = state.alpha;
@@ -870,7 +870,7 @@ uno.WebglGraphics.prototype.drawArc = function(x, y, radius, startAngle, endAngl
  * @param {uno.Point[]} points - The points of the polyline
  * @returns {Boolean} - Is polyline rendered
  */
-uno.WebglGraphics.prototype.drawPoly = function(points) {
+uno.WebglGraphics.prototype.poly = function(points) {
     var state = this._render._state;
     var transform = state.transform;
     var alpha = state.alpha;
@@ -891,7 +891,7 @@ uno.WebglGraphics.prototype.drawPoly = function(points) {
     if (len === 2) {
         p1 = points[0];
         p2 = points[1];
-        this.drawLine(p1.x, p1.y, p2.x, p2.y);
+        this.line(p1.x, p1.y, p2.x, p2.y);
         return true;
     }
 

@@ -9,14 +9,14 @@ clip.id = 'clip';
 clip.prototype.render = function(render, deltaTime) {
     var m = this.object.transform.matrix;
     render.clip(100 + m.tx, 100 + m.ty, 200 * m.a, 200 * m.d);
-    render.drawTexture(this.tex, this.tile);
+    render.texture(this.tex, this.tile);
     render.thickness = 5;
     render.fill = uno.Color.RED;
     render.clip(200 + m.tx, 200 + m.ty, 100, 100);
-    render.drawCircle(200, 200, 100);
+    render.circle(200, 200, 100);
     render.clip(false);
     render.fill = uno.Color.GREEN;
-    render.drawCircle(300, 300, 100);
+    render.circle(300, 300, 100);
 };
 
 function create(render1, render2) {

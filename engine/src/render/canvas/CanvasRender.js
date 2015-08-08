@@ -424,7 +424,7 @@ uno.CanvasRender.prototype.style = function(fill, stroke, thickness) {
  * @param {uno.Color} [tint=uno.Color.WHITE] - The texture tint color
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint) {
+uno.CanvasRender.prototype.texture = function(texture, frame, tint) {
     var state = this._state;
 
     if (!texture || !texture.ready || !state.alpha)
@@ -477,9 +477,9 @@ uno.CanvasRender.prototype.drawTexture = function(texture, frame, tint) {
  * @param {Number} y2 - The y-coordinate of the second point of the line
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawLine = function(x1, y1, x2, y2) {
+uno.CanvasRender.prototype.line = function(x1, y1, x2, y2) {
     this._state.sync();
-    this._graphics.drawLine(x1, y1, x2, y2);
+    this._graphics.line(x1, y1, x2, y2);
     return this;
 };
 
@@ -491,9 +491,9 @@ uno.CanvasRender.prototype.drawLine = function(x1, y1, x2, y2) {
  * @param {Number} height - The rectangle height
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawRect = function(x, y, width, height) {
+uno.CanvasRender.prototype.rect = function(x, y, width, height) {
     this._state.sync();
-    this._graphics.drawRect(x, y, width, height);
+    this._graphics.rect(x, y, width, height);
     return this;
 };
 
@@ -504,9 +504,9 @@ uno.CanvasRender.prototype.drawRect = function(x, y, width, height) {
  * @param {Number} radius - The radius of the circle
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawCircle = function(x, y, radius) {
+uno.CanvasRender.prototype.circle = function(x, y, radius) {
     this._state.sync();
-    this._graphics.drawCircle(x, y, radius);
+    this._graphics.circle(x, y, radius);
     return this;
 };
 
@@ -518,9 +518,9 @@ uno.CanvasRender.prototype.drawCircle = function(x, y, radius) {
  * @param {Number} height - The width of the ellipse
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawEllipse = function(x, y, width, height) {
+uno.CanvasRender.prototype.ellipse = function(x, y, width, height) {
     this._state.sync();
-    this._graphics.drawEllipse(x, y, width, height);
+    this._graphics.ellipse(x, y, width, height);
     return this;
 };
 
@@ -534,9 +534,9 @@ uno.CanvasRender.prototype.drawEllipse = function(x, y, width, height) {
  * @param {Boolean} antiClockwise - Specifies whether the drawing should be counterclockwise or clockwise
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
+uno.CanvasRender.prototype.arc = function(x, y, radius, startAngle, endAngle, antiClockwise) {
     this._state.sync();
-    this._graphics.drawArc(x, y, radius, startAngle, endAngle, antiClockwise);
+    this._graphics.arc(x, y, radius, startAngle, endAngle, antiClockwise);
     return this;
 };
 
@@ -545,9 +545,9 @@ uno.CanvasRender.prototype.drawArc = function(x, y, radius, startAngle, endAngle
  * @param {uno.Point[]} points - The points of the polyline
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawPoly = function(points) {
+uno.CanvasRender.prototype.poly = function(points) {
     this._state.sync();
-    this._graphics.drawPoly(points);
+    this._graphics.poly(points);
     return this;
 };
 
@@ -556,9 +556,9 @@ uno.CanvasRender.prototype.drawPoly = function(points) {
  * @param {uno.Shape} shape - The shape created before
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.drawShape = function(shape) {
+uno.CanvasRender.prototype.shape = function(shape) {
     this._state.sync();
-    this._graphics.drawShape(shape);
+    this._graphics.shape(shape);
     return this;
 };
 
@@ -849,14 +849,14 @@ uno.CanvasRender.prototype._applyMask = function() {
     state.transform.set(this._maskTransform);
     state.alpha = this._maskAlpha;
     state.blend = uno.CanvasState.BLEND_MASK;
-    this.drawTexture(this._mask);
+    this.texture(this._mask);
     state.restore();
 
     // Draw masked buffer to current target
     this._setTarget(this._target);
     state.save();
     state.reset();
-    this.drawTexture(this._maskBuffer);
+    this.texture(this._maskBuffer);
     state.restore();
 
     // Clear mask

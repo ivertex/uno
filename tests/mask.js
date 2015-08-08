@@ -19,10 +19,10 @@ mask.prototype.render = function(render, deltaTime) {
 
     render.mask(this.mask1, this.object.transform.matrix);
 
-    render.drawTexture(this.tex, this.tile);
+    render.texture(this.tex, this.tile);
     render.fill = uno.Color.GREEN;
     render.blend = uno.Render.BLEND_ADD;
-    render.drawCircle(300, 300, 200);
+    render.circle(300, 300, 200);
     render.blend = uno.Render.BLEND_NORMAL;
 
     render.target = this.buf;
@@ -33,12 +33,12 @@ mask.prototype.render = function(render, deltaTime) {
     render.clip(100, 100, 100, 100);
     if (this.mask2.ready) {
         render.fill = uno.Color.BLUE;
-        render.drawRect(0, 0, 300, 300);
+        render.rect(0, 0, 300, 300);
     }
 
     render.target = null;
     render.transform.reset().translate(500, 500);
-    render.drawTexture(this.buf);
+    render.texture(this.buf);
 };
 
 function create(render1, render2) {

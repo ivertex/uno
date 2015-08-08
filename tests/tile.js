@@ -30,7 +30,7 @@ tiles.prototype.render = function(render, deltaTime) {
     render.transform = this.object.transform.matrix;
     render.alpha = 0.5;
     render.blend = uno.Render.BLEND_ADD;
-    render.drawTexture(this.tex, this.frame);
+    render.texture(this.tex, this.frame);
 };
 
 function create(render1, render2) {
@@ -44,7 +44,7 @@ function create(render1, render2) {
 
         render2.target = tex2;
         render2.transform.reset();
-        render2.drawTexture(tex);
+        render2.texture(tex);
         render2.target = null;
 
         tex = tex2;
