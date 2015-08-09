@@ -108,6 +108,28 @@ uno.WebglRender = function(settings) {
     this._clip = new uno.Rect();
 
     /**
+     * Alpha mask texture
+     * @type {uno.Texture}
+     * @private
+     * @default null
+     */
+    this._mask = null;
+
+    /**
+     * Alpha mask transform
+     * @type {uno.Matrix}
+     * @private
+     */
+    this._maskTransform = new uno.Matrix();
+
+    /**
+     * Alpha mask alpha
+     * @type {Number}
+     * @private
+     */
+    this._maskAlpha = 1;
+
+    /**
      * Projection vector
      * @type {uno.Point}
      * @private
@@ -525,13 +547,16 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
  * @param {Number} alpha - Alpha multiplier for alpha mask
  * @returns {uno.WebglRender} - <code>this</code>
  */
-/*uno.WebglRender.prototype.mask = function(texture, transform, alpha) {
+uno.WebglRender.prototype.mask = function(texture, transform, alpha) {
     if (this._restoring)
         return this;
 
+    this._mask = texture;
+    this._maskTransform.set(transform);
+    this._maskAlpha = alpha;
 
     return this;
-};*/
+};
 
 /**
  * Set or reset mask texture
