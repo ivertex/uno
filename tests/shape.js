@@ -12,7 +12,7 @@ var building = function(object) {
 building.id = 'building';
 
 building.prototype.build = function(render) {
-    render.startShape();
+    render.beginShape();
 
     render.style(null, 0x00D025, 10);
     render.line(0, 200, 300, 200);

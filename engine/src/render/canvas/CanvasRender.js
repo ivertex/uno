@@ -724,8 +724,8 @@ uno.CanvasRender.prototype.shape = function(shape) {
  * Start creating shape
  * @returns {uno.Shape} - Created shape
  */
-uno.CanvasRender.prototype.startShape = function() {
-    return this._graphics.startShape();
+uno.CanvasRender.prototype.beginShape = function() {
+    return this._graphics.beginShape();
 };
 
 /**

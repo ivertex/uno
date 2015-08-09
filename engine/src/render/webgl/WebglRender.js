@@ -712,8 +712,8 @@ uno.WebglRender.prototype.shape = function(shape) {
  * Start creating shape
  * @returns {uno.Shape} - Created shape
  */
-uno.WebglRender.prototype.startShape = function() {
-    return this._graphics.startShape();
+uno.WebglRender.prototype.beginShape = function() {
+    return this._graphics.beginShape();
 };
 
 /**

@@ -232,7 +232,7 @@ uno.WebglGraphics.prototype.flush = function() {
  * Start collect new shape
  * @returns {uno.Shape} - Created shape
  */
-uno.WebglGraphics.prototype.startShape = function() {
+uno.WebglGraphics.prototype.beginShape = function() {
     this._shape = new uno.Shape();
     this._shapeIndex = this._indexCount;
     this._shapeVertex = this._vertexCount;

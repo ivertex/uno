@@ -21,7 +21,7 @@ uno.CanvasGraphics.prototype.destroy = function() {
  * Start collect new shape
  * @returns {uno.Shape} - Created shape
  */
-uno.CanvasGraphics.prototype.startShape = function() {
+uno.CanvasGraphics.prototype.beginShape = function() {
     this._shape = new uno.Shape();
     return this._shape;
 };
