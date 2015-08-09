@@ -253,11 +253,12 @@ uno.WebglState.prototype.restore = function() {
  */
 uno.WebglState._initBlending = function(ctx) {
     var result = [];
+    var consts = uno.WebglConsts;
 
-    result[uno.Render.BLEND_NORMAL]     = [ctx.ONE, ctx.ONE_MINUS_SRC_ALPHA];
-    result[uno.Render.BLEND_ADD]        = [ctx.ONE, ctx.ONE];
-    result[uno.Render.BLEND_MULTIPLY]   = [ctx.DST_COLOR, ctx.ONE_MINUS_SRC_ALPHA];
-    result[uno.Render.BLEND_SCREEN]     = [ctx.ONE, ctx.ONE_MINUS_SRC_COLOR];
+    result[uno.Render.BLEND_NORMAL]     = [consts.ONE, consts.ONE_MINUS_SRC_ALPHA];
+    result[uno.Render.BLEND_ADD]        = [consts.ONE, consts.ONE];
+    result[uno.Render.BLEND_MULTIPLY]   = [consts.DST_COLOR, consts.ONE_MINUS_SRC_ALPHA];
+    result[uno.Render.BLEND_SCREEN]     = [consts.ONE, consts.ONE_MINUS_SRC_COLOR];
 
     uno.WebglState.BLEND_MODES = result;
 };

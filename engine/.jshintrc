@@ -42,7 +42,7 @@
         "require": false,
 
         // uno globals
-        "uno": false,
+        "uno": {},
         "requestAnimationFrame": false
     },
 

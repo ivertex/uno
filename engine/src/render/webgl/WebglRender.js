@@ -456,29 +456,30 @@ uno.WebglRender.prototype.clear = function(color) {
     this._batch.reset();
 
     var ctx = this._context;
+    var consts = uno.WebglConsts;
 
     if (!color)
         color = this.background;
 
     if (!color) {
         ctx.colorMask(false, false, false, false);
-        ctx.clear(ctx.COLOR_BUFFER_BIT);
+        ctx.clear(consts.COLOR_BUFFER_BIT);
         ctx.colorMask(true, true, true, true);
         return this;
     }
 
     ctx.clearColor(color.r, color.g, color.b, color.a);
-    ctx.clear(ctx.COLOR_BUFFER_BIT);
+    ctx.clear(consts.COLOR_BUFFER_BIT);
 
     return this;
 };
 
 /**
  * Clip viewport rect
- * @param {Number} x - The x-coordinate of the left-top point of the clip rect
- * @param {Number} y - The y-coordinate of the left-top point of the clip rect
- * @param {Number} width - The clip rectangle width
- * @param {Number} height - The clip rectangle height
+ * @param {Number} [x] - The x-coordinate of the left-top point of the clip rect
+ * @param {Number} [y] - The y-coordinate of the left-top point of the clip rect
+ * @param {Number} [width] - The clip rectangle width
+ * @param {Number} [height] - The clip rectangle height
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.clip = function(x, y, width, height) {
@@ -493,13 +494,15 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
         return this;
     }
 
+    var consts = uno.WebglConsts;
+
     if (x === undefined || x === false) {
         if (!full) {
             this._graphics.flush();
             this._batch.flush();
         }
         clip.set(0, 0, this._width, this._height);
-        ctx.disable(ctx.SCISSOR_TEST);
+        ctx.disable(consts.SCISSOR_TEST);
         return this;
     }
 
@@ -509,7 +512,7 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
     }
 
     clip.set(x, y, width, height);
-    ctx.enable(ctx.SCISSOR_TEST);
+    ctx.enable(consts.SCISSOR_TEST);
     ctx.scissor(x, this._height - y - height, width, height);
 
     return this;
@@ -763,16 +766,17 @@ uno.WebglRender.prototype.getPixels = function(texture, x, y, width, height) {
     }
 
     var ctx = this._context;
+    var consts = uno.WebglConsts;
 
     if (texture || this._target)
-        ctx.bindFramebuffer(ctx.FRAMEBUFFER, texture ? source.handle(this, true) : null);
+        ctx.bindFramebuffer(consts.FRAMEBUFFER, texture ? source.handle(this, true) : null);
     if (texture)
-        ctx.framebufferTexture2D(ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, source.handle(this), 0);
-    ctx.readPixels(x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, source._imageData);
+        ctx.framebufferTexture2D(consts.FRAMEBUFFER, consts.COLOR_ATTACHMENT0, consts.TEXTURE_2D, source.handle(this), 0);
+    ctx.readPixels(x, y, width, height, consts.RGBA, consts.UNSIGNED_BYTE, source._imageData);
 
     var target = this._target;
     if (target === null)
-        ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
+        ctx.bindFramebuffer(consts.FRAMEBUFFER, null);
     else
         this.target = target;
 
@@ -835,10 +839,12 @@ uno.WebglRender.prototype.setPixels = function(texture, data, x, y, width, heigh
         tex._imageDataClamped.set(data);
 
     var ctx = this._context;
-    ctx.bindTexture(ctx.TEXTURE_2D, tex.handle(this));
-    ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
-    ctx.texSubImage2D(ctx.TEXTURE_2D, 0, x, y, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, tex._imageData);
-    ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, false);
+    var consts = uno.WebglConsts;
+
+    ctx.bindTexture(consts.TEXTURE_2D, tex.handle(this));
+    ctx.pixelStorei(consts.UNPACK_FLIP_Y_WEBGL, true);
+    ctx.texSubImage2D(consts.TEXTURE_2D, 0, x, y, width, height, consts.RGBA, consts.UNSIGNED_BYTE, tex._imageData);
+    ctx.pixelStorei(consts.UNPACK_FLIP_Y_WEBGL, false);
 
     return this;
 };
@@ -865,7 +871,7 @@ uno.WebglRender.prototype._getShader = function(shader) {
 
 /**
  * Set current shader
- * @param {uno.WebglRender} shader - Use the shader for rendering
+ * @param {uno.WebglShader} shader - Use the shader for rendering
  * @private
  */
 uno.WebglRender.prototype._setShader = function(shader) {
@@ -881,15 +887,19 @@ uno.WebglRender.prototype._setShader = function(shader) {
  */
 uno.WebglRender.prototype._updateShaders = function() {
     var shaders = this._shaders;
+    var current = this._shader;
+
     for (var i in shaders) {
         var shader = shaders[i];
+
         if (shader.uProjection) {
-            shader.use();
+            if (shader !== current)
+                shader.use();
             shader.uProjection.values(this._projection.x, this._projection.y);
         }
     }
-    if (this._shader)
-        this._shader.use();
+    if (current && shader !== current)
+        current.use();
 };
 
 /**
@@ -968,11 +978,12 @@ uno.WebglRender.prototype._setupRestore = function() {
  * @private
  */
 uno.WebglRender.prototype._addRestore = function(target) {
-    if (!target._restore)
-        return uno.error('Object has no _restore method for context lost handling');
+    if (!target._restore && !target._lose)
+        return uno.error('Object has no _restore or _lose method for context lost handling');
 
     if (this._restoreObjects.indexOf(target) !== -1)
         return false;
+
 
     this._restoreObjects.push(target);
     return true;
@@ -998,11 +1009,27 @@ uno.WebglRender.prototype._removeRestore = function(target) {
  * @private
  */
 uno.WebglRender.prototype._restore = function() {
-    for (var i = 0, l = this._restoreObjects.length; i < l; ++i) {
-        this._restoreObjects[i]._restore(this);
+    var objs = this._restoreObjects;
+    for (var i = 0, l = objs.length; i < l; ++i) {
+        if (objs[i]._restore)
+            objs[i]._restore(this);
     }
+
+    this._shader = null;
     this._updateShaders();
     this._restoring = false;
+};
+
+/**
+ * Call <code>_lose</code> method for all registered objects
+ * @private
+ */
+uno.WebglRender.prototype._lose = function() {
+    var objs = this._restoreObjects;
+    for (var i = 0, l = objs.length; i < l; ++i) {
+        if (objs[i]._lose)
+            objs[i]._lose(this);
+    }
 };
 
 /**
@@ -1013,6 +1040,7 @@ uno.WebglRender.prototype._restore = function() {
 uno.WebglRender.prototype._onContextLost = function(e) {
     e.preventDefault();
     this._restoring = true;
+    this._lose();
 };
 
 /**
@@ -1060,10 +1088,11 @@ uno.WebglRender.prototype._createContext = function() {
         return uno.error(error);
 
     var ctx = this._context;
+    var consts = uno.WebglConsts;
 
-    ctx.disable(ctx.DEPTH_TEST);
-    ctx.disable(ctx.CULL_FACE);
-    ctx.enable(ctx.BLEND);
+    ctx.disable(consts.DEPTH_TEST);
+    ctx.disable(consts.CULL_FACE);
+    ctx.enable(consts.BLEND);
     ctx.colorMask(true, true, true, true);
 
     this._restore();
@@ -1157,5 +1186,7 @@ uno.WebglRender.prototype._onFrame = function(time) {
 uno.WebglRender.prototype._resetState = function() {
     this.target = null;
     this._state.reset().sync();
-    this.clear();
+    this.clip();
+    if (this.background)
+        this.clear();
 };

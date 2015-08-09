@@ -121,9 +121,7 @@ uno.WebglBatch = function(render) {
 uno.WebglBatch.prototype.destroy = function() {
     this._render._removeRestore(this);
 
-    var ctx = this._render._context;
-    ctx.deleteBuffer(this._vertexBuffer);
-    ctx.deleteBuffer(this._indexBuffer);
+    this._free();
 
     this.texture = null;
     this._indices = null;
@@ -159,18 +157,37 @@ uno.WebglBatch.prototype._prepare = function() {
 };
 
 /**
+ * Free buffers
+ * @private
+ */
+uno.WebglBatch.prototype._free = function() {
+    var ctx = this._render._context;
+    ctx.deleteBuffer(this._vertexBuffer);
+    ctx.deleteBuffer(this._indexBuffer);
+};
+
+/**
+ * Restore method for handling context restoring
+ * @private
+ */
+uno.WebglBatch.prototype._lose = function() {
+    this._free();
+};
+
+/**
  * Restore method for handling context restoring
  * @private
  */
 uno.WebglBatch.prototype._restore = function() {
     var ctx = this._render._context;
+    var consts = uno.WebglConsts;
     this._vertexBuffer = ctx.createBuffer();
     this._indexBuffer = ctx.createBuffer();
 
-    ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    ctx.bindBuffer(ctx.ARRAY_BUFFER, this._vertexBuffer);
-    ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, this._indices, ctx.STATIC_DRAW);
-    ctx.bufferData(ctx.ARRAY_BUFFER, this._vertices, ctx.DYNAMIC_DRAW);
+    ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+    ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
+    ctx.bufferData(consts.ELEMENT_ARRAY_BUFFER, this._indices, consts.STATIC_DRAW);
+    ctx.bufferData(consts.ARRAY_BUFFER, this._vertices, consts.DYNAMIC_DRAW);
 
     this._stateTextures.length = 0;
 };
@@ -256,7 +273,7 @@ uno.WebglBatch.prototype.draw = function(texture, x, y, width, height, tint) {
  * Reset sprite batch
  */
 uno.WebglBatch.prototype.reset = function() {
-    var states = this._states;
+    var states = this._stateTextures;
 
     // Clear all links to textures
     for (var i = 0, l = this._stateCount; i < l; ++i)
@@ -280,9 +297,10 @@ uno.WebglBatch.prototype.flush = function() {
     var render = this._render;
     var state = render._state;
     var ctx = render._context;
+    var consts = uno.WebglConsts;
 
-    ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    ctx.bindBuffer(ctx.ARRAY_BUFFER, this._vertexBuffer);
+    ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+    ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
 
     var shader = render._getShader(uno.WebglShader.SPRITE);
     render._setShader(shader);
@@ -290,9 +308,9 @@ uno.WebglBatch.prototype.flush = function() {
     // TODO: Check perfomance
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)
-        ctx.bufferSubData(ctx.ARRAY_BUFFER, 0, this._vertices);
+        ctx.bufferSubData(consts.ARRAY_BUFFER, 0, this._vertices);
     else
-        ctx.bufferSubData(ctx.ARRAY_BUFFER, 0, this._positions.subarray(0, this._spriteCount * this._spriteSize));
+        ctx.bufferSubData(consts.ARRAY_BUFFER, 0, this._positions.subarray(0, this._spriteCount * this._spriteSize));
 
     var states = this._states;
     var modes = this._stateBlends;
@@ -313,7 +331,7 @@ uno.WebglBatch.prototype.flush = function() {
         }
 
         count = states[i];
-        ctx.drawElements(ctx.TRIANGLES, count - index, ctx.UNSIGNED_SHORT, index * 2);
+        ctx.drawElements(consts.TRIANGLES, count - index, consts.UNSIGNED_SHORT, index * 2);
         index = count;
     }
 

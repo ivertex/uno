@@ -137,6 +137,13 @@ uno.WebglGraphics = function(render) {
      */
     this._shapeVertex = 0;
 
+    /**
+     * Indices array for poly render (prevent gc)
+     * @type {Array}
+     * @private
+     */
+    this._polyIndices = [];
+
     this._restore();
     render._addRestore(this);
 };
@@ -147,9 +154,7 @@ uno.WebglGraphics = function(render) {
 uno.WebglGraphics.prototype.destroy = function() {
     this._render._removeRestore(this);
 
-    var ctx = this._render._context;
-    ctx.deleteBuffer(this._vertexBuffer);
-    ctx.deleteBuffer(this._indexBuffer);
+    this._free();
 
     this._indices = null;
     this._vertices = null;
@@ -159,19 +164,38 @@ uno.WebglGraphics.prototype.destroy = function() {
 };
 
 /**
+ * Free buffers
+ * @private
+ */
+uno.WebglGraphics.prototype._free = function() {
+    var ctx = this._render._context;
+    ctx.deleteBuffer(this._vertexBuffer);
+    ctx.deleteBuffer(this._indexBuffer);
+};
+
+/**
+ * Restore method for handling context restoring
+ * @private
+ */
+uno.WebglGraphics.prototype._lose = function() {
+    this._free();
+};
+
+/**
  * Restore method for handling context restoring
  * @private
  */
 uno.WebglGraphics.prototype._restore = function() {
     var ctx = this._render._context;
+    var consts = uno.WebglConsts;
 
     this._vertexBuffer = ctx.createBuffer();
     this._indexBuffer = ctx.createBuffer();
 
-    ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    ctx.bindBuffer(ctx.ARRAY_BUFFER, this._vertexBuffer);
-    ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, this._indices, ctx.DYNAMIC_DRAW);
-    ctx.bufferData(ctx.ARRAY_BUFFER, this._vertices, ctx.DYNAMIC_DRAW);
+    ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+    ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
+    ctx.bufferData(consts.ELEMENT_ARRAY_BUFFER, this._indices, consts.DYNAMIC_DRAW);
+    ctx.bufferData(consts.ARRAY_BUFFER, this._vertices, consts.DYNAMIC_DRAW);
 };
 
 /**
@@ -195,19 +219,20 @@ uno.WebglGraphics.prototype.flush = function() {
     var render = this._render;
     var state = render._state;
     var ctx = render._context;
+    var consts = uno.WebglConsts;
 
-    ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
-    ctx.bindBuffer(ctx.ARRAY_BUFFER, this._vertexBuffer);
+    ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
+    ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
 
     var shader = render._getShader(uno.WebglShader.PRIMITIVE);
     render._setShader(shader);
 
     if (this._vertexCount > this._maxVertexCount * 0.5) {
-        ctx.bufferSubData(ctx.ELEMENT_ARRAY_BUFFER, 0, this._indices);
-        ctx.bufferSubData(ctx.ARRAY_BUFFER, 0, this._vertices);
+        ctx.bufferSubData(consts.ELEMENT_ARRAY_BUFFER, 0, this._indices);
+        ctx.bufferSubData(consts.ARRAY_BUFFER, 0, this._vertices);
     } else {
-        ctx.bufferSubData(ctx.ELEMENT_ARRAY_BUFFER, 0, this._indices.subarray(0, this._indexCount));
-        ctx.bufferSubData(ctx.ARRAY_BUFFER, 0, this._positions.subarray(0, this._vertexCount * this._vertexSize));
+        ctx.bufferSubData(consts.ELEMENT_ARRAY_BUFFER, 0, this._indices.subarray(0, this._indexCount));
+        ctx.bufferSubData(consts.ARRAY_BUFFER, 0, this._positions.subarray(0, this._vertexCount * this._vertexSize));
     }
 
     var states = this._states;
@@ -219,7 +244,7 @@ uno.WebglGraphics.prototype.flush = function() {
         state.blend = modes[i];
         state.sync();
         count = states[i];
-        ctx.drawElements(ctx.TRIANGLES, count - index, ctx.UNSIGNED_SHORT, index * 2);
+        ctx.drawElements(consts.TRIANGLES, count - index, consts.UNSIGNED_SHORT, index * 2);
         index = count;
     }
 
@@ -931,7 +956,7 @@ uno.WebglGraphics.prototype.poly = function(points) {
 
         var i0, i1, i2, found;
         var d00, d01, d02, d11, d12;
-        var indices = [];
+        var indices = this._polyIndices;
 
         indices.length = l;
         for (j = 0; j < l; ++j)

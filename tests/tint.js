@@ -94,5 +94,5 @@ function create(render1, render2) {
 }
 
 function init() {
-    createRenders(false, true);
+    createRenders(true, true);
 }
