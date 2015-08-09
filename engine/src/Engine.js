@@ -30,36 +30,54 @@ uno.time = function() {
 
 /**
  * Print log message
- * @param {...String} message - Message strings that will be concatenated
+ * @param {...String} [message] - Message strings that will be concatenated
  * @returns {Boolean} - <code>true</code> for using with <code>return</code>
  */
-uno.log = function() {
+/*jshint unused: false */
+uno.log = function(message) {
+    var args = Array.prototype.slice.call(arguments);
+
+    // TODO: This log should displayed in inspector with line number where it called
     if (uno.Browser.any && window.console) {
-        console.log('%cUno: ' + Array.prototype.slice.call(arguments).join(' '), 'color: blue');
+        console.log('%cUno: ' + args.join(' '), 'color: blue');
     }
+
     return true;
 };
 
 /**
  * Print warning message
- * @param {...String} message - Message strings that will be concatenated
+ * @param {...String} [message] - Message strings that will be concatenated
  * @returns {Boolean} - <code>false</code> for using with <code>return</code>
  */
-uno.warn = function() {
+/*jshint unused: false */
+uno.warn = function(message) {
+    var args = Array.prototype.slice.call(arguments);
+
     if (uno.Browser.any && window.console) {
-        console.warn('%cUno: ' + Array.prototype.slice.call(arguments).join(' '), 'color: orange');
+        console.warn('%cUno: ' + args.join(' '), 'color: orange');
     }
+
     return false;
 };
 
 /**
  * Print error message
- * @param {...String} message - Message strings that will be concatenated
+ * @param {Error} [error] - Error object that should throw
+ * @param {...String} [message] - Message strings that will be concatenated
  * @returns {Boolean} - <code>false</code> for using with <code>return</code>
  */
-uno.error = function() {
+/*jshint unused: false */
+uno.error = function(error, message) {
+    var args = Array.prototype.slice.call(arguments);
+
+    // TODO: Need working solution for errors declaration
+    if (args.length && args[0] && args[0] instanceof Error)
+        throw args[0];
+
     if (uno.Browser.any && window.console) {
-        console.error('Uno: ' + Array.prototype.slice.call(arguments).join(' '));
+        console.error('Uno: ' + args.join(' '));
     }
+
     return false;
 };

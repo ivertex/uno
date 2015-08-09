@@ -30,7 +30,7 @@ uno.WebglBatch = function(render) {
      * @type {Number}
      * @private
      */
-    this._maxSpriteCount = 2000;
+    this._maxSpriteCount = 20;
 
     /**
      * Indeces array (for each sprite 6 indices)
@@ -133,6 +133,10 @@ uno.WebglBatch.prototype.destroy = function() {
     this._render = null;
     this._states = null;
     this._stateBlends = null;
+
+    var textures = this._stateTextures;
+    for (var i = 0, l = textures.length; i < l; ++i)
+        textures[i] = null;
     this._stateTextures = null;
 };
 
@@ -143,6 +147,7 @@ uno.WebglBatch.prototype.destroy = function() {
 uno.WebglBatch.prototype._prepare = function() {
     this._stateTextures.length = this._maxSpriteCount;
     var indices = this._indices;
+
     for (var i = 0, j = 0, l = indices.length; i < l; i += 6, j += 4) {
         indices[i + 0] = j + 0;
         indices[i + 1] = j + 1;
@@ -161,10 +166,13 @@ uno.WebglBatch.prototype._restore = function() {
     var ctx = this._render._context;
     this._vertexBuffer = ctx.createBuffer();
     this._indexBuffer = ctx.createBuffer();
+
     ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     ctx.bindBuffer(ctx.ARRAY_BUFFER, this._vertexBuffer);
     ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, this._indices, ctx.STATIC_DRAW);
     ctx.bufferData(ctx.ARRAY_BUFFER, this._vertices, ctx.DYNAMIC_DRAW);
+
+    this._stateTextures.length = 0;
 };
 
 /**
@@ -297,11 +305,13 @@ uno.WebglBatch.prototype.flush = function() {
     for (var i = 0, l = this._stateCount; i < l; ++i) {
         state.blend = modes[i];
         state.sync();
+
         texture = textures[i];
         if (texture !== current) {
             sampler.texture(0, texture);
             current = texture;
         }
+
         count = states[i];
         ctx.drawElements(ctx.TRIANGLES, count - index, ctx.UNSIGNED_SHORT, index * 2);
         index = count;
@@ -322,10 +332,12 @@ uno.WebglBatch.prototype._saveState = function(texture, blend) {
         this._states[this._stateCount - 1] = this._spriteCount * 6;
         return;
     }
+
     this._states[this._stateCount] = this._spriteCount * 6;
     this._stateTextures[this._stateCount] = texture;
     this._stateTextureLast = texture;
     this._stateBlends[this._stateCount] = blend;
     this._stateBlendLast = blend;
+
     ++this._stateCount;
 };

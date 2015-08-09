@@ -65,6 +65,10 @@ function onClick(e) {
             e.target.classList.add('active');
         return;
     }
+    if (name === 'docs') {
+        window.open('engine/docs', '_blank');
+        return;
+    }
     sessionStorage.setItem('current', name);
     window.location.reload();
 }

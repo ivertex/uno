@@ -108,11 +108,13 @@ uno.WebglShader.prototype._restore = function() {
     var ctx = this._render._context;
     var settings = this._settings;
     var program = uno.WebglShader._createProgram(ctx, settings.vertex, settings.fragment);
+
     ctx.useProgram(program);
     this._attributes = [];
     this._uniforms = [];
     var name, params, value;
     this._size = 0;
+
     for (name in settings.attributes) {
         params = settings.attributes[name];
         this._attributes.push(name);
@@ -125,6 +127,7 @@ uno.WebglShader.prototype._restore = function() {
         this._size += value.size;
         this[name] = value;
     }
+
     for (name in settings.uniforms) {
         params = settings.uniforms[name];
         this._uniforms.push(name);
@@ -138,6 +141,7 @@ uno.WebglShader.prototype._restore = function() {
         value.texture = this.setUniformTexture.bind(this, value);
         this[name] = value;
     }
+
     this._program = program;
 };
 
@@ -148,9 +152,11 @@ uno.WebglShader.prototype.setUniformValues = function() {
     var len = arguments.length;
     if (len < 2)
         return;
+
     var ctx = this._render._context;
     var uniform = arguments[0];
     var type = uniform.type;
+
     if (type === ctx.BYTE || type === ctx.UNSIGNED_BYTE || type === ctx.SHORT ||
         type === ctx.UNSIGNED_SHORT || type === ctx.SHORT || type === ctx.INT || type === ctx.UNSIGNED_INT) {
         switch (uniform.count) {
@@ -177,6 +183,7 @@ uno.WebglShader.prototype.setUniformValues = function() {
 uno.WebglShader.prototype.setUniformVector = function(uniform, vector) {
     var ctx = this._render._context;
     var type = uniform.type;
+
     if (type === ctx.BYTE || type === ctx.UNSIGNED_BYTE || type === ctx.SHORT ||
         type === ctx.UNSIGNED_SHORT || type === ctx.SHORT || type === ctx.INT || type === ctx.UNSIGNED_INT) {
         ctx['uniform' + uniform.count + 'iv'](uniform.location, vector);
@@ -215,7 +222,9 @@ uno.WebglShader.prototype.setUniformTexture = function(uniform, index, texture) 
 uno.WebglShader.prototype.use = function() {
     var ctx = this._render._context;
     var attr, offset = 0;
+
     ctx.useProgram(this._program);
+
     for (var i = 0, l = this._attributes.length; i < l; ++i) {
         attr = this[this._attributes[i]];
         ctx.enableVertexAttribArray(attr.location);
@@ -234,11 +243,14 @@ uno.WebglShader.prototype.use = function() {
  */
 uno.WebglShader._createProgram = function(ctx, vertexShader, fragmentShader) {
     var program = ctx.createProgram();
+
     ctx.attachShader(program, uno.WebglShader._compileShader(ctx, ctx.VERTEX_SHADER, vertexShader));
     ctx.attachShader(program, uno.WebglShader._compileShader(ctx, ctx.FRAGMENT_SHADER, fragmentShader));
     ctx.linkProgram(program);
+
     if (!ctx.getProgramParameter(program, ctx.LINK_STATUS) && !ctx.isContextLost())
         return uno.error('Program filed to link:', ctx.getProgramInfoLog(program));
+
     return program;
 };
 
@@ -252,10 +264,13 @@ uno.WebglShader._createProgram = function(ctx, vertexShader, fragmentShader) {
  */
 uno.WebglShader._compileShader = function(ctx, type, source) {
     var shader = ctx.createShader(type);
+
     ctx.shaderSource(shader, typeof source === 'string' ? source : source.join('\n'));
     ctx.compileShader(shader);
+
     if (!ctx.getShaderParameter(shader, ctx.COMPILE_STATUS) && !ctx.isContextLost())
         return uno.error('Could not compile shader:', ctx.getShaderInfoLog(shader));
+
     return shader;
 };
 

@@ -109,9 +109,9 @@ uno.Color.prototype.set = function(r, g, b, a) {
  * Is the color equal to given
  * @param {Number|uno.Color} r - The red value of the color.<br>
  *     If g is undefined then r treated as color hex value (if r is Number) or uno.Color
- * @param {Number} g - The green value of the color
- * @param {Number} b - The blue value of the color
- * @param {Number} a - The alpha value of the color
+ * @param {Number} [g] - The green value of the color
+ * @param {Number} [b] - The blue value of the color
+ * @param {Number} [a] - The alpha value of the color
  * @returns {Boolean}
  */
 uno.Color.prototype.equal = function(r, g, b, a) {

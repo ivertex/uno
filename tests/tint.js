@@ -84,6 +84,8 @@ function create(render1, render2) {
         obj2.transform.setPivot(tex2.width * 0.5, tex2.height * 0.5);
     });
 
+    window.tex1 = tex1;
+
     if (render1)
         render1.root = stage;
 
@@ -92,5 +94,5 @@ function create(render1, render2) {
 }
 
 function init() {
-    createRenders(true, true);
+    createRenders(false, true);
 }

@@ -5,38 +5,155 @@
 uno.WebglState = function(render) {
     var def = uno.Render.DEFAULT;
 
-    this.context = render._context;
+    /**
+     * Current canvas rendering context
+     * @type {WebGLRenderingContext}
+     * @private
+     */
+    this._render = render;
 
+    /**
+     * Current matrix transform
+     * @type {uno.Matrix}
+     */
     this.transform = new uno.Matrix();
+
+    /**
+     * Previous matrix transform
+     * @type {uno.Matrix}
+     * @private
+     */
     this._transform = new uno.Matrix();
+
+    /**
+     * Temp matrix transform
+     * @type {uno.Matrix}
+     * @private
+     */
     this.__transform = new uno.Matrix();
 
+    /**
+     * Current alpha
+     * @type {Number}
+     */
     this.alpha = def.alpha;
+
+    /**
+     * Previous alpha
+     * @type {Number}
+     * @private
+     */
     this._alpha = def.alpha;
+
+    /**
+     * Temp alpha
+     * @type {Number}
+     * @private
+     */
     this.__alpha = def.alpha;
 
+    /**
+     * Current blend mode
+     * @type {Number}
+     */
     this.blend = def.blend;
+
+    /**
+     * Previous blend mode
+     * @type {Number}
+     * @private
+     */
     this._blend = def.blend;
+
+    /**
+     * Temp blend mode
+     * @type {Number}
+     * @private
+     */
     this.__blend = def.blend;
 
+    /**
+     * Current scale mode
+     * @type {Number}
+     */
     this.scale = def.scale;
+
+    /**
+     * Previous scale mode
+     * @type {Number}
+     * @private
+     */
     this._scale = def.scale;
+
+    /**
+     * Temp scale mode
+     * @type {Number}
+     * @private
+     */
     this.__scale = def.scale;
 
+    /**
+     * Current fill color
+     * @type {uno.Color}
+     */
     this.fill = def.fill.clone();
+
+    /**
+     * Previous fill color
+     * @type {uno.Color}
+     * @private
+     */
     this._fill = def.fill.clone();
+
+    /**
+     * Temp fill color
+     * @type {uno.Color}
+     * @private
+     */
     this.__fill = def.fill.clone();
 
+    /**
+     * Current fill color
+     * @type {uno.Color}
+     */
     this.stroke = def.stroke.clone();
+
+    /**
+     * Previous fill color
+     * @type {uno.Color}
+     * @private
+     */
     this._stroke = def.stroke.clone();
+
+    /**
+     * Temp fill color
+     * @type {uno.Color}
+     * @private
+     */
     this.__stroke = def.stroke.clone();
 
+    /**
+     * Current stroke width
+     * @type {Number}
+     */
     this.thickness = def.thickness;
+
+    /**
+     * Previous stroke width
+     * @type {Number}
+     * @private
+     */
     this._thickness = def.thickness;
+
+    /**
+     * Temp stroke width
+     * @type {Number}
+     * @private
+     */
     this.__thickness = def.thickness;
 
     if (!uno.WebglState._inited) {
-        uno.WebglState._initBlending(this.context);
+        uno.WebglState._initBlending(render._context);
         uno.WebglState._inited = true;
     }
 
@@ -67,7 +184,7 @@ uno.WebglState.prototype.destroy = function() {
  * @param {Boolean} force - Do not check state before
  */
 uno.WebglState.prototype.sync = function(force) {
-    var ctx = this.context;
+    var ctx = this._render._context;
     var current, tmp;
 
     current = this.blend;

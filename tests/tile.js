@@ -21,12 +21,17 @@ tiles.prototype.input = function(event) {
     }
 };
 
-tiles.prototype.render = function(render, deltaTime) {
-    if (!this.object.transform && this.tex)
+tiles.prototype.update = function(render, deltaTime) {
+    if (!this.object.transform)
         return;
     this.frame.x += this.offset;
     this.frame.y += this.offset;
     this.object.transform.rotation += 0.001;
+};
+
+tiles.prototype.render = function(render, deltaTime) {
+    if (!this.object.transform && this.tex)
+        return;
     render.transform = this.object.transform.matrix;
     render.alpha = 0.5;
     render.blend = uno.Render.BLEND_ADD;

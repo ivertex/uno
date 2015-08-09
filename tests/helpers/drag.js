@@ -18,7 +18,8 @@ drag.prototype.input = function(event) {
     var transform = this.object.transform;
 
     if (uno.Mouse.down(event, uno.Mouse.RIGHT)) {
-        //window.render2._loseContext();
+        if (window.render2)
+            window.render2._loseContext();
     }
 
     if (this.wheel && uno.Mouse.wheel(event)) {

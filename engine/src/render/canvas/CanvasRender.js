@@ -5,6 +5,12 @@
  */
 uno.CanvasRender = function(settings) {
     /**
+     * ID of the render
+     * @type {Number}
+     */
+    this.id = 0;
+
+    /**
      * Type of render. See {@link uno.Render} constants
      * @type {Number}
      * @default uno.Render.RENDER_CANVAS
@@ -17,17 +23,173 @@ uno.CanvasRender = function(settings) {
      */
     this.root = null;
 
+    /**
+     * Backhground clear color (false if auto clear disabled)
+     * @type {Boolean|uno.Color}
+     * @default uno.Render.DEFAULT.background
+     */
+    this.background = null;
+
+    /**
+     * Required frame per second
+     * @default uno.Render.DEFAULT.ups
+     */
+    this.fps = 0;
+
+    /**
+     * Required updates per second
+     * @type {Number}
+     * @default uno.Render.DEFAULT.ups
+     */
+    this.ups = 0;
+
+    /**
+     * Width of the render
+     * @type {Number}
+     * @private
+     */
+    this._width = 0;
+
+    /**
+     * Height of the render
+     * @type {Number}
+     * @private
+     */
+    this._height = 0;
+
+    /**
+     * Current canvas
+     * @type {HTMLCanvasElement}
+     * @private
+     */
+    this._canvas = null;
+
+    /**
+     * Display canvas (element on the page)
+     * @type {HTMLCanvasElement}
+     * @private
+     */
+    this._displayCanvas = null;
+
+    /**
+     * Current canvas context
+     * @type {CanvasRenderingContext2D}
+     * @private
+     */
+    this._context = null;
+
+    /**
+     * Display canvas context (context of the canvas on the page)
+     * @type {CanvasRenderingContext2D}
+     * @private
+     */
+    this._displayContext = null;
+
+    /**
+     * Render state helper
+     * @type {uno.CanvasState}
+     * @private
+     */
+    this._state = null;
+
+    /**
+     * Graphics helper
+     * @type {uno.CanvasGraphics}
+     * @private
+     */
+    this._graphics = null;
+
+    /**
+     * Current render target
+     * @type {uno.Texture}
+     * @private
+     */
+    this._target = null;
+
+    /**
+     * Clipping rectangle
+     * @type {uno.Rect}
+     * @private
+     * @default Full screen
+     */
+    this._clip = new uno.Rect();
+
+    /**
+     * Alpha mask texture
+     * @type {uno.Texture}
+     * @private
+     * @default null
+     */
+    this._mask = null;
+
+    /**
+     * Alpha mask texture buffer
+     * @type {uno.Texture}
+     * @private
+     * @default null
+     */
+    this._maskBuffer = null;
+
+    /**
+     * Alpha mask transform
+     * @type {uno.Matrix}
+     * @private
+     */
+    this._maskTransform = new uno.Matrix();
+
+    /**
+     * Alpha mask alpha
+     * @type {Number}
+     * @private
+     */
+    this._maskAlpha = 1;
+
+    /**
+     * Display canvas bounds on the page
+     * @type {uno.Rect}
+     * @private
+     */
+    this._bounds = new uno.Rect();
+
+    /**
+     * Cached scroll of the page (for bounds refreshing)
+     * @type {uno.Point}
+     * @private
+     */
+    this._boundsScroll = new uno.Point();
+
+    /**
+     * Last frame update time
+     * @type {Number}
+     * @private
+     */
+    this._lastUpdateTime = 0;
+
+    /**
+     * Last frame render time
+     * @type {Number}
+     * @private
+     */
+    this._lastRenderTime = 0;
+
+    /**
+     * Cached bind of _onFrame function
+     * @type {Function}
+     * @private
+     */
+    this._frameBind = null;
+
+    // Initialize
+
     this._setupSettings(settings);
-    this._setupProps();
-    this._setupBounds();
 
     if (!this._createContext())
         return;
 
-    this._setupManagers();
+    this._setupHelpers();
     this._setupViewport(settings);
     this._resetState();
-    this._registerRender();
+    this._addRender();
     this._setupFrame();
 };
 
@@ -233,11 +395,7 @@ uno.CanvasRender.prototype.resize = function(width, height) {
  * Free all allocated resources and destroy render
  */
 uno.CanvasRender.prototype.destroy = function() {
-    // Remove from renders list
-    var index = uno.Render.renders.indexOf(this);
-    if (index === -1)
-        return;
-    uno.Render.renders.splice(index, 1);
+    this._removeRender();
 
     // Free managers
     this._state = null;
@@ -685,29 +843,6 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
 };
 
 /**
- * Initialize render specific properties helper
- * @private
- */
-uno.CanvasRender.prototype._setupProps = function() {
-    this._state = new uno.CanvasState();
-    this._target = null;
-    this._clip = new uno.Rect(0, 0, this._width, this._height);
-    this._mask = null;
-    this._maskBuffer = null;
-    this._maskTransform = new uno.Matrix();
-    this._maskAlpha = 1;
-};
-
-/**
- * Initialize the render bounds tracking
- * @private
- */
-uno.CanvasRender.prototype._setupBounds = function() {
-    this._bounds = new uno.Rect();
-    this._boundsScroll = new uno.Point();
-};
-
-/**
  * Update render bounds
  * @private
  */
@@ -731,8 +866,6 @@ uno.CanvasRender.prototype._createContext = function() {
     if (!this._context)
         return uno.error('This browser does not support canvas. Try using another browser');
 
-    this._state.context = this._context;
-
     return true;
 };
 
@@ -751,17 +884,29 @@ uno.CanvasRender.prototype._setupViewport = function(settings) {
  * Initialize helpers
  * @private
  */
-uno.CanvasRender.prototype._setupManagers = function() {
+uno.CanvasRender.prototype._setupHelpers = function() {
+    this._state = new uno.CanvasState(this);
     this._graphics = new uno.CanvasGraphics(this);
 };
 
 /**
- * Register render in global list of renders
+ * Add render to global list of renders
  * @private
  */
-uno.CanvasRender.prototype._registerRender = function() {
+uno.CanvasRender.prototype._addRender = function() {
     this.id = uno.Render._uid++;
     uno.Render.renders.push(this);
+};
+
+/**
+ * Remove render from global list of renders
+ * @private
+ */
+uno.CanvasRender.prototype._removeRender = function() {
+    var index = uno.Render.renders.indexOf(this);
+    if (index === -1)
+        return;
+    uno.Render.renders.splice(index, 1);
 };
 
 /**
@@ -769,8 +914,6 @@ uno.CanvasRender.prototype._registerRender = function() {
  * @private
  */
 uno.CanvasRender.prototype._setupFrame = function() {
-    this._lastUpdateTime = 0;
-    this._lastRenderTime = 0;
     this._frameBind = this._onFrame.bind(this);
     this._onFrame(0);
 };
