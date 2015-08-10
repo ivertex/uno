@@ -30,24 +30,11 @@ uno.WebglShader.PRIMITIVE = {
         '}'
     ],
     attributes: {
-        aPosition: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        aColor: {
-            type: uno.WebglShader.UNSIGNED_BYTE,
-            size: 4,
-            normalize: true     // Using packing ABGR (alpha and tint color)
-        }
+        aPosition: { type: uno.WebglShader.FLOAT, size: 2 },
+        aColor: { type: uno.WebglShader.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
     },
     uniforms: {
-        uProjection: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        uOffset: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        }
+        uProjection: { type: uno.WebglShader.FLOAT, size: 2 },
+        uOffset: { type: uno.WebglShader.FLOAT, size: 2 }
     }
 };

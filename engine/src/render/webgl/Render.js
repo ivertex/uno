@@ -411,8 +411,8 @@ uno.WebglRender.prototype.resize = function(width, height) {
     this._height = height;
     this._canvas.width = width;
     this._canvas.height = height;
-    this._projection.x = width / 2;
-    this._projection.y = -height / 2;
+    this._projection.x = width * 0.5;
+    this._projection.y = -height * 0.5;
     this._context.viewport(0, 0, width, height);
     this._clip.set(0, 0, width, height);
 
@@ -552,8 +552,8 @@ uno.WebglRender.prototype.mask = function(texture, transform, alpha) {
         return this;
 
     this._mask = texture;
-    this._maskTransform.set(transform);
     this._maskAlpha = alpha;
+    this._maskTransform.set(transform).invert();
 
     return this;
 };

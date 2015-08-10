@@ -305,6 +305,12 @@ uno.WebglBatch.prototype.flush = function() {
     var shader = render._getShader(render._mask ? uno.WebglShader.SPRITE_MASK : uno.WebglShader.SPRITE);
     render._setShader(shader);
 
+    if (render._mask) {
+        shader.uMask.texture(1, uno.WebglTexture.get(render._mask).handle(render));
+        shader.uMaskSize.values(render._mask.width, -render._mask.height);
+        shader.uMaskTransform.matrix(render._maskTransform);
+    }
+
     // TODO: Check perfomance
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)

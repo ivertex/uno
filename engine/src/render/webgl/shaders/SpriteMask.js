@@ -15,10 +15,16 @@ uno.WebglShader.SPRITE_MASK = {
         'varying vec4 vColor;',
         'uniform sampler2D uSampler;',
         'uniform sampler2D uMask;',
+        'uniform mat3 uMaskTransform;',
+        'uniform vec2 uMaskSize;',
 
         'void main(void) {',
-        '   vColor.a *= texture2D(uMask, gl_FragCoord).a;',
-        '   gl_FragColor = texture2D(uSampler, vUV) * vColor;',
+        '   vec4 color = texture2D(uSampler, vUV) * vColor;',
+        '   vec2 coords = (gl_FragCoord.xyz * uMaskTransform).xy / uMaskSize;',
+        '   if (coords.x < 0.0 || coords.y < 0.0 || coords.x > 1.0 || coords.y > 1.0) discard;',
+        '   float alpha = color.a * texture2D(uMask, coords).a;',
+        '   if (alpha < 0.01) discard;',
+        '   gl_FragColor = vec4(color.rgb * alpha, alpha);',
         '}'
     ],
     vertex: [
@@ -37,34 +43,15 @@ uno.WebglShader.SPRITE_MASK = {
         '}'
     ],
     attributes: {
-        aPosition: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        aUV: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        aColor: {
-            type: uno.WebglShader.UNSIGNED_BYTE,
-            size: 4,
-            normalize: true     // Using packing ABGR (alpha and tint color)
-        }
+        aPosition: { type: uno.WebglShader.FLOAT, size: 2 },
+        aUV: { type: uno.WebglShader.FLOAT, size: 2 },
+        aColor: { type: uno.WebglShader.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
     },
     uniforms: {
-        uProjection: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        uSampler: {
-            type: uno.WebglShader.SAMPLER
-        },
-        uMask: {
-            type: uno.WebglShader.SAMPLER
-        },
-        uOffset: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        }
+        uProjection: { type: uno.WebglShader.FLOAT, size: 2 },
+        uMaskTransform: { type: uno.WebglShader.MATRIX, size: 3 },
+        uMaskSize: { type: uno.WebglShader.FLOAT, size: 2 },
+        uSampler: { type: uno.WebglShader.SAMPLER },
+        uMask: { type: uno.WebglShader.SAMPLER }
     }
 };

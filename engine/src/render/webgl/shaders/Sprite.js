@@ -35,31 +35,12 @@ uno.WebglShader.SPRITE = {
         '}'
     ],
     attributes: {
-        aPosition: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        aUV: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        aColor: {
-            type: uno.WebglShader.UNSIGNED_BYTE,
-            size: 4,
-            normalize: true     // Using packing ABGR (alpha and tint color)
-        }
+        aPosition: { type: uno.WebglShader.FLOAT, size: 2 },
+        aUV: { type: uno.WebglShader.FLOAT, size: 2 },
+        aColor: { type: uno.WebglShader.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
     },
     uniforms: {
-        uProjection: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        },
-        uSampler: {
-            type: uno.WebglShader.SAMPLER
-        },
-        uOffset: {
-            type: uno.WebglShader.FLOAT,
-            size: 2
-        }
+        uProjection: { type: uno.WebglShader.FLOAT, size: 2 },
+        uSampler: { type: uno.WebglShader.SAMPLER }
     }
 };

@@ -117,12 +117,14 @@ uno.Matrix.prototype.set = function(a, b, c, d, tx, ty) {
         this.ty = a.ty;
         return this;
     }
+
     this.a = a || 1;
     this.b = b || 0;
     this.c = c || 0;
     this.d = d || 1;
     this.tx = tx || 0;
     this.ty = ty || 0;
+
     return this;
 };
 
@@ -161,18 +163,37 @@ uno.Matrix.prototype.identity = function() {
 
 /**
  * Return matrix representation as array
+ * @param {Boolean} transpose - Whether we need to transpose the matrix or not
  * @returns {Number[]}
  */
-uno.Matrix.prototype.array = function() {
+uno.Matrix.prototype.array = function(transpose) {
     var arr = this._array;
+
     if (!arr)
-        arr = this._array = new Float32Array(6);
-    arr[0] = this.a;
-    arr[1] = this.b;
-    arr[2] = this.c;
-    arr[3] = this.d;
-    arr[4] = this.tx;
-    arr[5] = this.ty;
+        arr = this._array = new Float32Array(9);
+
+    if (transpose) {
+        arr[0] = this.a;
+        arr[1] = this.b;
+        arr[2] = 0;
+        arr[3] = this.c;
+        arr[4] = this.d;
+        arr[5] = 0;
+        arr[6] = this.tx;
+        arr[7] = this.ty;
+        arr[8] = 1;
+    } else {
+        arr[0] = this.a;
+        arr[1] = this.b;
+        arr[2] = this.tx;
+        arr[3] = this.c;
+        arr[4] = this.d;
+        arr[5] = this.ty;
+        arr[6] = 0;
+        arr[7] = 0;
+        arr[8] = 1;
+    }
+
     return arr;
 };
 
@@ -191,7 +212,9 @@ uno.Matrix.prototype.transform = function(position, scale, rotation, pivot, pare
         this._cos = Math.cos(rotation);
         this._rotation = rotation;
     }
+
     parentMatrix = parentMatrix || uno.Matrix.IDENTITY;
+
     var a00 = this._cos * scale.x,
         a01 = -this._sin * scale.y,
         a10 = this._sin * scale.x,
@@ -200,12 +223,14 @@ uno.Matrix.prototype.transform = function(position, scale, rotation, pivot, pare
         a12 = position.y - a11 * pivot.y - pivot.x * a10,
         b00 = parentMatrix.a, b01 = parentMatrix.b,
         b10 = parentMatrix.c, b11 = parentMatrix.d;
+
     this.a = b00 * a00 + b01 * a10;
     this.b = b00 * a01 + b01 * a11;
     this.tx = b00 * a02 + b01 * a12 + parentMatrix.tx;
     this.c = b10 * a00 + b11 * a10;
     this.d = b10 * a01 + b11 * a11;
     this.ty = b10 * a02 + b11 * a12 + parentMatrix.ty;
+
     return this;
 };
 
@@ -216,8 +241,10 @@ uno.Matrix.prototype.transform = function(position, scale, rotation, pivot, pare
  */
 uno.Matrix.prototype.apply = function(point) {
     var x = this.a * point.x + this.b * point.y + this.tx;
+
     point.y = this.c * point.x + this.d * point.y + this.ty;
     point.x = x;
+
     return this;
 };
 
@@ -229,8 +256,10 @@ uno.Matrix.prototype.apply = function(point) {
 uno.Matrix.prototype.applyInverse = function(point) {
     var id = 1 / (this.a * this.d + this.c * -this.b);
     var x = this.d * id * point.x + -this.c * id * point.y + (this.ty * this.c - this.tx * this.d) * id;
+
     point.y = this.a * id * point.y + -this.b * id * x + (-this.ty * this.a + this.tx * this.b) * id;
     point.x = x;
+
     return this;
 };
 
@@ -247,8 +276,10 @@ uno.Matrix.prototype.translate = function(x, y) {
         this.ty += x.y;
         return this;
     }
+
     this.tx += x;
     this.ty += y || x;
+
     return this;
 };
 
@@ -266,6 +297,7 @@ uno.Matrix.prototype.scale = function(x, y) {
     this.b *= y || x;
     this.tx *= x;
     this.ty *= y || x;
+
     return this;
 };
 
@@ -280,12 +312,14 @@ uno.Matrix.prototype.rotate = function(angle) {
     var a1 = this.a;
     var c1 = this.c;
     var tx1 = this.tx;
+
     this.a = a1 * cos - this.b * sin;
     this.b = a1 * sin + this.b * cos;
     this.c = c1 * cos - this.d * sin;
     this.d = c1 * sin + this.d * cos;
     this.tx = tx1 * cos - this.ty * sin;
     this.ty = tx1 * sin + this.ty * cos;
+
     return this;
 };
 
@@ -299,12 +333,14 @@ uno.Matrix.prototype.append = function(matrix) {
     var b1 = this.b;
     var c1 = this.c;
     var d1 = this.d;
+
     this.a = matrix.a * a1 + matrix.b * c1;
     this.b = matrix.a * b1 + matrix.b * d1;
     this.c = matrix.c * a1 + matrix.d * c1;
     this.d = matrix.c * b1 + matrix.d * d1;
     this.tx = matrix.tx * a1 + matrix.ty * c1 + this.tx;
     this.ty = matrix.tx * b1 + matrix.ty * d1 + this.ty;
+
     return this;
 };
 
@@ -315,6 +351,7 @@ uno.Matrix.prototype.append = function(matrix) {
  */
 uno.Matrix.prototype.prepend = function(matrix) {
     var tx1 = this.tx;
+
     if (matrix.a !== 1 || matrix.b !== 0 || matrix.c !== 0 || matrix.d !== 1) {
         var a1 = this.a;
         var c1 = this.c;
@@ -323,8 +360,10 @@ uno.Matrix.prototype.prepend = function(matrix) {
         this.c  = c1 * matrix.a + this.d * matrix.c;
         this.d  = c1 * matrix.b + this.d * matrix.d;
     }
+
     this.tx = tx1 * matrix.a + this.ty * matrix.c + matrix.tx;
     this.ty = tx1 * matrix.b + this.ty * matrix.d + matrix.ty;
+
     return this;
 };
 
@@ -339,12 +378,14 @@ uno.Matrix.prototype.invert = function() {
     var d1 = this.d;
     var tx1 = this.tx;
     var n = a1 * d1 - b1 * c1;
+
     this.a = d1 / n;
     this.b = -b1 / n;
     this.c = -c1 / n;
     this.d = a1 / n;
     this.tx = (c1 * this.ty - d1 * tx1) / n;
     this.ty = -(a1 * this.ty - b1 * tx1) / n;
+
     return this;
 };
 
@@ -358,6 +399,7 @@ uno.Matrix.prototype.invert = function() {
 uno.Matrix.concat = function(m1, m2, res) {
     var a00 = m1.a, a01 = m1.b, a10 = m1.c, a11 = m1.d, a02 = m1.tx, a12 = m1.ty;
     var b00 = m2.a, b01 = m2.b, b10 = m2.c, b11 = m2.d, b02 = m2.tx, b12 = m2.ty;
+
     res.a = b00 * a00 + b01 * a10;
     res.b = b00 * a01 + b01 * a11;
     res.tx = b00 * a02 + b01 * a12 + b02;
