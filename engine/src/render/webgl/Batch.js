@@ -309,6 +309,7 @@ uno.WebglBatch.prototype.flush = function() {
         shader.uMask.texture(1, uno.WebglTexture.get(render._mask).handle(render));
         shader.uMaskSize.values(render._mask.width, -render._mask.height);
         shader.uMaskTransform.matrix(render._maskTransform);
+        shader.uViewport.values(render._width, render._height);
     }
 
     // TODO: Check perfomance

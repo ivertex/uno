@@ -23,8 +23,13 @@ drag.prototype.input = function(event) {
     }
 
     if (this.wheel && uno.Mouse.wheel(event)) {
-        if (event.wheelX || event.wheelY)
-            transform.scale.add(event.wheelY * this.scale, event.wheelY * this.scale);
+        var wheel = event.wheelX || event.wheelY;
+        if (wheel) {
+            if (uno.Keyboard.shift)
+                transform.rotation += wheel * this.scale;
+            else
+                transform.scale.add(wheel * this.scale, wheel * this.scale);
+        }
         return;
     }
 

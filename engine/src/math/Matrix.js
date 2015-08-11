@@ -163,7 +163,7 @@ uno.Matrix.prototype.identity = function() {
 
 /**
  * Return matrix representation as array
- * @param {Boolean} transpose - Whether we need to transpose the matrix or not
+ * @param {Boolean} [transpose=false] - Whether we need to transpose the matrix or not
  * @returns {Number[]}
  */
 uno.Matrix.prototype.array = function(transpose) {

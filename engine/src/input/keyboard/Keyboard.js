@@ -12,34 +12,6 @@ uno.Keyboard = function() {
 
     /**
      * @memberof uno.Keyboard
-     * @member {Boolean} _control - Is CONTROL button pressed
-     * @private
-     */
-    this._control = false;
-
-    /**
-     * @memberof uno.Keyboard
-     * @member {Boolean} _alt - Is ALT button pressed
-     * @private
-     */
-    this._alt = false;
-
-    /**
-     * @memberof uno.Keyboard
-     * @member {Boolean} _shift - Is SHIFT button pressed
-     * @private
-     */
-    this._shift = false;
-
-    /**
-     * @memberof uno.Keyboard
-     * @member {Boolean} _command - Is COMMAND button pressed
-     * @private
-     */
-    this._command = false;
-
-    /**
-     * @memberof uno.Keyboard
      * @member {Object} _controls - Control key codes list
      * @private
      */
@@ -72,31 +44,40 @@ uno.Keyboard = function() {
 /**
  * Check is event type equal to any of {@link uno.Keyboard.UP}, {@link uno.Keyboard.DOWN}
  * @param {uno.MouseEvent|uno.KeyboardEvent|uno.TouchEvent} event - Event to check
+ * @param {Number} key - The key code of the button
  * @static
  * @returns {Boolean}
  */
-uno.Keyboard.prototype.any = function(event) {
-    return event.type === uno.Keyboard.UP || event.type === uno.Keyboard.DOWN;
+uno.Keyboard.prototype.any = function(event, key) {
+    if ((event.type === uno.Keyboard.UP || event.type === uno.Keyboard.DOWN) || (key && event.key !== key))
+        return false;
+    return true;
 };
 
 /**
  * Check is event type is {@link uno.Keyboard.UP}
  * @param {uno.MouseEvent|uno.KeyboardEvent|uno.TouchEvent} event - Event to check
+ * @param {Number} key - The key code of the button
  * @static
  * @returns {Boolean}
  */
-uno.Keyboard.prototype.up = function(event) {
-    return event.type === uno.Keyboard.UP;
+uno.Keyboard.prototype.up = function(event, key) {
+    if (event.type !== uno.Keyboard.UP || (key && event.key !== key))
+        return false;
+    return true;
 };
 
 /**
  * Check is event type is {@link uno.Keyboard.DOWN}
  * @param {uno.MouseEvent|uno.KeyboardEvent|uno.TouchEvent} event - Event to check
+ * @param {Number} key - The key code of the button
  * @static
  * @returns {Boolean}
  */
-uno.Keyboard.prototype.down = function(event) {
-    return event.type === uno.Keyboard.DOWN;
+uno.Keyboard.prototype.down = function(event, key) {
+    if (event.type !== uno.Keyboard.DOWN || (key && event.key !== key))
+        return false;
+    return true;
 };
 
 /**
@@ -115,7 +96,7 @@ uno.Keyboard.prototype.key = function(key) {
  */
 Object.defineProperty(uno.Keyboard.prototype, 'control', {
     get: function () {
-        return this._control;
+        return this._keys[uno.Keyboard.CONTROL];
     }
 });
 
@@ -126,7 +107,7 @@ Object.defineProperty(uno.Keyboard.prototype, 'control', {
  */
 Object.defineProperty(uno.Keyboard.prototype, 'alt', {
     get: function () {
-        return this._alt;
+        return this._keys[uno.Keyboard.ALT];
     }
 });
 
@@ -137,7 +118,7 @@ Object.defineProperty(uno.Keyboard.prototype, 'alt', {
  */
 Object.defineProperty(uno.Keyboard.prototype, 'shift', {
     get: function () {
-        return this._shift;
+        return this._keys[uno.Keyboard.SHIFT];
     }
 });
 
@@ -148,7 +129,7 @@ Object.defineProperty(uno.Keyboard.prototype, 'shift', {
  */
 Object.defineProperty(uno.Keyboard.prototype, 'command', {
     get: function () {
-        return this._command;
+        return this._keys[uno.Keyboard.COMMAND_LEFT] || this._keys[uno.Keyboard.COMMAND_RIGHT];
     }
 });
 
@@ -187,12 +168,15 @@ uno.Keyboard.prototype._initialize = function() {
 uno.Keyboard.prototype._callInput = function(type, key, char) {
     var renders = uno.Render.renders;
     var event = this._event;
-    event._set(type, key, char, this._alt, this._control, this._shift, this._command);
+
+    event._set(type, key, char, this.alt, this.control, this.shift, this.command);
+
     for (var i = 0, l = renders.length; i < l; ++i) {
         var render = renders[i];
         if (render.root)
             render.root.input(event, render);
     }
+
     event._reset();
 };
 
@@ -245,7 +229,7 @@ uno.Keyboard = new uno.Keyboard();
 uno.Keyboard.UP = 200;
 
 /**
- * Mouse down event type
+ * Keyboard down event type
  * @const
  * @type {Number}
  */
@@ -438,6 +422,8 @@ uno.Keyboard.ENTER = 13;
 uno.Keyboard.SHIFT = 16;
 uno.Keyboard.CONTROL = 17;
 uno.Keyboard.ALT = 18;
+uno.Keyboard.COMMAND_LEFT = 91;
+uno.Keyboard.COMMAND_RIGHT = 93;
 uno.Keyboard.CAPS_LOCK = 20;
 uno.Keyboard.ESC = 27;
 uno.Keyboard.SPACEBAR = 32;
