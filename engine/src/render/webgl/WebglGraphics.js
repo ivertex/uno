@@ -82,12 +82,6 @@ uno.WebglGraphics = function(render) {
      */
     this._minShapeSize = 4;
 
-    /**
-     * Default blend mode to reset. See {@link uno.Render} constants
-     * @type {Number}
-     * @private
-     */
-    this._defaultBlend = uno.Render.DEFAULT.blend;
 
     /**
      * Array states of the batch (each item is number of shapes with equal blend mode together)
@@ -203,7 +197,7 @@ uno.WebglGraphics.prototype._restore = function() {
  * Reset graphics batch
  */
 uno.WebglGraphics.prototype.reset = function() {
-    this._stateBlendLast = this._defaultBlend;
+    this._stateBlendLast = uno.Render.BLEND_NORMAL;
     this._stateCount = 0;
     this._vertexCount = 0;
     this._indexCount = 0;
@@ -219,13 +213,20 @@ uno.WebglGraphics.prototype.flush = function() {
 
     var render = this._render;
     var state = render._state;
+    var mask = render._mask;
     var ctx = render._context;
     var consts = uno.WebglConsts;
 
     ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
 
-    var shader = render._useShader(uno.WebglShader.PRIMITIVE);
+    var shader;
+    if (mask.enable()) {
+        shader = render._useShader(uno.WebglShader.GRAPHICS_MASK);
+        mask.apply(shader, 0);
+    } else {
+        shader = render._useShader(uno.WebglShader.GRAPHICS);
+    }
     shader.uProjection.set(render._projection);
 
     // TODO: Check perfomance & gc
@@ -243,6 +244,7 @@ uno.WebglGraphics.prototype.flush = function() {
     var index = 0;
     var count = 0;
 
+    state.save();
     for (var i = 0, l = this._stateCount; i < l; ++i) {
         state.blend = modes[i];
         state.sync();
@@ -250,6 +252,7 @@ uno.WebglGraphics.prototype.flush = function() {
         ctx.drawElements(consts.TRIANGLES, count - index, consts.UNSIGNED_SHORT, index * 2);
         index = count;
     }
+    state.restore();
 
     this.reset();
 

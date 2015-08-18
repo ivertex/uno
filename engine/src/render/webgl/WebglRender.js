@@ -81,10 +81,10 @@ uno.WebglRender = function(settings) {
 
     /**
      * Texture batch helper
-     * @type {uno.WebglBatch}
+     * @type {uno.WebglSprites}
      * @private
      */
-    this._batch = null;
+    this._sprites = null;
 
     /**
      * Graphics helper
@@ -109,26 +109,12 @@ uno.WebglRender = function(settings) {
     this._clip = new uno.Rect();
 
     /**
-     * Alpha mask texture
-     * @type {uno.Texture}
+     * Alpha mask helper
+     * @type {uno.WebglMask}
      * @private
      * @default null
      */
     this._mask = null;
-
-    /**
-     * Alpha mask transform
-     * @type {uno.Matrix}
-     * @private
-     */
-    this._maskTransform = new uno.Matrix();
-
-    /**
-     * Alpha mask alpha
-     * @type {Number}
-     * @private
-     */
-    this._maskAlpha = 1;
 
     /**
      * Projection vector
@@ -288,10 +274,11 @@ Object.defineProperty(uno.WebglRender.prototype, 'target', {
         return this._target;
     },
     set: function(value) {
+        this.mask();
         if (!value) {
             if (value !== this._target) {
                 this._graphics.flush();
-                this._batch.flush();
+                this._sprites.flush();
                 this._target = null;
                 this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
                 this._projection.x = this.width * 0.5;
@@ -301,7 +288,7 @@ Object.defineProperty(uno.WebglRender.prototype, 'target', {
         } else {
             if (this._target !== value) {
                 this._graphics.flush();
-                this._batch.flush();
+                this._sprites.flush();
                 this._target = value;
                 this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(value).handle(this, true));
                 this._projection.x = value.width * 0.5;
@@ -427,12 +414,14 @@ uno.WebglRender.prototype.destroy = function() {
     this._removeRender();
 
     // Free helpers
-    this._batch.destroy();
-    this._batch = null;
+    this._sprites.destroy();
+    this._sprites = null;
     this._graphics.destroy();
     this._graphics = null;
     this._state.destroy();
     this._state = null;
+    this._mask.destroy();
+    this._mask = null;
 
     // Free all owned shaders
     for (var i in this._shaders)
@@ -473,7 +462,7 @@ uno.WebglRender.prototype.clear = function(color) {
         return this;
 
     this._graphics.reset();
-    this._batch.reset();
+    this._sprites.reset();
 
     var ctx = this._context;
     var consts = uno.WebglConsts;
@@ -519,7 +508,7 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
     if (x === undefined || x === false) {
         if (!full) {
             this._graphics.flush();
-            this._batch.flush();
+            this._sprites.flush();
         }
         clip.set(0, 0, this._width, this._height);
         ctx.disable(consts.SCISSOR_TEST);
@@ -528,7 +517,7 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
 
     if (!full) {
         this._graphics.flush();
-        this._batch.flush();
+        this._sprites.flush();
     }
 
     clip.set(x, y, width, height);
@@ -541,27 +530,19 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
 /**
  * Set or reset mask texture
  * @param {uno.Texture} texture - Alpha mask texture
- * @param {uno.Matrix} transform - Transform for texture
- * @param {Number} alpha - Alpha multiplier for alpha mask
+ * @param {uno.Rect} [frame] - The frame to mask rect of the texture (default full texture)
  * @returns {uno.WebglRender} - <code>this</code>
  */
-uno.WebglRender.prototype.mask = function(texture, transform, alpha) {
+uno.WebglRender.prototype.mask = function(texture, frame) {
     if (this._restoring)
         return this;
 
-    if (this._mask !== texture || (transform && transform.equal(this._maskTransform)) ||
-        (alpha !== undefined && this._maskAlpha !== alpha)) {
-        this._graphics.flush();
-        this._batch.flush();
+    if (texture && texture.ready && !texture.pot && frame && (frame.width > texture.width || frame.height > texture.height)) {
+        uno.error('Repeating non power of two textures are not supported');
+        return this;
     }
 
-    this._mask = texture;
-
-    if (transform)
-        this._maskTransform.set(transform);
-
-    if (alpha !== undefined)
-        this._maskAlpha = alpha;
+    this._mask.set(texture, this.transform, frame);
 
     return this;
 };
@@ -601,7 +582,7 @@ uno.WebglRender.prototype.texture = function(texture, frame, tint) {
     }
 
     this._graphics.flush();
-    this._batch.draw(uno.WebglTexture.get(texture),
+    this._sprites.draw(uno.WebglTexture.get(texture),
         frame ? frame.x : 0, frame ? frame.y : 0,
         frame ? frame.width / texture.width : 1, frame ? frame.height / texture.height : 1,
         tint || uno.Color.WHITE);
@@ -623,7 +604,7 @@ uno.WebglRender.prototype.line = function(x1, y1, x2, y2) {
     if (this._restoring || !state.alpha || !state.stroke.a)
         return this;
 
-    this._batch.flush();
+    this._sprites.flush();
     this._graphics.line(x1, y1, x2, y2);
 
     return this;
@@ -643,7 +624,7 @@ uno.WebglRender.prototype.rect = function(x, y, width, height) {
     if (this._restoring || !state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
 
-    this._batch.flush();
+    this._sprites.flush();
     this._graphics.rect(x, y, width, height);
 
     return this;
@@ -662,7 +643,7 @@ uno.WebglRender.prototype.circle = function(x, y, radius) {
     if (this._restoring || !state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
 
-    this._batch.flush();
+    this._sprites.flush();
     this._graphics.circle(x, y, radius);
 
     return this;
@@ -682,7 +663,7 @@ uno.WebglRender.prototype.ellipse = function(x, y, width, height) {
     if (this._restoring || !state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
 
-    this._batch.flush();
+    this._sprites.flush();
     this._graphics.ellipse(x, y, width, height);
 
     return this;
@@ -704,7 +685,7 @@ uno.WebglRender.prototype.arc = function(x, y, radius, startAngle, endAngle, ant
     if (this._restoring || !state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
 
-    this._batch.flush();
+    this._sprites.flush();
     this._graphics.arc(x, y, radius, startAngle, endAngle, antiClockwise);
 
     return this;
@@ -721,7 +702,7 @@ uno.WebglRender.prototype.poly = function(points) {
     if (this._restoring || !state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
 
-    this._batch.flush();
+    this._sprites.flush();
     this._graphics.poly(points);
 
     return this;
@@ -738,7 +719,7 @@ uno.WebglRender.prototype.shape = function(shape) {
     if (this._restoring || !state.alpha || (!state.fill.a && (!state.stroke.a || !state.thickness)))
         return this;
 
-    this._batch.flush();
+    this._sprites.flush();
     this._graphics.shape(shape);
 
     return this;
@@ -785,7 +766,7 @@ uno.WebglRender.prototype.getPixels = function(texture, x, y, width, height) {
         return null;
 
     this._graphics.flush();
-    this._batch.flush();
+    this._sprites.flush();
 
     y = h - y - height;
 
@@ -1120,7 +1101,8 @@ uno.WebglRender.prototype._setupViewport = function(settings) {
  */
 uno.WebglRender.prototype._setupHelpers = function() {
     this._state = new uno.WebglState(this);
-    this._batch = new uno.WebglBatch(this);
+    this._mask = new uno.WebglMask(this);
+    this._sprites = new uno.WebglSprites(this);
     this._graphics = new uno.WebglGraphics(this);
 };
 
@@ -1179,7 +1161,7 @@ uno.WebglRender.prototype._onFrame = function(time) {
         this._resetState();
         root.render(this, rdelta);
         this._graphics.flush();
-        this._batch.flush();
+        this._sprites.flush();
         this._lastRenderTime = time;
     }
 };

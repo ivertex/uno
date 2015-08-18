@@ -4,7 +4,7 @@
  * @constructor
  * @ignore
  */
-uno.WebglBatch = function(render) {
+uno.WebglSprites = function(render) {
     /**
      * Host render
      * @type {uno.WebglRender}
@@ -119,7 +119,7 @@ uno.WebglBatch = function(render) {
 /**
  * Free all allocated resources and destroy sprite batch
  */
-uno.WebglBatch.prototype.destroy = function() {
+uno.WebglSprites.prototype.destroy = function() {
     this._render._removeRestore(this);
 
     this._free();
@@ -143,7 +143,7 @@ uno.WebglBatch.prototype.destroy = function() {
  * Prepare batch data
  * @private
  */
-uno.WebglBatch.prototype._prepare = function() {
+uno.WebglSprites.prototype._prepare = function() {
     this._stateTextures.length = this._maxSpriteCount;
     var indices = this._indices;
 
@@ -161,7 +161,7 @@ uno.WebglBatch.prototype._prepare = function() {
  * Free buffers
  * @private
  */
-uno.WebglBatch.prototype._free = function() {
+uno.WebglSprites.prototype._free = function() {
     var ctx = this._render._context;
     ctx.deleteBuffer(this._vertexBuffer);
     ctx.deleteBuffer(this._indexBuffer);
@@ -171,7 +171,7 @@ uno.WebglBatch.prototype._free = function() {
  * Restore method for handling context restoring
  * @private
  */
-uno.WebglBatch.prototype._lose = function() {
+uno.WebglSprites.prototype._lose = function() {
     this._free();
 };
 
@@ -179,7 +179,7 @@ uno.WebglBatch.prototype._lose = function() {
  * Restore method for handling context restoring
  * @private
  */
-uno.WebglBatch.prototype._restore = function() {
+uno.WebglSprites.prototype._restore = function() {
     var ctx = this._render._context;
     var consts = uno.WebglConsts;
     this._vertexBuffer = ctx.createBuffer();
@@ -202,7 +202,7 @@ uno.WebglBatch.prototype._restore = function() {
  * @param {Number} height - The height of the texture frame
  * @param {uno.Color} tint - The texture tint color
  */
-uno.WebglBatch.prototype.draw = function(texture, x, y, width, height, tint) {
+uno.WebglSprites.prototype.draw = function(texture, x, y, width, height, tint) {
     var state = this._render._state;
     var transform = state.transform;
     var tw = texture.texture.width;
@@ -273,7 +273,7 @@ uno.WebglBatch.prototype.draw = function(texture, x, y, width, height, tint) {
 /**
  * Reset sprite batch
  */
-uno.WebglBatch.prototype.reset = function() {
+uno.WebglSprites.prototype.reset = function() {
     var states = this._stateTextures;
 
     // Clear all links to textures
@@ -287,66 +287,31 @@ uno.WebglBatch.prototype.reset = function() {
     this._spriteCount = 0;
 };
 
-function setCoords(transform, mask, shader) {
-    var auv = new uno.Point(0, 0);
-    var buv = new uno.Point(1, 0);
-    var cuv = new uno.Point(0, 1);
-
-    var a = new uno.Point(0, 0);
-    var b = new uno.Point(mask.width, 0);
-    var c = new uno.Point(0, mask.height);
-
-    transform.apply(a);
-    transform.apply(b);
-    transform.apply(c);
-
-    var AB = new uno.Point(b.x - a.x, b.y - a.y);
-    var AC = new uno.Point(c.x - a.x, c.y - a.y);
-
-    var v = 1 / (AB.x * AC.y - AB.y * AC.x);
-
-    AB.multiply(v);
-    AC.multiply(v);
-
-    var ac = new uno.Point(AC.x * a.y - AC.y * a.x, -(AB.x * a.y - AB.y * a.x));
-
-    AB.multiply(-1);
-
-    AB.x *= -1;
-    AC.x *= -1;
-
-    var dAB = new uno.Point(buv.x - auv.x, buv.y - auv.y);
-    var dAC = new uno.Point(cuv.x - auv.x, cuv.y - auv.y);
-
-    shader.uMaskUV.set([ac.x, AC.y, AC.x, ac.y, AB.y, AB.x, auv.x, dAB.x, dAC.x, auv.y, dAB.y, dAC.y]);
-
-    shader.uClip.set([0, 0, 1, 1]);
-}
-
 /**
  * Render all current batched textures and free batch buffers
  * @returns {Boolean} - Is rendered anything
  */
-uno.WebglBatch.prototype.flush = function() {
+uno.WebglSprites.prototype.flush = function() {
     if (!this._spriteCount)
         return false;
 
     var render = this._render;
     var state = render._state;
+    var mask = render._mask;
     var ctx = render._context;
     var consts = uno.WebglConsts;
 
     ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
 
-    // TODO: Refactor set/get shader and uniforms cache
-    var shader = render._useShader(render._mask ? uno.WebglShader.SPRITE_MASK : uno.WebglShader.SPRITE);
-    shader.uProjection.set(render._projection);
-
-    if (render._mask) {
-        shader.uMask.set(uno.WebglTexture.get(render._mask).handle(render), 1);
-        setCoords(render._maskTransform, render._mask, shader);
+    var shader;
+    if (mask.enable()) {
+        shader = render._useShader(uno.WebglShader.SPRITES_MASK);
+        mask.apply(shader, 1);
+    } else {
+        shader = render._useShader(uno.WebglShader.SPRITES);
     }
+    shader.uProjection.set(render._projection);
 
     // TODO: Check perfomance & gc
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
@@ -363,6 +328,7 @@ uno.WebglBatch.prototype.flush = function() {
     var count = 0;
     var texture, current = null;
 
+    state.save();
     for (var i = 0, l = this._stateCount; i < l; ++i) {
         state.blend = modes[i];
         state.sync();
@@ -377,6 +343,7 @@ uno.WebglBatch.prototype.flush = function() {
         ctx.drawElements(consts.TRIANGLES, count - index, consts.UNSIGNED_SHORT, index * 2);
         index = count;
     }
+    state.restore();
 
     this.reset();
 };
@@ -387,7 +354,7 @@ uno.WebglBatch.prototype.flush = function() {
  * @param {Number} blend - Changed blend mode. See {@link uno.Render} constants
  * @private
  */
-uno.WebglBatch.prototype._saveState = function(texture, blend) {
+uno.WebglSprites.prototype._saveState = function(texture, blend) {
     if (texture === this._stateTextureLast &&
         blend === this._stateBlendLast && this._stateCount) {
         this._states[this._stateCount - 1] = this._spriteCount * 6;

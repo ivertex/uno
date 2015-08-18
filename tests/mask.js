@@ -17,30 +17,33 @@ mask.prototype.render = function(render, deltaTime) {
     if (this.mask1.ready)
         this.object.transform.pivot.set(this.mask1.width * 0.5, this.mask1.height * 0.5);
 
-    render.mask(this.mask1, this.object.transform.matrix);
+    render.transform = this.object.transform.matrix;
+    render.mask(this.mask1, new uno.Rect(0, 0, 300, 300));
+
+    render.transform.reset();
 
     render.texture(this.tex, this.tile);
     render.texture(this.mask2);
+    render.fill = uno.Color.RED;
 
-    /*render.fill = uno.Color.GREEN;
+    render.fill = uno.Color.GREEN;
     render.blend = uno.Render.BLEND_ADD;
     render.circle(300, 300, 200);
     render.blend = uno.Render.BLEND_NORMAL;
 
+    //render.mask();
     render.target = this.buf;
 
-    render.mask(this.mask2, this.object.transform.matrix);
+    //render.mask(this.mask2, this.object.transform.matrix);
     render.clear(uno.Color.TRANSPARENT);
 
-    render.clip(100, 100, 300, 300);
-    if (this.mask2.ready) {
-        render.fill = uno.Color.BLUE;
-        render.rect(0, 0, 300, 300);
-    }
+    //render.clip(100, 100, 300, 300);
+    render.fill = uno.Color.BLUE;
+    render.rect(0, 0, 300, 300);
 
     render.target = null;
     render.transform.reset().translate(300, 300);
-    render.texture(this.buf);*/
+    render.texture(this.buf);
 };
 
 function create(render1, render2) {
@@ -49,7 +52,7 @@ function create(render1, render2) {
     var obj = uno.Object.create(mask, uno.Transform, drag);
     obj.mask.tex = uno.Texture.load('assets/water.jpg');
     //obj.mask.mask1 = uno.Texture.create(300, 300);
-    obj.mask.mask1 = uno.Texture.load('assets/test.png');
+    obj.mask.mask1 = uno.Texture.load('assets/sphere.png');
     obj.mask.mask2 = uno.Texture.load('assets/test.png');
     obj.transform.position.set(300, 300);
     stage.addChild(obj);

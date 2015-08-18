@@ -43,13 +43,13 @@ debug.prototype.input = function(event) {
 };
 
 function prefab1(render, texture) {
-    var obj = uno.Object.create(uno.Transform, uno.Sprite, /*rotator, tinter,*/ drag);
+    var obj = uno.Object.create(uno.Transform, uno.Sprite, rotator, tinter, drag);
     obj.transform.setPosition(render.width / 2, render.height / 2);
     obj.transform.setScale(0.7, 0.7);
-    //obj.rotator.rotation = 0.001;
+    obj.rotator.rotation = 0.001;
     obj.sprite.texture = texture;
-    //obj.sprite.tint.set(0, 1, 0);
-    //obj.sprite.alpha = 1;
+    obj.sprite.tint.set(0, 1, 0);
+    obj.sprite.alpha = 1;
     return obj;
 }
 
@@ -72,16 +72,16 @@ function create(render1, render2) {
     var obj1 = prefab1(render1 || render2, tex1);
     stage.addChild(obj1);
 
-    //var obj2 = prefab2(tex2);
-    //obj1.addChild(obj2);
+    var obj2 = prefab2(tex2);
+    obj1.addChild(obj2);
 
     tex1.load('assets/test.jpg', function() {
         obj1.transform.setPivot(tex1.width * 0.25, tex1.height * 0.25);
-        //obj1.sprite.frame.set(0, 0, tex1.width * 0.5, tex1.height * 0.5);
-        //obj2.transform.setPosition(tex1.width * 0.25, tex1.height * 0.25);
+        obj1.sprite.frame.set(0, 0, tex1.width * 0.5, tex1.height * 0.5);
+        obj2.transform.setPosition(tex1.width * 0.25, tex1.height * 0.25);
     });
     tex2.load('assets/test.png', function() {
-        //obj2.transform.setPivot(tex2.width * 0.5, tex2.height * 0.5);
+        obj2.transform.setPivot(tex2.width * 0.5, tex2.height * 0.5);
     });
 
     window.tex1 = tex1;

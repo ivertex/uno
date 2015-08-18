@@ -1,5 +1,5 @@
 /**
- * Canvas context state helper
+ * WebGL context state helper
  * @constructor
  * @ignore
  */

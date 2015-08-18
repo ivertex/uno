@@ -248,10 +248,12 @@ uno.Mouse.prototype._onMove = function(e) {
  * @private
  */
 uno.Mouse.prototype._onWheel = function(e) {
-    if (e.deltaX !== undefined)
+    if (e.deltaX !== undefined) {
         this._wheel.set(e.deltaX, e.deltaY);
-    else if (e.wheelDeltaX !== undefined)
-        this._wheel.set(e.wheelDeltaX, e.wheelDeltaY);
+        if (uno.Browser.firefox)
+            this._wheel.multiply(40);
+    } else if (e.wheelDeltaX !== undefined)
+        this._wheel.set(-e.wheelDeltaX / 40, -e.wheelDeltaY / 40);
     else
         this._wheel.set(0, e.detail);
     if (this._callInput(uno.Mouse.WHEEL))

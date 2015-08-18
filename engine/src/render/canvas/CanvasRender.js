@@ -116,34 +116,12 @@ uno.CanvasRender = function(settings) {
     this._clip = new uno.Rect();
 
     /**
-     * Alpha mask texture
-     * @type {uno.Texture}
+     * Alpha mask helper
+     * @type {uno.CanvasMask}
      * @private
      * @default null
      */
     this._mask = null;
-
-    /**
-     * Alpha mask texture buffer
-     * @type {uno.Texture}
-     * @private
-     * @default null
-     */
-    this._maskBuffer = null;
-
-    /**
-     * Alpha mask transform
-     * @type {uno.Matrix}
-     * @private
-     */
-    this._maskTransform = new uno.Matrix();
-
-    /**
-     * Alpha mask alpha
-     * @type {Number}
-     * @private
-     */
-    this._maskAlpha = 1;
 
     /**
      * Display canvas bounds on the page
@@ -264,8 +242,7 @@ Object.defineProperty(uno.CanvasRender.prototype, 'target', {
     },
     set: function(value) {
         if (this._target !== value) {
-            if (this._mask)
-                this.mask(null);
+            this.mask();
             this._target = value;
             this.clip();
             this._setTarget(value);
@@ -375,9 +352,7 @@ uno.CanvasRender.prototype.resize = function(width, height) {
     this._canvas.height = height;
     this._clip.set(0, 0, width, height);
 
-    // Mask buffer resize if it exists
-    if (this._maskBuffer && (this._maskBuffer.width !== width || this._maskBuffer.height !== height))
-        this._maskBuffer = new uno.Texture(width, height);
+    this._mask.resize(width, height);
 
     // Update render page bounds
     this._updateBounds();
@@ -402,6 +377,8 @@ uno.CanvasRender.prototype.destroy = function() {
     this._state = null;
     this._graphics.destroy();
     this._graphics = null;
+    this._mask.destroy();
+    this._mask = null;
 
     this._context = null;
     this._canvas = null;
@@ -411,9 +388,6 @@ uno.CanvasRender.prototype.destroy = function() {
     this._bounds = null;
     this._boundsScroll = null;
     this._frameBind = null;
-    this._mask = null;
-    this._maskBuffer = null;
-    this._maskTransform = null;
 
     this.root = null;
 };
@@ -430,16 +404,14 @@ uno.CanvasRender.prototype.clear = function(color) {
         color = this.background;
 
     if (color && !color.a) {
-        if (this._mask)
-            this._setTarget(this._target);
+        this._mask.enable(false);
 
         state.save();
         state.reset();
         this._context.clearRect(0, 0, this._width, this._height);
         state.restore();
 
-        if (this._mask)
-            this._setTarget(this._maskBuffer);
+        this._mask.enable(true);
 
         return this;
     }
@@ -447,8 +419,7 @@ uno.CanvasRender.prototype.clear = function(color) {
     if (!color)
         return this;
 
-    if (this._mask)
-        this._setTarget(this._target);
+    this._mask.enable(false);
 
     state.save();
     state.transform.reset();
@@ -460,8 +431,7 @@ uno.CanvasRender.prototype.clear = function(color) {
 
     state.restore();
 
-    if (this._mask)
-        this._setTarget(this._maskBuffer);
+    this._mask.enable(true);
 
     return this;
 };
@@ -487,21 +457,18 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
         if (full)
             return this;
 
-        if (this._mask)
-            this._setTarget(this._target);
+        this._mask.enable(false);
 
         clip.set(0, 0, this._width, this._height);
         this._context.restore();
         state.sync(true);
 
-        if (this._mask)
-            this._setTarget(this._maskBuffer);
+        this._mask.enable(true);
 
         return this;
     }
 
-    if (this._mask)
-        this._setTarget(this._target);
+    this._mask.enable(false);
 
     var ctx = this._context;
 
@@ -516,8 +483,7 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
     ctx.rect(x, y, width, height);
     ctx.clip();
 
-    if (this._mask)
-        this._setTarget(this._maskBuffer);
+    this._mask.enable(true);
 
     return this;
 };
@@ -525,36 +491,11 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
 /**
  * Set or reset mask texture
  * @param {uno.Texture} texture - Alpha mask texture
- * @param {uno.Matrix} transform - Transform for texture
- * @param {Number} alpha - Alpha multiplier for alpha mask
+ * @param {uno.Rect} [frame] - The frame to mask rect of the texture (default full texture)
  * @returns {uno.CanvasRender} - <code>this</code>
  */
-uno.CanvasRender.prototype.mask = function(texture, transform, alpha) {
-    if (!texture) {
-        this._applyMask();
-        return this;
-    }
-
-    if (this._mask && texture !== this._mask) {
-        this._applyMask();
-    }
-
-    if (transform !== undefined)
-        this._maskTransform.set(transform);
-    else
-        this._maskTransform.reset();
-
-    this._maskAlpha = alpha !== undefined ? alpha : 1;
-
-    if (texture.ready === false || texture === this._mask)
-        return this;
-
-    this._mask = texture;
-
-    if (!this._maskBuffer)
-        this._maskBuffer = new uno.Texture.create(this._width, this._height);
-    this._setTarget(this._maskBuffer);
-
+uno.CanvasRender.prototype.mask = function(texture, frame) {
+    this._mask.set(texture, this.transform, frame);
     return this;
 };
 
@@ -888,6 +829,7 @@ uno.CanvasRender.prototype._setupViewport = function(settings) {
 uno.CanvasRender.prototype._setupHelpers = function() {
     this._state = new uno.CanvasState(this);
     this._graphics = new uno.CanvasGraphics(this);
+    this._mask = new uno.CanvasMask(this);
 };
 
 /**
@@ -944,7 +886,7 @@ uno.CanvasRender.prototype._onFrame = function(time) {
         (this.fps === 60 || rdelta >= (1 / this.fps) * 900)) { // 90% percent of time per render and maximum for 60 fps
         this._resetState();
         root.render(this, rdelta);
-        this.mask(null);
+        this.mask();
         this._lastRenderTime = time;
     }
 };
@@ -976,36 +918,4 @@ uno.CanvasRender.prototype._setTarget = function(target) {
         this._context = tex.context();
     }
     this._state.context = this._context;
-};
-
-/**
- * Apply mask to rendered content
- * @private
- */
-uno.CanvasRender.prototype._applyMask = function() {
-    if (!this._mask || !this._maskBuffer)
-        return;
-
-    var state = this._state;
-
-    // Clip alpha mask
-    state.save();
-    state.transform.set(this._maskTransform);
-    state.alpha = this._maskAlpha;
-    state.blend = uno.CanvasState.BLEND_MASK;
-    this.texture(this._mask);
-    state.restore();
-
-    // Draw masked buffer to current target
-    this._setTarget(this._target);
-    state.save();
-    state.reset();
-    this.texture(this._maskBuffer);
-    state.restore();
-
-    // Clear mask
-    this._mask = null;
-    this._setTarget(this._maskBuffer);
-    this.clear(uno.Color.TRANSPARENT);
-    this._setTarget(this._target);
 };

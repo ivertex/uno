@@ -22,7 +22,7 @@ module.exports = function(grunt) {
         'src/render/common/Color.js',
         'src/render/common/Texture.js',
         'src/render/common/Shape.js',
-        'src/render/CanvasRender.js',
+        'src/render/Render.js',
         'src/render/canvas/CanvasGraphics.js',
         'src/render/canvas/CanvasTexture.js',
         'src/render/canvas/CanvasTinter.js',
@@ -33,7 +33,7 @@ module.exports = function(grunt) {
         'src/render/webgl/shaders/*.js',
         'src/render/webgl/WebglGraphics.js',
         'src/render/webgl/WebglTexture.js',
-        'src/render/webgl/WebglBatch.js',
+        'src/render/webgl/WebglSprites.js',
         'src/render/webgl/WebglState.js',
         'src/render/webgl/WebglRender.js',
         'src/input/mouse/MouseEvent.js',
@@ -45,7 +45,7 @@ module.exports = function(grunt) {
         'src/input/touch/TouchEvent.js',
         'src/input/touch/Touch.js',
         'src/scene/Object.js',
-        'src/scene/Sprite.js',
+        'src/scene/Sprites.js',
         'src/scene/Transform.js',
         'src/build/Footer.js'
     ];

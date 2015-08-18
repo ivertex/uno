@@ -138,7 +138,6 @@ uno.WebglShader.prototype.use = function() {
         attr = this[attrs[i]];
         ctx.enableVertexAttribArray(attr.location);
         ctx.vertexAttribPointer(attr.location, attr.size, attr.item, attr.normalize, stride, offset);
-        console.log(attr.location, attr.size, attr.item, attr.normalize, stride, offset);
         offset += attr.bytes;
     }
 };
@@ -180,20 +179,16 @@ uno.WebglShader.prototype._restore = function() {
     this._uniforms = [];
     this._stride = 0;
 
-    var i, l, item;
+    var i, l, items, item;
 
-    l = ctx.getProgramParameter(program, ctx.ACTIVE_ATTRIBUTES);
-    for (i = 0; i < l; ++i) {
-        item = this._createAttribute(ctx, settings.attributes, program, i);
+    // Attributes should be in valid order, use settings
+    items = settings.attributes;
+
+    for (i = 0, l = items.length; i < l; ++i) {
+        item = this._createAttribute(ctx, program, items[i]);
         this._stride += item.bytes;
         this[item.name] = item;
         this._attributes.push(item.name);
-    }
-
-    var order = settings.attributes.order;
-    for (i = 0, l = order.length; i < l; ++i) {
-        item = this[order[i]];
-        item.location = ctx.getAttribLocation(program, item.name);
     }
 
     l = ctx.getProgramParameter(program, ctx.ACTIVE_UNIFORMS);
@@ -209,30 +204,24 @@ uno.WebglShader.prototype._restore = function() {
 /**
  * Create new attribute
  * @param {WebGLRenderingContext} ctx - Render context
- * @param {Object} settings - Shader settings
  * @param {WebGLProgram} program - Compiled program
- * @param {Number} index - Index of attribute
+ * @param {Object} settings - Shader settings
  * @returns {Object}
  * @private
  */
-uno.WebglShader.prototype._createAttribute = function(ctx, settings, program, index) {
-    var params = ctx.getActiveAttrib(program, index);
-    var name = params.name;
-    var override = settings.override && settings.override[name] ? settings.override[name] : {};
+uno.WebglShader.prototype._createAttribute = function(ctx, program, settings) {
+    var info = uno.WebglShader.TYPES[settings.type];
+    var item = {};
 
-    var value = {};
+    item.name = settings.name;
+    item.type = settings.type;
+    item.location = ctx.getAttribLocation(program, item.name);
+    item.size = (settings.size || 1) * info.size;
+    item.item = info.type;
+    item.bytes = info.bytes * item.size;
+    item.normalize = settings.normalize === true;
 
-    value.name = name;
-    value.type = override.type ? override.type : params.type;
-
-    var info = uno.WebglShader.TYPES[value.type];
-
-    value.size = override.size ? override.size : info.size;
-    value.item = info.type;
-    value.bytes = info.bytes * params.size * value.size;
-    value.normalize = override.normalize === true;
-
-    return value;
+    return item;
 };
 
 /**
@@ -252,16 +241,16 @@ uno.WebglShader.prototype._createUniform = function(ctx, settings, program, inde
     if (i !== -1)
         name = name.substr(0, i);
 
-    var value = {};
+    var item = {};
 
-    value.name = name;
-    value.location = ctx.getUniformLocation(program, name);
-    value.type = params.type;
-    value.size = params.size;
-    value.last = null;
-    value.set = this._setUniform.bind(this, value);
+    item.name = name;
+    item.location = ctx.getUniformLocation(program, name);
+    item.type = params.type;
+    item.size = params.size;
+    item.last = null;
+    item.set = this._setUniform.bind(this, item);
 
-    return value;
+    return item;
 };
 
 /**
@@ -284,7 +273,7 @@ uno.WebglShader.prototype._setUniform = function(uniform, param1, param2) {
         case consts.INT:
         case consts.UNSIGNED_INT:
             if (uniform.last !== param1) {
-                ctx.uniform1iv(uniform.location, param1);
+                ctx.uniform1i(uniform.location, param1);
                 uniform.last = param1;
             }
             break;
@@ -307,7 +296,7 @@ uno.WebglShader.prototype._setUniform = function(uniform, param1, param2) {
                 ctx.uniform4iv(uniform.location, param1);
             break;
         case consts.FLOAT:
-            ctx.uniform1fv(uniform.location, param1);
+            ctx.uniform1f(uniform.location, param1);
             break;
         case consts.FLOAT_VEC2:
             if (param1 instanceof uno.Point)
@@ -359,6 +348,7 @@ uno.WebglShader.prototype._createProgram = function(vertex, fragment) {
 
     ctx.attachShader(program, this._vertex);
     ctx.attachShader(program, this._fragment);
+
     ctx.linkProgram(program);
 
     if (!ctx.getProgramParameter(program, consts.LINK_STATUS) && !ctx.isContextLost())

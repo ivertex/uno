@@ -1,13 +1,13 @@
 /**
  * Primitive shader for rendering shapes in graphics batch
- * @property {Object} PRIMITIVE
- * @property {String} PRIMITIVE.name - Name of the shader
- * @property {String[]} PRIMITIVE.fragment - Fragment shader
- * @property {String[]} PRIMITIVE.vertex - Vertex shader
- * @property {Object} PRIMITIVE.override - Shader types overrides
+ * @property {Object} GRAPHICS
+ * @property {String} GRAPHICS.name - Name of the shader
+ * @property {String[]} GRAPHICS.fragment - Fragment shader
+ * @property {String[]} GRAPHICS.vertex - Vertex shader
+ * @property {Object} GRAPHICS.attributes - Vertex shader attributes
  */
-uno.WebglShader.PRIMITIVE = {
-    name: 'primitive',
+uno.WebglShader.GRAPHICS = {
+    name: 'graphics',
     fragment: [
         'precision lowp float;',
         'varying vec4 vColor;',
@@ -28,7 +28,8 @@ uno.WebglShader.PRIMITIVE = {
         '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
         '}'
     ],
-    override: {
-        aColor: { type: uno.WebglConsts.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
-    }
+    attributes: [
+        { name: 'aPosition', type: uno.WebglConsts.FLOAT_VEC2 },
+        { name: 'aColor', type: uno.WebglConsts.UNSIGNED_BYTE, size: 4, normalize: true } // Using packing ABGR (alpha and tint color)
+    ]
 };
