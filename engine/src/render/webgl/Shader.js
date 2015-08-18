@@ -40,103 +40,30 @@ uno.WebglShader = function(render, settings) {
      */
     this._fragment = null;
 
+    /**
+     * List of attributes names
+     * @type {Array}
+     * @private
+     */
+    this._attributes = [];
+
+    /**
+     * List of uniforms names
+     * @type {Array}
+     * @private
+     */
+    this._uniforms = [];
+
+    /**
+     * Stride
+     * @type {number}
+     * @private
+     */
+    this._stride = 0;
+
     this._restore();
+
     render._addRestore(this);
-};
-
-/**
- * Type Sampler for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.SAMPLER = 0;
-
-/**
- * Type Sampler for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.MATRIX = 1;
-
-/**
- * Type Byte for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.BYTE = 2;
-
-/**
- * Type Unsigned byte for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.UNSIGNED_BYTE = 3;
-
-/**
- * Type Short for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.SHORT = 4;
-
-/**
- * Type Unsigned short for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.UNSIGNED_SHORT = 5;
-
-/**
- * Type Integer for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.INT = 6;
-
-/**
- * Type Unsigned integer for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.UNSIGNED_INT = 7;
-
-/**
- * Type Float for attributes or uniforms
- * @const
- * @type {Number}
- */
-uno.WebglShader.FLOAT = 8;
-
-/**
- * Shader type to WebGL types conversion hash
- * @const
- * @type {Object}
- */
-uno.WebglShader.TYPES = {
-    0: 0,
-    1: 1,
-    2: uno.WebglConsts.BYTE,
-    3: uno.WebglConsts.UNSIGNED_BYTE,
-    4: uno.WebglConsts.SHORT,
-    5: uno.WebglConsts.UNSIGNED_SHORT,
-    6: uno.WebglConsts.INT,
-    7: uno.WebglConsts.UNSIGNED_INT,
-    8: uno.WebglConsts.FLOAT
-};
-
-/**
- * Shader type to sizes in bytes conversion hash
- * @const
- * @type {Object}
- */
-uno.WebglShader.SIZES = {
-    2: 1,
-    3: 1,
-    4: 2,
-    5: 2,
-    6: 4,
-    7: 4,
-    8: 4
 };
 
 /**
@@ -156,38 +83,31 @@ uno.WebglShader.TEXTURES = [
 ];
 
 /**
- * Matrix uniform call conversion hash
+ * Types information
  * @const
  * @type {Object}
  */
-uno.WebglShader.MATRIX = {
-    2: 'uniformMatrix2fv',
-    3: 'uniformMatrix3fv',
-    4: 'uniformMatrix4fv'
-};
-
-/**
- * Float uniform call conversion hash
- * @const
- * @type {Object}
- */
-uno.WebglShader.UNIFORM_F = {
-    1: 'uniform1fv',
-    2: 'uniform2fv',
-    3: 'uniform3fv',
-    4: 'uniform4fv'
-};
-
-/**
- * Integer uniform call conversion hash
- * @const
- * @type {Object}
- */
-uno.WebglShader.UNIFORM_I = {
-    1: 'uniform1iv',
-    2: 'uniform2iv',
-    3: 'uniform3iv',
-    4: 'uniform4iv'
+uno.WebglShader.TYPES = {
+    35670:  { type: uno.WebglConsts.BOOL, bytes: 1, size: 1 },
+    35671:  { type: uno.WebglConsts.BOOL, bytes: 1, size: 2 },
+    35672:  { type: uno.WebglConsts.BOOL, bytes: 1, size: 3 },
+    35673:  { type: uno.WebglConsts.BOOL, bytes: 1, size: 4 },
+    5120:   { type: uno.WebglConsts.BYTE, bytes: 1, size: 1 },
+    5121:   { type: uno.WebglConsts.UNSIGNED_BYTE, bytes: 1, size: 1 },
+    5122:   { type: uno.WebglConsts.SHORT, bytes: 2, size: 1 },
+    5123:   { type: uno.WebglConsts.UNSIGNED_SHORT, bytes: 2, size: 1 },
+    5124:   { type: uno.WebglConsts.INT, bytes: 4, size: 1 },
+    5125:   { type: uno.WebglConsts.UNSIGNED_INT, bytes: 4, size: 1 },
+    5126:   { type: uno.WebglConsts.FLOAT, bytes: 4, size: 1 },
+    35665:  { type: uno.WebglConsts.FLOAT, bytes: 4, size: 3 },
+    35666:  { type: uno.WebglConsts.FLOAT, bytes: 4, size: 4 },
+    35667:  { type: uno.WebglConsts.INT, bytes: 4, size: 2 },
+    35668:  { type: uno.WebglConsts.INT, bytes: 4, size: 2 },
+    35669:  { type: uno.WebglConsts.INT, bytes: 4, size: 2 },
+    35664:  { type: uno.WebglConsts.FLOAT, bytes: 4, size: 2 },
+    35674:  { type: uno.WebglConsts.FLOAT, bytes: 4, size: 4 },
+    35675:  { type: uno.WebglConsts.FLOAT, bytes: 4, size: 9 },
+    35676:  { type: uno.WebglConsts.FLOAT, bytes: 4, size: 16 }
 };
 
 /**
@@ -201,7 +121,24 @@ uno.WebglShader.prototype.destroy = function() {
     this._program = null;
     this._attributes = null;
     this._uniforms = null;
-    this._size = 0;
+};
+
+/**
+ * Use this shader in render
+ */
+uno.WebglShader.prototype.use = function() {
+    var ctx = this._render._context;
+    var attr, offset = 0, stride = this._stride;
+    var attrs = this._attributes;
+
+    ctx.useProgram(this._program);
+
+    for (var i = 0, l = attrs.length; i < l; ++i) {
+        attr = this[attrs[i]];
+        ctx.enableVertexAttribArray(attr.location);
+        ctx.vertexAttribPointer(attr.location, attr.size, attr.item, attr.normalize, stride, offset);
+        offset += attr.bytes;
+    }
 };
 
 /**
@@ -239,127 +176,162 @@ uno.WebglShader.prototype._restore = function() {
 
     this._attributes = [];
     this._uniforms = [];
-    var name, params, value;
-    this._size = 0;
+    this._stride = 0;
 
-    for (name in settings.attributes) {
-        params = settings.attributes[name];
-        this._attributes.push(name);
-        value = {};
-        value.location = ctx.getAttribLocation(program, name);
-        value.type = uno.WebglShader.TYPES[params.type];
-        value.size = params.size || 1;
-        value.normalize = !!params.normalize;
-        value.bytes = uno.WebglShader.SIZES[params.type] * value.size;
-        this._size += value.bytes;
-        this[name] = value;
+    var i, l, item;
+
+    l = ctx.getProgramParameter(program, ctx.ACTIVE_ATTRIBUTES);
+    for (i = 0; i < l; ++i) {
+        item = this._createAttribute(ctx, settings, program, i);
+        this._stride += item.bytes;
+        this[item.name] = item;
+        this._attributes.push(item.name);
     }
 
-    for (name in settings.uniforms) {
-        params = settings.uniforms[name];
-        this._uniforms.push(name);
-        value = {};
-        value.location = ctx.getUniformLocation(program, name);
-        value.type = uno.WebglShader.TYPES[params.type];
-        value.size = params.size;
-        value.values = this.setUniformValues.bind(this, value);
-        value.vector = this.setUniformVector.bind(this, value);
-        value.matrix = this.setUniformMatrix.bind(this, value);
-        value.texture = this.setUniformTexture.bind(this, value);
-        this[name] = value;
+    l = ctx.getProgramParameter(program, ctx.ACTIVE_UNIFORMS);
+    for (i = 0; i < l; ++i) {
+        item = this._createUniform(ctx, settings, program, i);
+        this[item.name] = item;
+        this._uniforms.push(item.name);
     }
 
     this._program = program;
 };
 
 /**
- * Sets uniforms from arguments
+ * Create new attribute
+ * @param {WebGLRenderingContext} ctx - Render context
+ * @param {Object} settings - Shader settings
+ * @param {WebGLProgram} program - Compiled program
+ * @param {Number} index - Index of attribute
+ * @returns {Object}
+ * @private
  */
-uno.WebglShader.prototype.setUniformValues = function() {
-    var len = arguments.length;
-    if (len < 2)
-        return;
+uno.WebglShader.prototype._createAttribute = function(ctx, settings, program, index) {
+    var params = ctx.getActiveAttrib(program, index);
+    var name = params.name;
+    var override = settings.override && settings.override[name];
 
-    var ctx = this._render._context;
-    var uniform = arguments[0];
-    var type = uniform.type;
+    var value = {};
 
-    if (type <= 1)
-        return;
+    value.name = name;
+    value.location = ctx.getAttribLocation(program, name);
+    value.type = override && override.type ? override.type : params.type;
 
-    if (type === uno.WebglConsts.FLOAT) {
-        switch (uniform.size) {
-            case 1: ctx.uniform1f(uniform.location, arguments[1]); break;
-            case 2: ctx.uniform2f(uniform.location, arguments[1], arguments[2]); break;
-            case 3: ctx.uniform3f(uniform.location, arguments[1], arguments[2], arguments[3]); break;
-            case 4: ctx.uniform4f(uniform.location, arguments[1], arguments[2], arguments[3], arguments[4]); break;
-        }
-    } else {
-        switch (uniform.size) {
-            case 1: ctx.uniform1i(uniform.location, arguments[1]); break;
-            case 2: ctx.uniform2i(uniform.location, arguments[1], arguments[2]); break;
-            case 3: ctx.uniform3i(uniform.location, arguments[1], arguments[2], arguments[3]); break;
-            case 4: ctx.uniform4i(uniform.location, arguments[1], arguments[2], arguments[3], arguments[4]); break;
-        }
-    }
+    var info = uno.WebglShader.TYPES[value.type];
+
+    value.size = override && override.size ? override.size : info.size;
+    value.item = info.type;
+    value.bytes = info.bytes * params.size * value.size;
+    value.normalize = override && override.normalize === true;
+
+    return value;
+};
+
+/**
+ * Create new uniform
+ * @param {WebGLRenderingContext} ctx - Render context
+ * @param {Object} settings - Shader settings
+ * @param {WebGLProgram} program - Compiled program
+ * @param {Number} index - Index of uniform
+ * @returns {Object}
+ * @private
+ */
+uno.WebglShader.prototype._createUniform = function(ctx, settings, program, index) {
+    var params = ctx.getActiveUniform(program, index);
+    var name = params.name;
+
+    var i = name.indexOf('[');
+    if (i !== -1)
+        name = name.substr(0, i);
+
+    var value = {};
+
+    value.name = name;
+    value.location = ctx.getUniformLocation(program, name);
+    value.type = params.type;
+    value.size = params.size;
+    value.last = null;
+    value.set = this._setUniform.bind(this, value);
+
+    return value;
 };
 
 /**
  * Set vector to uniform
- * @param {Object} uniform - Uniform instance
- * @param {Array} vector - The data to set
+ * @param {Object} uniform - Uniform
+ * @param {Array|WebGLTexture|uno.Point|uno.Rect} param1 - The data or texture to set
+ * @param {Boolean|Number} param2 - For matrix - transpose, for texture - index
+ * @private
  */
-uno.WebglShader.prototype.setUniformVector = function(uniform, vector) {
+uno.WebglShader.prototype._setUniform = function(uniform, param1, param2) {
     var ctx = this._render._context;
-    var type = uniform.type;
+    var consts = uno.WebglConsts;
 
-    if (type <= 1)
-        return;
-
-    var conv = type === uno.WebglConsts.FLOAT ? uno.WebglShader.UNIFORM_F : uno.WebglShader.UNIFORM_I;
-    ctx[conv[uniform.size]](uniform.location, vector);
-};
-
-/**
- * Set matrix to uniform
- * @param {Object} uniform - Uniform instance
- * @param {uno.Matrix} matrix - The matrix to set
- * @param {Boolean} transpose - Transponse the matrix
- */
-uno.WebglShader.prototype.setUniformMatrix = function(uniform, matrix, transpose) {
-    this._render._context[uno.WebglShader.MATRIX[uniform.size < 2 ? 2 : uniform.size]](
-        uniform.location, transpose === true, matrix.array());
-};
-
-/**
- * Set texture to uniform
- * @param {Object} uniform - Uniform instance
- * @param {Number} index - Texture index
- * @param {WebGLTexture} texture - Texture instance
- */
-uno.WebglShader.prototype.setUniformTexture = function(uniform, index, texture) {
-    var ctx = this._render._context;
-
-    ctx.activeTexture(uno.WebglShader.TEXTURES[index]);
-    ctx.bindTexture(uno.WebglConsts.TEXTURE_2D, texture);
-    ctx.uniform1i(uniform.location, index);
-};
-
-/**
- * Use this shader in render
- */
-uno.WebglShader.prototype.use = function() {
-    var ctx = this._render._context;
-    var attr, offset = 0;
-    var attrs = this._attributes;
-
-    ctx.useProgram(this._program);
-
-    for (var i = 0, l = attrs.length; i < l; ++i) {
-        attr = this[attrs[i]];
-        ctx.enableVertexAttribArray(attr.location);
-        ctx.vertexAttribPointer(attr.location, attr.size, attr.type, attr.normalize, this._size, offset);
-        offset += attr.bytes;
+    switch (uniform.type) {
+        case consts.BOOL:
+        case consts.BYTE:
+        case consts.UNSIGNED_BYTE:
+        case consts.SHORT:
+        case consts.UNSIGNED_SHORT:
+        case consts.INT:
+        case consts.UNSIGNED_INT:
+            if (uniform.last !== param1) {
+                ctx.uniform1iv(uniform.location, param1);
+                uniform.last = param1;
+            }
+            break;
+        case consts.BOOL_VEC2:
+        case consts.INT_VEC2:
+            if (param1 instanceof uno.Point)
+                ctx.uniform2i(uniform.location, param1.x, param1.y);
+            else
+                ctx.uniform2iv(uniform.location, param1);
+            break;
+        case consts.BOOL_VEC3:
+        case consts.INT_VEC3:
+            ctx.uniform3iv(uniform.location, param1);
+            break;
+        case consts.BOOL_VEC4:
+        case consts.INT_VEC4:
+            if (param1 instanceof uno.Rect)
+                ctx.uniform4i(uniform.location, param1.x, param1.y, param1.width, param1.height);
+            else
+                ctx.uniform4iv(uniform.location, param1);
+            break;
+        case consts.FLOAT:
+            ctx.uniform1fv(uniform.location, param1);
+            break;
+        case consts.FLOAT_VEC2:
+            if (param1 instanceof uno.Point)
+                ctx.uniform2f(uniform.location, param1.x, param1.y);
+            else
+                ctx.uniform2fv(uniform.location, param1);
+            break;
+        case consts.FLOAT_VEC3:
+            ctx.uniform3fv(uniform.location, param1);
+            break;
+        case consts.FLOAT_VEC4:
+            if (param1 instanceof uno.Rect)
+                ctx.uniform4f(uniform.location, param1.x, param1.y, param1.width, param1.height);
+            else
+                ctx.uniform4fv(uniform.location, param1);
+            break;
+        case consts.FLOAT_MAT2:
+            ctx.uniformMatrix2fv(uniform.location, param2 === true, param1);
+            break;
+        case consts.FLOAT_MAT3:
+            ctx.uniformMatrix3fv(uniform.location, param2 === true, param1 instanceof uno.Matrix ? param1.array() : param1);
+            break;
+        case consts.FLOAT_MAT4:
+            ctx.uniformMatrix4fv(uniform.location, param2 === true, param1);
+            break;
+        case consts.SAMPLER_2D:
+            param2 = param2 || 0;
+            ctx.activeTexture(uno.WebglShader.TEXTURES[param2]);
+            ctx.bindTexture(uno.WebglConsts.TEXTURE_2D, param1);
+            ctx.uniform1i(uniform.location, param2);
+            break;
     }
 };
 

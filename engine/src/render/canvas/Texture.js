@@ -83,10 +83,15 @@ uno.CanvasTexture.prototype.handle = function(tint) {
         source.height = this.texture.height;
         this._source = source;
 
+        // TODO: Refactor & optimize
         if (uno.WebglTexture.has(this.texture)) {
             var tex = uno.WebglTexture.get(this.texture);
             // TODO: Here we hope that we have only one webgl texture handle
-            this.setPixels(tex.getPixels(tex._renders[0]));
+            var render = tex._renders[0];
+            var ctx = this.context();
+            this._imageData = ctx.getImageData(0, 0, source.width, source.height);
+            this._imageData.data.set(render.getPixels(this.texture));
+            ctx.putImageData(this._imageData, 0, 0);
         }
     }
 

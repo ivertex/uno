@@ -224,9 +224,11 @@ uno.WebglGraphics.prototype.flush = function() {
     ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
 
-    var shader = render._getShader(uno.WebglShader.PRIMITIVE);
-    render._setShader(shader);
+    var shader = render._useShader(uno.WebglShader.PRIMITIVE);
+    shader.uProjection.set(render._projection);
 
+    // TODO: Check perfomance & gc
+    // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._vertexCount > this._maxVertexCount * 0.5) {
         ctx.bufferSubData(consts.ELEMENT_ARRAY_BUFFER, 0, this._indices);
         ctx.bufferSubData(consts.ARRAY_BUFFER, 0, this._vertices);
@@ -912,8 +914,9 @@ uno.WebglGraphics.prototype.poly = function(points) {
         return false;
 
     var p1, p2;
+    var closed = points[0].equal(points[len - 1]);
 
-    if (len === 2) {
+    if (len === 2 || (len === 3 && closed)) {
         p1 = points[0];
         p2 = points[1];
         this.line(p1.x, p1.y, p2.x, p2.y);
@@ -950,7 +953,7 @@ uno.WebglGraphics.prototype.poly = function(points) {
     if (fill.a) {
         color = fill.packABGR(alpha);
         l = len;
-        if (points[0].equal(points[len - 1]))
+        if (closed)
             --l;
         i = vi;
 
@@ -1067,9 +1070,10 @@ uno.WebglGraphics.prototype.poly = function(points) {
         p2 = points[len - 1];
 
         var w = thickness * 0.5;
-        var closed = p1.x === p2.x && p1.y === p2.y;
         var cap;
         var fx1, fy1, fx2, fy2;
+
+        closed = p1.x === p2.x && p1.y === p2.y;
         len -= 2;
         i = vi;
 

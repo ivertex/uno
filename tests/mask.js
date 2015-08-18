@@ -20,7 +20,8 @@ mask.prototype.render = function(render, deltaTime) {
     render.mask(this.mask1, this.object.transform.matrix);
 
     render.texture(this.tex, this.tile);
-    render.texture(this.mask1);
+    render.texture(this.mask2);
+
     /*render.fill = uno.Color.GREEN;
     render.blend = uno.Render.BLEND_ADD;
     render.circle(300, 300, 200);
@@ -47,10 +48,20 @@ function create(render1, render2) {
 
     var obj = uno.Object.create(mask, uno.Transform, drag);
     obj.mask.tex = uno.Texture.load('assets/water.jpg');
+    //obj.mask.mask1 = uno.Texture.create(300, 300);
     obj.mask.mask1 = uno.Texture.load('assets/test.png');
     obj.mask.mask2 = uno.Texture.load('assets/test.png');
     obj.transform.position.set(300, 300);
     stage.addChild(obj);
+
+    //render1.target = obj.mask.mask1;
+    //render1.rect(1.5, 1.5, 297, 297);
+    //render1.target = null;
+    /*render2.target = obj.mask.mask1;
+    render2.circle(75, 150, 75);
+    render2.circle(225, 150, 75);
+    render2.circle(0, 0, 30);
+    render2.target = null;*/
 
     if (render1)
         render1.root = stage;

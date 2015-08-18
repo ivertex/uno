@@ -296,7 +296,6 @@ Object.defineProperty(uno.WebglRender.prototype, 'target', {
                 this._projection.x = this.width * 0.5;
                 this._projection.y = -this.height * 0.5;
                 this._context.viewport(0, 0, this.width, this.height);
-                this._updateShaders();
             }
         } else {
             if (this._target !== value) {
@@ -307,7 +306,6 @@ Object.defineProperty(uno.WebglRender.prototype, 'target', {
                 this._projection.x = value.width * 0.5;
                 this._projection.y = -value.height * 0.5;
                 this._context.viewport(0, 0, value.width, value.height);
-                this._updateShaders();
             }
         }
     }
@@ -417,7 +415,6 @@ uno.WebglRender.prototype.resize = function(width, height) {
     this._clip.set(0, 0, width, height);
 
     this._updateBounds();
-    this._updateShaders();
 
     return this;
 };
@@ -551,9 +548,19 @@ uno.WebglRender.prototype.mask = function(texture, transform, alpha) {
     if (this._restoring)
         return this;
 
+    if (this._mask !== texture || (transform && transform.equal(this._maskTransform)) ||
+        (alpha !== undefined && this._maskAlpha !== alpha)) {
+        this._graphics.flush();
+        this._batch.flush();
+    }
+
     this._mask = texture;
-    this._maskAlpha = alpha;
-    this._maskTransform.set(transform).invert();
+
+    if (transform)
+        this._maskTransform.set(transform);
+
+    if (alpha !== undefined)
+        this._maskAlpha = alpha;
 
     return this;
 };
@@ -875,56 +882,30 @@ uno.WebglRender.prototype.setPixels = function(texture, data, x, y, width, heigh
 };
 
 /**
- * Get shader from registered
+ * Apply shader
  * @param {Object} shader - The shader settings object. If undefined than current shader returned
  * @returns {uno.WebglShader} - Shader
  * @private
  */
-uno.WebglRender.prototype._getShader = function(shader) {
+uno.WebglRender.prototype._useShader = function(shader) {
     if (!shader)
         return this._shader;
 
-    if (this._shaders[shader.name])
-        return this._shaders[shader.name];
+    var item = this._shaders[shader.name];
 
-    var newShader = new uno.WebglShader(this, shader);
-    newShader.uProjection.values(this._projection.x, this._projection.y);
-    this._shaders[shader.name] = newShader;
-
-    return newShader;
-};
-
-/**
- * Set current shader
- * @param {uno.WebglShader} shader - Use the shader for rendering
- * @private
- */
-uno.WebglRender.prototype._setShader = function(shader) {
-    if (this._shader === shader)
-        return;
-    shader.use();
-    this._shader = shader;
-};
-
-/**
- * Update uniform uProjection for registered shaders after render resize
- * @private
- */
-uno.WebglRender.prototype._updateShaders = function() {
-    var shaders = this._shaders;
-    var current = this._shader;
-
-    for (var i in shaders) {
-        var shader = shaders[i];
-
-        if (shader.uProjection) {
-            if (shader !== current)
-                shader.use();
-            shader.uProjection.values(this._projection.x, this._projection.y);
-        }
+    if (!item) {
+        this._shader = this._shaders[shader.name] = new uno.WebglShader(this, shader);
+        this._shader.use();
+        return this._shader;
     }
-    if (current && shader !== current)
-        current.use();
+
+    if (item !== this._shader) {
+        this._shader = this._shaders[shader.name];
+        this._shader.use();
+        return this._shader;
+    }
+
+    return item;
 };
 
 /**
@@ -1009,7 +990,6 @@ uno.WebglRender.prototype._addRestore = function(target) {
     if (this._restoreObjects.indexOf(target) !== -1)
         return false;
 
-
     this._restoreObjects.push(target);
     return true;
 };
@@ -1041,7 +1021,6 @@ uno.WebglRender.prototype._restore = function() {
     }
 
     this._shader = null;
-    this._updateShaders();
     this._restoring = false;
 };
 

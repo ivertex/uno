@@ -1,11 +1,10 @@
 /**
- * Shader for rendering in sprite batch
- * @property {Object} default
- * @property {String} default.name - Name of the shader
- * @property {String[]} default.fragment - Fragment shader
- * @property {String[]} default.vertex - Vertex shader
- * @property {Object} default.attributes - Shader attributes
- * @property {Object} default.uniforms - Shader uniforms
+ * Shader for rendering in sprite batch with alpha masking
+ * @property {Object} SPRITE_MASK
+ * @property {String} SPRITE_MASK.name - Name of the shader
+ * @property {String[]} SPRITE_MASK.fragment - Fragment shader
+ * @property {String[]} SPRITE_MASK.vertex - Vertex shader
+ * @property {Object} SPRITE_MASK.override - Shader types overrides
  */
 uno.WebglShader.SPRITE_MASK = {
     name: 'sprite_mask',
@@ -14,32 +13,13 @@ uno.WebglShader.SPRITE_MASK = {
         'varying vec2 vUV;',
         'varying vec4 vColor;',
         'varying vec2 vMaskUV;',
-        'uniform sampler2D uSampler;',
+        'uniform vec4 uClip;',
+        'uniform sampler2D uTexture;',
         'uniform sampler2D uMask;',
-        'uniform vec2 uMaskSize;',
-        //'uniform mat3 uMaskTransform;',
-        'uniform vec2 uViewport;',
 
         'void main(void) {',
-        //'   vec4 color = texture2D(uSampler, vUV) * vColor;',
-        //'   vec2 coords = gl_FragCoord.xy;',
-        //'   coords.y = uViewport.y - coords.y;',
-        //'   coords = (vec3(coords, 1.0) * uMaskTransform).xy;',
-        //'   coords /= gl_FragCoord.z;',
-        //'   coords /= uMaskSize * 2.0 - 1.0;',
-        //'   coords.y *= -1.0;',
-        //'   if (coords.x < 0.0 || coords.y < 0.0 || coords.x > 1.0 || coords.y > 1.0) discard;',
-        //'   float alpha = color.a * texture2D(uMask, coords).a;',
-        //'   if (alpha == 0.0) discard;',
-        //'   gl_FragColor = vec4(color.rgb * alpha, alpha);',
-
-        '   vec2 text = abs(vMaskUV - 0.5);',
-        '   text = step(0.5, text);',
-        '   float clip = 1.0 - max(text.y, text.x);',
-        '   vec4 original = texture2D(uSampler, vUV);',
-        '   vec4 mask = texture2D(uMask, vMaskUV);',
-        '   original *= mask.a;',
-        '   gl_FragColor = original;',
+        '   if (vMaskUV.x < uClip.x || vMaskUV.y < uClip.y || vMaskUV.x > uClip.z || vMaskUV.y > uClip.z) discard;',
+        '   gl_FragColor = texture2D(uTexture, vUV) * vColor * texture2D(uMask, vMaskUV).a;',
         '}'
     ],
     vertex: [
@@ -47,30 +27,23 @@ uno.WebglShader.SPRITE_MASK = {
         'attribute vec2 aUV;',
         'attribute vec4 aColor;',
         'uniform vec2 uProjection;',
-        'uniform mat3 uMaskTransform;',
+        'uniform vec3 uMaskUV[4];',
         'varying vec2 vUV;',
-        'varying vec4 vColor;',
         'varying vec2 vMaskUV;',
+        'varying vec4 vColor;',
         'const vec2 cOffset = vec2(-1.0, 1.0);',
 
         'void main(void) {',
         '   gl_Position = vec4(aPosition / uProjection + cOffset, 0.0, 1.0);',
         '   vUV = aUV;',
-        '   vMaskUV = (vec3(aUV, 1.0) * uMaskTransform).xy;',
+        '   float a = dot(uMaskUV[0], vec3(1.0, aPosition.x, aPosition.y));',
+        '   float b = dot(uMaskUV[1], vec3(1.0, aPosition.x, aPosition.y));',
+        '   vMaskUV.x = dot(uMaskUV[2], vec3(1.0, a, b));',
+        '   vMaskUV.y = dot(uMaskUV[3], vec3(1.0, a, b));',
         '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
         '}'
     ],
-    attributes: {
-        aPosition: { type: uno.WebglShader.FLOAT, size: 2 },
-        aUV: { type: uno.WebglShader.FLOAT, size: 2 },
-        aColor: { type: uno.WebglShader.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
-    },
-    uniforms: {
-        uProjection: { type: uno.WebglShader.FLOAT, size: 2 },
-        uMaskTransform: { type: uno.WebglShader.MATRIX, size: 3 },
-        uMaskSize: { type: uno.WebglShader.FLOAT, size: 2 },
-        uViewport: { type: uno.WebglShader.FLOAT, size: 2 },
-        uSampler: { type: uno.WebglShader.SAMPLER },
-        uMask: { type: uno.WebglShader.SAMPLER }
+    override: {
+        aColor: { type: uno.WebglConsts.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
     }
 };

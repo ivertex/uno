@@ -1,11 +1,10 @@
 /**
  * Shader for rendering in sprite batch
- * @property {Object} default
- * @property {String} default.name - Name of the shader
- * @property {String[]} default.fragment - Fragment shader
- * @property {String[]} default.vertex - Vertex shader
- * @property {Object} default.attributes - Shader attributes
- * @property {Object} default.uniforms - Shader uniforms
+ * @property {Object} SPRITE
+ * @property {String} SPRITE.name - Name of the shader
+ * @property {String[]} SPRITE.fragment - Fragment shader
+ * @property {String[]} SPRITE.vertex - Vertex shader
+ * @property {Object} SPRITE.override - Shader types overrides
  */
 uno.WebglShader.SPRITE = {
     name: 'sprite',
@@ -13,10 +12,10 @@ uno.WebglShader.SPRITE = {
         'precision lowp float;',
         'varying vec2 vUV;',
         'varying vec4 vColor;',
-        'uniform sampler2D uSampler;',
+        'uniform sampler2D uTexture;',
 
         'void main(void) {',
-        '   gl_FragColor = texture2D(uSampler, vUV) * vColor;',
+        '   gl_FragColor = texture2D(uTexture, vUV) * vColor;',
         '}'
     ],
     vertex: [
@@ -34,13 +33,7 @@ uno.WebglShader.SPRITE = {
         '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
         '}'
     ],
-    attributes: {
-        aPosition: { type: uno.WebglShader.FLOAT, size: 2 },
-        aUV: { type: uno.WebglShader.FLOAT, size: 2 },
-        aColor: { type: uno.WebglShader.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
-    },
-    uniforms: {
-        uProjection: { type: uno.WebglShader.FLOAT, size: 2 },
-        uSampler: { type: uno.WebglShader.SAMPLER }
+    override: {
+        aColor: { type: uno.WebglConsts.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
     }
 };

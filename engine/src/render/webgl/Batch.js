@@ -286,6 +286,42 @@ uno.WebglBatch.prototype.reset = function() {
     this._spriteCount = 0;
 };
 
+function setCoords(transform, mask, shader) {
+    var auv = new uno.Point(0, 0);
+    var buv = new uno.Point(1, 0);
+    var cuv = new uno.Point(0, 1);
+
+    var a = new uno.Point(0, 0);
+    var b = new uno.Point(mask.width, 0);
+    var c = new uno.Point(0, mask.height);
+
+    transform.apply(a);
+    transform.apply(b);
+    transform.apply(c);
+
+    var AB = new uno.Point(b.x - a.x, b.y - a.y);
+    var AC = new uno.Point(c.x - a.x, c.y - a.y);
+
+    var v = 1 / (AB.x * AC.y - AB.y * AC.x);
+
+    AB.multiply(v);
+    AC.multiply(v);
+
+    var ac = new uno.Point(AC.x * a.y - AC.y * a.x, -(AB.x * a.y - AB.y * a.x));
+
+    AB.multiply(-1);
+
+    AB.x *= -1;
+    AC.x *= -1;
+
+    var dAB = new uno.Point(buv.x - auv.x, buv.y - auv.y);
+    var dAC = new uno.Point(cuv.x - auv.x, cuv.y - auv.y);
+
+    shader.uMaskUV.set([ac.x, AC.y, AC.x, ac.y, AB.y, AB.x, auv.x, dAB.x, dAC.x, auv.y, dAB.y, dAC.y]);
+
+    shader.uClip.set([0, 0, 1, 1]);
+}
+
 /**
  * Render all current batched textures and free batch buffers
  * @returns {Boolean} - Is rendered anything
@@ -302,17 +338,16 @@ uno.WebglBatch.prototype.flush = function() {
     ctx.bindBuffer(consts.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
 
-    var shader = render._getShader(render._mask ? uno.WebglShader.SPRITE_MASK : uno.WebglShader.SPRITE);
-    render._setShader(shader);
+    // TODO: Refactor set/get shader and uniforms cache
+    var shader = render._useShader(render._mask ? uno.WebglShader.SPRITE_MASK : uno.WebglShader.SPRITE);
+    shader.uProjection.set(render._projection);
 
     if (render._mask) {
-        shader.uMask.texture(1, uno.WebglTexture.get(render._mask).handle(render));
-        shader.uMaskSize.values(render._mask.width, -render._mask.height);
-        shader.uMaskTransform.matrix(render._maskTransform);
-        shader.uViewport.values(render._width, render._height);
+        shader.uMask.set(uno.WebglTexture.get(render._mask).handle(render), 1);
+        setCoords(render._maskTransform, render._mask, shader);
     }
 
-    // TODO: Check perfomance
+    // TODO: Check perfomance & gc
     // If batch have size more than max half send it all to GPU, otherwise send subarray (minimize send size)
     if (this._spriteCount > this._maxSpriteCount * 0.5)
         ctx.bufferSubData(consts.ARRAY_BUFFER, 0, this._vertices);
@@ -322,7 +357,7 @@ uno.WebglBatch.prototype.flush = function() {
     var states = this._states;
     var modes = this._stateBlends;
     var textures = this._stateTextures;
-    var sampler = shader.uSampler;
+    var uniform = shader.uTexture;
     var index = 0;
     var count = 0;
     var texture, current = null;
@@ -333,7 +368,7 @@ uno.WebglBatch.prototype.flush = function() {
 
         texture = textures[i];
         if (texture !== current) {
-            sampler.texture(0, texture);
+            uniform.set(texture);
             current = texture;
         }
 
