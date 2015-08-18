@@ -2,6 +2,7 @@
  * Canvas render
  * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @constructor
+ * @ignore
  */
 uno.CanvasRender = function(settings) {
     /**
@@ -838,7 +839,7 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
         this._canvas.style['-ms-touch-action'] = 'none';
     }
 
-    if (!settings.contextMenu)
+    if (!settings.menu)
         this._canvas.oncontextmenu = function() { return false; };
 };
 

@@ -1,6 +1,7 @@
 /**
  * Canvas context state helper
  * @constructor
+ * @ignore
  */
 uno.CanvasState = function(render) {
     var def = uno.Render.DEFAULT;

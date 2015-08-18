@@ -1,13 +1,13 @@
 /**
  * A polyfill for requestAnimationFrame
- *
  * @method requestAnimationFrame
+ * @ignore
  */
 
 /**
  * A polyfill for cancelAnimationFrame
- *
  * @method cancelAnimationFrame
+ * @ignore
  */
 
 (function() {
@@ -43,8 +43,8 @@
 
 /**
  * A polyfill for Function.prototype.bind
- *
  * @method bind
+ * @ignore
  */
 
 (function() {

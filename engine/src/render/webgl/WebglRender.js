@@ -2,6 +2,7 @@
  * WebGL render
  * @param {Object} settings - See {@link uno.Render.DEFAULT}
  * @constructor
+ * @ignore
  */
 uno.WebglRender = function(settings) {
     /**
@@ -961,7 +962,7 @@ uno.WebglRender.prototype._setupSettings = function(settings) {
         this._canvas.style['-ms-touch-action'] = 'none';
     }
 
-    if (!settings.contextMenu)
+    if (!settings.menu)
         this._canvas.oncontextmenu = function() { return false; };
 };
 

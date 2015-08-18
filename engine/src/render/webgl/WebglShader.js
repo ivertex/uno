@@ -3,6 +3,7 @@
  * @param {uno.WebglRender} render - WebGL render instance
  * @param {Object} settings - Shader settings
  * @constructor
+ * @ignore
  */
 uno.WebglShader = function(render, settings) {
     /**
@@ -137,6 +138,7 @@ uno.WebglShader.prototype.use = function() {
         attr = this[attrs[i]];
         ctx.enableVertexAttribArray(attr.location);
         ctx.vertexAttribPointer(attr.location, attr.size, attr.item, attr.normalize, stride, offset);
+        console.log(attr.location, attr.size, attr.item, attr.normalize, stride, offset);
         offset += attr.bytes;
     }
 };
@@ -182,10 +184,16 @@ uno.WebglShader.prototype._restore = function() {
 
     l = ctx.getProgramParameter(program, ctx.ACTIVE_ATTRIBUTES);
     for (i = 0; i < l; ++i) {
-        item = this._createAttribute(ctx, settings, program, i);
+        item = this._createAttribute(ctx, settings.attributes, program, i);
         this._stride += item.bytes;
         this[item.name] = item;
         this._attributes.push(item.name);
+    }
+
+    var order = settings.attributes.order;
+    for (i = 0, l = order.length; i < l; ++i) {
+        item = this[order[i]];
+        item.location = ctx.getAttribLocation(program, item.name);
     }
 
     l = ctx.getProgramParameter(program, ctx.ACTIVE_UNIFORMS);
@@ -210,20 +218,19 @@ uno.WebglShader.prototype._restore = function() {
 uno.WebglShader.prototype._createAttribute = function(ctx, settings, program, index) {
     var params = ctx.getActiveAttrib(program, index);
     var name = params.name;
-    var override = settings.override && settings.override[name];
+    var override = settings.override && settings.override[name] ? settings.override[name] : {};
 
     var value = {};
 
     value.name = name;
-    value.location = ctx.getAttribLocation(program, name);
-    value.type = override && override.type ? override.type : params.type;
+    value.type = override.type ? override.type : params.type;
 
     var info = uno.WebglShader.TYPES[value.type];
 
-    value.size = override && override.size ? override.size : info.size;
+    value.size = override.size ? override.size : info.size;
     value.item = info.type;
     value.bytes = info.bytes * params.size * value.size;
-    value.normalize = override && override.normalize === true;
+    value.normalize = override.normalize === true;
 
     return value;
 };

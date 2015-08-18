@@ -1,6 +1,7 @@
 /**
  * Canvas context state helper
  * @constructor
+ * @ignore
  */
 uno.WebglState = function(render) {
     var def = uno.Render.DEFAULT;
@@ -248,10 +249,9 @@ uno.WebglState.prototype.restore = function() {
 
 /**
  * Initialize WebGL blend modes
- * @param {WebGLRenderingContext} ctx - WebGL context
  * @private
  */
-uno.WebglState._initBlending = function(ctx) {
+uno.WebglState._initBlending = function() {
     var result = [];
     var consts = uno.WebglConsts;
 

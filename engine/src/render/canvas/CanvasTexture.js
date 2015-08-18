@@ -2,6 +2,7 @@
  * Canvas texture extension
  * @param {uno.Texture} texture - Texture that holds this extension
  * @constructor
+ * @ignore
  */
 uno.CanvasTexture = function(texture) {
     /**

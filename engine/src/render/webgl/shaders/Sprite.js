@@ -22,9 +22,12 @@ uno.WebglShader.SPRITE = {
         'attribute vec2 aPosition;',
         'attribute vec2 aUV;',
         'attribute vec4 aColor;',
+
         'uniform vec2 uProjection;',
+
         'varying vec2 vUV;',
         'varying vec4 vColor;',
+
         'const vec2 cOffset = vec2(-1.0, 1.0);',
 
         'void main(void) {',
@@ -33,7 +36,10 @@ uno.WebglShader.SPRITE = {
         '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
         '}'
     ],
-    override: {
-        aColor: { type: uno.WebglConsts.UNSIGNED_BYTE, size: 4, normalize: true }   // Using packing ABGR (alpha and tint color)
+    attributes: {
+        order: ['aPosition', 'aUV', 'aColor'],
+        override: {
+            aColor: { type: uno.WebglConsts.UNSIGNED_BYTE, size: 4, normalize: true }
+        }
     }
 };

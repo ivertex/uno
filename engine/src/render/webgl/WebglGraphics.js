@@ -2,6 +2,7 @@
  * WebGL implementation for rendering graphics shapes
  * @param {uno.WebglRender} render - WebGL render instance
  * @constructor
+ * @ignore
  */
 uno.WebglGraphics = function(render) {
     /**

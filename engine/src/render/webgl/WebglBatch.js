@@ -2,6 +2,7 @@
  * Sprite batcher for WebGL render. Used for rendering sprites with minimum draw calls
  * @param {uno.WebglRender} render - WebGL render instance
  * @constructor
+ * @ignore
  */
 uno.WebglBatch = function(render) {
     /**
@@ -368,7 +369,7 @@ uno.WebglBatch.prototype.flush = function() {
 
         texture = textures[i];
         if (texture !== current) {
-            uniform.set(texture);
+            uniform.set(texture, 0);
             current = texture;
         }
 

@@ -1,6 +1,7 @@
 /**
  * Duplicate used WebGL constants in order not call native context
  * @namespace uno.WebglConsts
+ * @ignore
  */
 uno.WebglConsts = {
     ONE: 1,

@@ -2,6 +2,7 @@
  * Canvas implementation for rendering graphics shapes
  * @param {uno.CanvasRender} render - Canvas render instance
  * @constructor
+ * @ignore
  */
 uno.CanvasGraphics = function(render) {
     this._render = render;

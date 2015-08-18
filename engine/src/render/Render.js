@@ -1,105 +1,107 @@
 /**
  * Render creation module
- * @namespace uno.Render
+ * @param {Object} settings - Settings for the new render<br>
+ *     See uno.Render.DEFAULT<br>
+ * @constructor
  */
-uno.Render = {
-
-    /**
-     * Canvas mode rendering
-     * @const {Number}
-     */
-    RENDER_CANVAS: 1,
-
-    /**
-     * WebGL mode rendering
-     * @const {Number}
-     */
-    RENDER_WEBGL: 2,
-
-    /**
-     * Pixelating texture scaling mode
-     * @const {Number}
-     */
-    SCALE_NEAREST: 0,
-
-    /**
-     * Smooth texture scaling mode
-     * @const {Number}
-     */
-    SCALE_LINEAR: 1,
-
-    /**
-     * This is the standard blend mode which uses the top layer alone, without mixing its colors with the layer beneath it
-     * @const {Number}
-     */
-    BLEND_NORMAL: 0,
-
-    /**
-     * This blend mode simply adds pixel values of one layer with the other
-     * @const {Number}
-     */
-    BLEND_ADD: 1,
-
-    /**
-     * This blend mode multiplies the numbers for each pixel of the top layer with the corresponding pixel for the bottom layer
-     * @const {Number}
-     */
-    BLEND_MULTIPLY: 2,
-
-    /**
-     * This blend mode inverts both layers, multiplies them, and then inverts that result
-     * @const {Number}
-     */
-    BLEND_SCREEN: 3,
-
-    /**
-     * Default settings for render
-     * @const {Object}
-     * @property {uno.Color} background - Color for clearing viewport
-     * @property {Number} width - Width of render viewport (0 - fullscreen)
-     * @property {Number} height - Height of render viewport (0 - fullscreen)
-     * @property {Number} fps - Maximum frame per second (0 - stop rendering)
-     * @property {Number} ups - Maximum updates per second (0 - stop updating)
-     * @property {uno.Color} fillColor - Default fill color
-     * @property {uno.Color} lineColor - Default line color
-     * @property {Number} lineWidth - Default line width
-     * @property {HTMLCanvasElement} canvas - For browser mode canvas element for render
-     * @property {Object|String} container - For browser mode ID or HTML element to add new canvas to it if settings.canvas is null
-     * @property {Boolean} contextMenu - For browser mode disable or enable right click context menu
-     */
-    DEFAULT: {
-        background: uno.Color.WHITE.clone(),
-        width: 0,
-        height: 0,
-        fps: 60,
-        ups: 60,
-        fill: uno.Color.WHITE.clone(),
-        stroke: uno.Color.BLACK.clone(),
-        thickness: 1,
-        canvas: null,
-        container: null,
-        contextMenu: false
-    },
-
-    /**
-     * List of all created renders
-     * @type {Array}
-     */
-    renders: [],
-
-    /**
-     * Counter for render unique id
-     * @type {Number}
-     * @private
-     */
-    _uid: 0
+uno.Render = function() {
 };
+
+/**
+ * Canvas mode rendering
+ * @const {Number}
+ */
+uno.Render.RENDER_CANVAS = 1;
+
+/**
+ * WebGL mode rendering
+ * @const {Number}
+ */
+uno.Render.RENDER_WEBGL = 2;
+
+/**
+ * Pixelating texture scaling mode
+ * @const {Number}
+ */
+uno.Render.SCALE_NEAREST = 0;
+
+/**
+ * Smooth texture scaling mode
+ * @const {Number}
+ */
+uno.Render.SCALE_LINEAR = 1;
+
+/**
+ * This is the standard blend mode which uses the top layer alone, without mixing its colors with the layer beneath it
+ * @const {Number}
+ */
+uno.Render.BLEND_NORMAL = 0;
+
+/**
+ * This blend mode simply adds pixel values of one layer with the other
+ * @const {Number}
+ */
+uno.Render.BLEND_ADD = 1;
+
+/**
+ * This blend mode multiplies the numbers for each pixel of the top layer with the corresponding pixel for the bottom layer
+ * @const {Number}
+ */
+uno.Render.BLEND_MULTIPLY = 2;
+
+/**
+ * This blend mode inverts both layers, multiplies them, and then inverts that result
+ * @const {Number}
+ */
+uno.Render.BLEND_SCREEN = 3;
+
+/**
+ * Default settings for render
+ * @const {Object}
+ * @property {uno.Color} background - Color for clearing viewport
+ * @property {Number} width - Width of render viewport (0 - fullscreen)
+ * @property {Number} height - Height of render viewport (0 - fullscreen)
+ * @property {Number} fps - Maximum frame per second (0 - stop rendering)
+ * @property {Number} ups - Maximum updates per second (0 - stop updating)
+ * @property {uno.Color} fill - Default fill color
+ * @property {uno.Color} stroke - Default line color
+ * @property {Number} thickness - Default line width
+ * @property {HTMLCanvasElement} canvas - For browser mode canvas element for render
+ * @property {Object|String} container - For browser mode ID or HTML element to add new canvas to it if settings.canvas is null
+ * @property {Boolean} menu - For browser mode disable or enable right click context menu
+ */
+uno.Render.DEFAULT = {
+    background: uno.Color.WHITE.clone(),
+    width: 0,
+    height: 0,
+    fps: 60,
+    ups: 60,
+    fill: uno.Color.WHITE.clone(),
+    stroke: uno.Color.BLACK.clone(),
+    thickness: 1,
+    canvas: null,
+    container: null,
+    menu: false
+};
+
+/**
+ * List of all created renders
+ * @type {Array}
+ */
+uno.Render.renders = [];
+
+/**
+ * Counter for render unique id
+ * @type {Number}
+ * @private
+ */
+uno.Render._uid = 0;
 
 /**
  * Create new render with settings
  * @param {Object} settings - Settings for the new render<br>
  *     See uno.Render.DEFAULT<br>
- * @returns {uno.CanvasRender|uno.WebglRender}
+ * @returns {uno.Render}
  */
 uno.Render.create = function(settings) {
     settings = settings || {};

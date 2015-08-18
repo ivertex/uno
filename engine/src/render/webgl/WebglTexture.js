@@ -2,6 +2,7 @@
  * WebGL texture extension
  * @param {uno.Texture} texture - Texture that holds this extension
  * @constructor
+ * @ignore
  */
 uno.WebglTexture = function(texture) {
     /**

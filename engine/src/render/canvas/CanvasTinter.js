@@ -1,6 +1,7 @@
 /**
  * Canvas tint helper
  * @constructor
+ * @ignore
  */
 uno.CanvasTinter = function() {
 };
