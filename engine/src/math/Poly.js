@@ -53,6 +53,8 @@ uno.Poly.prototype.set = function(points) {
  * @returns {Boolean}
  */
 uno.Poly.prototype.equal = function(poly) {
+    if (!poly)
+        return false;
     if (this.points.length !== poly.points.length)
         return false;
     var p1 = this.points, p2 = poly.points, i = p1.length;

@@ -216,6 +216,8 @@ uno.Point.prototype.angle = function(x, y) {
  * @return {Boolean}
  */
 uno.Point.prototype.equal = function(x, y) {
+    if (x === undefined || x === null)
+        return false;
     if (x.x !== undefined)
         return this.x === x.x && this.y === x.y;
     return this.x === x && this.y === y;

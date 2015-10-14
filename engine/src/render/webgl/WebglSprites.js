@@ -305,7 +305,7 @@ uno.WebglSprites.prototype.flush = function() {
     ctx.bindBuffer(consts.ARRAY_BUFFER, this._vertexBuffer);
 
     var shader;
-    if (mask.enable()) {
+    if (mask.enabled()) {
         shader = render._useShader(uno.WebglShader.SPRITES_MASK);
         mask.apply(shader, 1);
     } else {

@@ -67,7 +67,7 @@ uno.Circle.prototype.set = function(x, y, radius) {
  * @returns {Boolean}
  */
 uno.Circle.prototype.equal = function(circle) {
-    return this.x === circle.x && this.y === circle.y && this.radius === circle.radius;
+    return circle && this.x === circle.x && this.y === circle.y && this.radius === circle.radius;
 };
 
 /**

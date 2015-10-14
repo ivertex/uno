@@ -89,7 +89,7 @@ uno.Line.prototype.set = function(x1, y1, x2, y2) {
  * @returns {Boolean}
  */
 uno.Line.prototype.equal = function(line) {
-    return this.x1 === line.x1 && this.y1 === line.y1 && this.x2 === line.x2 && this.y2 === line.y2;
+    return line && this.x1 === line.x1 && this.y1 === line.y1 && this.x2 === line.x2 && this.y2 === line.y2;
 };
 
 /**

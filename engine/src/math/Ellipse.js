@@ -89,9 +89,9 @@ uno.Ellipse.prototype.set = function(x, y, width, height) {
  * @returns {Boolean}
  */
 uno.Ellipse.prototype.equal = function(ellipse) {
-    if (ellipse.radius)
+    if (ellipse && ellipse.radius !== undefined)
         return this.x === ellipse.x && this.y === ellipse.y && this.width === ellipse.radius && this.height === ellipse.radius;
-    return this.x === ellipse.x && this.y === ellipse.y && this.width === ellipse.width && this.height === ellipse.height;
+    return ellipse && this.x === ellipse.x && this.y === ellipse.y && this.width === ellipse.width && this.height === ellipse.height;
 };
 
 /**

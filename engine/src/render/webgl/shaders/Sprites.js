@@ -38,4 +38,4 @@ uno.WebglShader.SPRITES = {
         { name: 'aUV', type: uno.WebglConsts.FLOAT_VEC2 },
         { name: 'aColor', type: uno.WebglConsts.UNSIGNED_BYTE, size: 4, normalize: true } // Using packing ABGR (alpha and tint color)
     ]
-}
+};

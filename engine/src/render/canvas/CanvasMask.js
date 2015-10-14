@@ -38,6 +38,13 @@ uno.CanvasMask = function(render) {
      * @private
      */
     this._frame = new uno.Rect();
+
+    /**
+     * Full mask frame
+     * @type {uno.Rect}
+     * @private
+     */
+    this._full = new uno.Rect();
 };
 
 /**
@@ -55,48 +62,37 @@ uno.CanvasMask.prototype.destroy = function() {
  * @returns {Boolean}
  */
 uno.CanvasMask.prototype.exist = function() {
-    return !!this._texture && this._texture.ready;
-};
-
-/**
- * Enable or disable current mask buffer
- * @param {Boolean} enable
- */
-uno.CanvasMask.prototype.enable = function(enable) {
-    if (!this._texture)
-        return;
-    this._render._setTarget(enable ? this._buffer : this._render._target);
+    return !!(this._texture && this._buffer);
 };
 
 /**
  * Setup mask
  * @param {uno.Texture} texture - Texture for alpha mask
  * @param {uno.Matrix} transform - Transform of the mask
- * @param {uno.Rect} frame - The frame to mask rect of the texture (default full texture)
+ * @param {uno.Rect} [frame] - The frame to mask rect of the texture (default full texture)
  */
 uno.CanvasMask.prototype.set = function(texture, transform, frame) {
-    if (!texture && !this._buffer)
-        return;
+    if (!texture || !texture.ready) {
+        if (this._texture && this._buffer)
+            this.apply();
+        this._texture = null;
+        return true;
+    }
 
-    if (this._texture !== texture) {
-        this.apply();
+    frame = frame || this._full.set(0, 0, texture.width, texture.height);
+
+    if (this._texture !== texture || !this._transform.equal(transform) || !this._frame.equal(frame)) {
+        if (this._texture && this._buffer)
+            this.apply();
         this._texture = texture;
-    }
-
-    if (transform !== undefined && !this._transform.equal(transform))
         this._transform.set(transform);
-
-    if (frame === undefined) {
-        if (texture)
-            this._frame.set(0, 0, texture.width, texture.height);
-    } else if (!this._frame.equal(frame))
         this._frame.set(frame);
-
-    if (texture) {
-        if (!this._buffer)
-            this._buffer = new uno.Texture.create(this._render.width, this._render.height);
-        this._render._setTarget(this._buffer);
     }
+
+    if (!this._buffer)
+        this._buffer = new uno.Texture.create(this._render.width, this._render.height);
+
+    this._render._setTarget(this._buffer);
 };
 
 /**
@@ -105,17 +101,43 @@ uno.CanvasMask.prototype.set = function(texture, transform, frame) {
  * @param {Number} height - New height of the render
  */
 uno.CanvasMask.prototype.resize = function(width, height) {
-    if (this._buffer && (this._buffer.width !== width || this._buffer.height !== height))
+    if (this._buffer && (this._buffer.width !== width || this._buffer.height !== height)) {
+        this._buffer.destroy();
         this._buffer = new uno.Texture(width, height);
+    }
+};
+
+uno.CanvasMask.prototype.clear = function(color) {
+    var render = this._render;
+    var temp = this._texture;
+
+    this._texture = null;
+
+    render.clear(uno.Color.TRANSPARENT);
+    render._setTarget(render._target);
+    render.clear(color);
+    render._setTarget(this._buffer);
+
+    this._texture = temp;
+};
+
+uno.CanvasMask.prototype.clip = function(x, y, width, height) {
+    var render = this._render;
+    var temp = this._texture;
+
+    this._texture = null;
+
+    render._setTarget(render._target);
+    render.clip(x, y, width, height);
+    render._setTarget(this._buffer);
+
+    this._texture = temp;
 };
 
 /**
  * Apply mask to canvas
  */
 uno.CanvasMask.prototype.apply = function() {
-    if (!this._texture || !this._buffer)
-        return;
-
     var render = this._render;
     var state = render._state;
 

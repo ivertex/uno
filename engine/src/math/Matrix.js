@@ -148,7 +148,7 @@ uno.Matrix.prototype.reset = function() {
  * @returns {Boolean}
  */
 uno.Matrix.prototype.equal = function(matrix) {
-    return this.a === matrix.a && this.b === matrix.b && this.c === matrix.c &&
+    return matrix && this.a === matrix.a && this.b === matrix.b && this.c === matrix.c &&
         this.d === matrix.d && this.tx === matrix.tx && this.ty === matrix.ty;
 };
 

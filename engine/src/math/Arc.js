@@ -100,7 +100,7 @@ uno.Arc.prototype.set = function(x, y, radius, startAngle, endAngle, antiClockwi
  * @returns {Boolean}
  */
 uno.Arc.prototype.equal = function(arc) {
-    return this.x === arc.x && this.y === arc.y && this.radius === arc.radius &&
+    return arc && this.x === arc.x && this.y === arc.y && this.radius === arc.radius &&
         this.startAngle === arc.startAngle && this.endAngle === arc.endAngle &&
         this.antiClockwise === arc.antiClockwise;
 };

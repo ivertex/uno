@@ -87,11 +87,19 @@ uno.Rect.prototype.set = function(x, y, width, height) {
 
 /**
  * Is the rect equal to given
- * @param {uno.Rect} rect - Rect for comparison
+ * @param {Number|uno.Rect} x - The x-coordinate of the left-top point of the rect<br>
+ *     If x param is object and have property width it treated as uno.Rect instance
+ * @param {Number} y - The y-coordinate of the left-top point of the rect
+ * @param {Number} width - The width of the rect
+ * @param {Number} height - The height of the rect
  * @returns {Boolean}
  */
-uno.Rect.prototype.equal = function(rect) {
-    return this.x === rect.x && this.y === rect.y && this.width === rect.width && this.height === rect.height;
+uno.Rect.prototype.equal = function(x, y, width, height) {
+    if (x === undefined || x === null)
+        return false;
+    if (x.width !== undefined)
+        return this.x === x.x && this.y === x.y && this.width === x.width && this.height === x.height;
+    return this.x === x && this.y === y && this.width === width && this.height === height;
 };
 
 /**

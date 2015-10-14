@@ -242,9 +242,9 @@ Object.defineProperty(uno.CanvasRender.prototype, 'target', {
     },
     set: function(value) {
         if (this._target !== value) {
+            this.clip();
             this.mask();
             this._target = value;
-            this.clip();
             this._setTarget(value);
         }
     }
@@ -350,7 +350,6 @@ uno.CanvasRender.prototype.resize = function(width, height) {
     this._height = height;
     this._canvas.width = width;
     this._canvas.height = height;
-    this._clip.set(0, 0, width, height);
 
     this._mask.resize(width, height);
 
@@ -400,26 +399,25 @@ uno.CanvasRender.prototype.destroy = function() {
 uno.CanvasRender.prototype.clear = function(color) {
     var state = this._state;
 
+    if (this._mask.exist()) {
+        this._mask.clear(color);
+        return this;
+    }
+
     if (!color)
         color = this.background;
 
     if (color && !color.a) {
-        this._mask.enable(false);
-
         state.save();
         state.reset();
         this._context.clearRect(0, 0, this._width, this._height);
         state.restore();
-
-        this._mask.enable(true);
 
         return this;
     }
 
     if (!color)
         return this;
-
-    this._mask.enable(false);
 
     state.save();
     state.transform.reset();
@@ -430,8 +428,6 @@ uno.CanvasRender.prototype.clear = function(color) {
     this._context.fillRect(0, 0, this._width, this._height);
 
     state.restore();
-
-    this._mask.enable(true);
 
     return this;
 };
@@ -447,32 +443,23 @@ uno.CanvasRender.prototype.clear = function(color) {
 uno.CanvasRender.prototype.clip = function(x, y, width, height) {
     var clip = this._clip;
     var state = this._state;
-    var full = clip.x === 0 && clip.y === 0 && clip.width === this._width && clip.height === this._height;
-
-    if (clip.x === x && clip.y === y && clip.width === width && clip.height === height) {
-        return this;
-    }
-
-    if (x === undefined || x === false) {
-        if (full)
-            return this;
-
-        this._mask.enable(false);
-
-        clip.set(0, 0, this._width, this._height);
-        this._context.restore();
-        state.sync(true);
-
-        this._mask.enable(true);
-
-        return this;
-    }
-
-    this._mask.enable(false);
-
     var ctx = this._context;
 
-    if (!full) {
+    if (x === undefined || x === false) {
+        if (clip.equal(0, 0, this._width, this._height))
+            return this;
+
+        clip.set(0, 0, this._width, this._height);
+        ctx.restore();
+        state.sync(true);
+
+        return this;
+    }
+
+    if (clip.equal(x, y, width, height))
+        return this;
+
+    if (!clip.equal(0, 0, this._width, this._height)) {
         ctx.restore();
         state.sync(true);
     }
@@ -483,24 +470,28 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
     ctx.rect(x, y, width, height);
     ctx.clip();
 
-    this._mask.enable(true);
-
     return this;
 };
 
 /**
  * Set or reset mask texture
- * @param {uno.Texture} texture - Alpha mask texture
- * @param {uno.Rect} [frame] - The frame to mask rect of the texture (default full texture)
+ * @param {uno.Texture} [texture] - Alpha mask texture (if empty reset mask)
+ * @param {uno.Rect} [frame] - The frame to mask rect of the texture (if empty full texture)
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.mask = function(texture, frame) {
+    if (texture && texture.ready && !texture.pot && frame && (frame.width > texture.width || frame.height > texture.height)) {
+        uno.error('Repeating non power of two mask textures are not supported');
+        return this;
+    }
+
     this._mask.set(texture, this.transform, frame);
+
     return this;
 };
 
 /**
- * Set or reset mask texture
+ * Set graphics style
  * @param {uno.Color} fill - Fill color
  * @param {uno.Color} stroke - Stroke color
  * @param {Number} thickness - Line width

@@ -33,6 +33,13 @@ uno.WebglMask = function(render) {
     this._frame = new uno.Rect();
 
     /**
+     * Full mask frame
+     * @type {uno.Rect}
+     * @private
+     */
+    this._full = new uno.Rect(0, 0, 1, 1);
+
+    /**
      * Mask calculated UV vectors (4 3d vectors)
      * @type {Float32Array}
      * @private
@@ -67,46 +74,51 @@ uno.WebglMask.prototype.destroy = function() {
  * Check is mask enabled
  * @returns {Boolean}
  */
-uno.WebglMask.prototype.enable = function() {
-    return !!this._texture && this._texture.ready;
+uno.WebglMask.prototype.enabled = function() {
+    return !!this._texture;
 };
 
 /**
  * Setup mask
  * @param {uno.Texture} texture - Texture for alpha mask
  * @param {uno.Matrix} transform - Transform of the mask
- * @param {uno.Rect} frame - The frame to mask rect of the texture (default full texture)
+ * @param {uno.Rect} [frame] - The frame to mask rect of the texture (default full texture)
  * @returns {Boolean}
  */
 uno.WebglMask.prototype.set = function(texture, transform, frame) {
     var changed = false;
     var render = this._render;
 
+    if (!texture || !texture.ready) {
+        render._flushAll();
+        this._texture = null;
+        return true;
+    }
+
     if (this._texture !== texture) {
-        render._graphics.flush();
-        render._sprites.flush();
+        render._flushAll();
         this._texture = texture;
+        changed = true;
     }
 
     if (transform !== undefined && !this._transform.equal(transform)) {
+        render._flushAll();
         this._transform.set(transform);
         changed = true;
     }
 
-    if (frame !== undefined && !this._frame.equal(frame)) {
-        if (texture)
+    if (!this._frame.equal(frame)) {
+        render._flushAll();
+        if (frame && texture) {
             this._frame.set(frame.x / texture.width, frame.y / texture.height, frame.width / texture.width, frame.height / texture.height);
-        changed = true;
-    } else {
-        this._frame.set(0, 0, 1, 1);
+            changed = true;
+        } else if (!this._frame.equal(this._full)) {
+            this._frame.set(this._full);
+            changed = true;
+        }
     }
 
-    if (changed) {
-        render._graphics.flush();
-        render._sprites.flush();
-    }
-
-    if (changed && texture)
+    if (changed)
         this._calc();
 
     return changed;
@@ -115,6 +127,7 @@ uno.WebglMask.prototype.set = function(texture, transform, frame) {
 /**
  * Apply mask shader uniforms
  * @param {uno.WebglShader} shader - Current mask shader
+ * @param {Number} unit - Texture unit for mask texture
  */
 uno.WebglMask.prototype.apply = function(shader, unit) {
     shader.uMask.set(uno.WebglTexture.get(this._texture).handle(this._render), unit || 0);
@@ -145,7 +158,8 @@ uno.WebglMask.prototype._calc = function() {
     var ab = this._ab.set(b.x - a.x, b.y - a.y);
     var ac = this._ac.set(c.x - a.x, c.y - a.y);
 
-    var v = 1 / (ab.x * ac.y - ab.y * ac.x);
+    var del = ab.x * ac.y - ab.y * ac.x;
+    var v = del === 0 ? 0 : 1 / del;
 
     ab.multiply(v);
     ac.multiply(v);

@@ -274,27 +274,25 @@ Object.defineProperty(uno.WebglRender.prototype, 'target', {
         return this._target;
     },
     set: function(value) {
+        if (this._target === value)
+            return;
+
+        this._flushAll();
+
         this.mask();
+
+        this._target = value;
+
         if (!value) {
-            if (value !== this._target) {
-                this._graphics.flush();
-                this._sprites.flush();
-                this._target = null;
-                this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
-                this._projection.x = this.width * 0.5;
-                this._projection.y = -this.height * 0.5;
-                this._context.viewport(0, 0, this.width, this.height);
-            }
+            this._context.bindFramebuffer(this._context.FRAMEBUFFER, null);
+            this._projection.x = this.width * 0.5;
+            this._projection.y = -this.height * 0.5;
+            this._context.viewport(0, 0, this.width, this.height);
         } else {
-            if (this._target !== value) {
-                this._graphics.flush();
-                this._sprites.flush();
-                this._target = value;
-                this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(value).handle(this, true));
-                this._projection.x = value.width * 0.5;
-                this._projection.y = -value.height * 0.5;
-                this._context.viewport(0, 0, value.width, value.height);
-            }
+            this._context.bindFramebuffer(this._context.FRAMEBUFFER, uno.WebglTexture.get(value).handle(this, true));
+            this._projection.x = value.width * 0.5;
+            this._projection.y = -value.height * 0.5;
+            this._context.viewport(0, 0, value.width, value.height);
         }
     }
 });
@@ -400,7 +398,6 @@ uno.WebglRender.prototype.resize = function(width, height) {
     this._projection.x = width * 0.5;
     this._projection.y = -height * 0.5;
     this._context.viewport(0, 0, width, height);
-    this._clip.set(0, 0, width, height);
 
     this._updateBounds();
 
@@ -497,31 +494,24 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
 
     var ctx = this._context;
     var clip = this._clip;
-    var full = clip.x === 0 && clip.y === 0 && clip.width === this._width && clip.height === this._height;
-
-    if (clip.x === x && clip.y === y && clip.width === width && clip.height === height) {
-        return this;
-    }
-
-    var consts = uno.WebglConsts;
 
     if (x === undefined || x === false) {
-        if (!full) {
-            this._graphics.flush();
-            this._sprites.flush();
-        }
+        if (clip.equal(0, 0, this._width, this._height))
+            return this;
+
+        this._flushAll();
         clip.set(0, 0, this._width, this._height);
-        ctx.disable(consts.SCISSOR_TEST);
+        ctx.disable(uno.WebglConsts.SCISSOR_TEST);
+
         return this;
     }
 
-    if (!full) {
-        this._graphics.flush();
-        this._sprites.flush();
-    }
+    if (clip.equal(x, y, width, height))
+        return this;
 
+    this._flushAll();
     clip.set(x, y, width, height);
-    ctx.enable(consts.SCISSOR_TEST);
+    ctx.enable(uno.WebglConsts.SCISSOR_TEST);
     ctx.scissor(x, this._height - y - height, width, height);
 
     return this;
@@ -529,8 +519,8 @@ uno.WebglRender.prototype.clip = function(x, y, width, height) {
 
 /**
  * Set or reset mask texture
- * @param {uno.Texture} texture - Alpha mask texture
- * @param {uno.Rect} [frame] - The frame to mask rect of the texture (default full texture)
+ * @param {uno.Texture} [texture] - Alpha mask texture (if empty reset mask)
+ * @param {uno.Rect} [frame] - The frame to mask rect of the texture (if empty full texture)
  * @returns {uno.WebglRender} - <code>this</code>
  */
 uno.WebglRender.prototype.mask = function(texture, frame) {
@@ -538,7 +528,7 @@ uno.WebglRender.prototype.mask = function(texture, frame) {
         return this;
 
     if (texture && texture.ready && !texture.pot && frame && (frame.width > texture.width || frame.height > texture.height)) {
-        uno.error('Repeating non power of two textures are not supported');
+        uno.error('Repeating non power of two mask textures are not supported');
         return this;
     }
 
@@ -548,7 +538,7 @@ uno.WebglRender.prototype.mask = function(texture, frame) {
 };
 
 /**
- * Set or reset mask texture
+ * Set graphics style
  * @param {uno.Color} fill - Fill color
  * @param {uno.Color} stroke - Stroke color
  * @param {Number} thickness - Line width
@@ -765,8 +755,7 @@ uno.WebglRender.prototype.getPixels = function(texture, x, y, width, height) {
     if (x < 0 || y < 0 || x + width > w || y + height > h)
         return null;
 
-    this._graphics.flush();
-    this._sprites.flush();
+    this._flushAll();
 
     y = h - y - height;
 
@@ -888,6 +877,15 @@ uno.WebglRender.prototype._useShader = function(shader) {
     }
 
     return item;
+};
+
+/**
+ * Flush batches
+ * @private
+ */
+uno.WebglRender.prototype._flushAll = function() {
+    this._graphics.flush();
+    this._sprites.flush();
 };
 
 /**
@@ -1160,8 +1158,8 @@ uno.WebglRender.prototype._onFrame = function(time) {
         (this.fps === 60 || rdelta >= (1 / this.fps) * 900)) { // 90% percent of time per render and maximum for 60 fps
         this._resetState();
         root.render(this, rdelta);
-        this._graphics.flush();
-        this._sprites.flush();
+        this.mask();
+        this._flushAll();
         this._lastRenderTime = time;
     }
 };
