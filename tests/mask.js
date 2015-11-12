@@ -11,8 +11,9 @@ mask.prototype.render = function(render, deltaTime) {
     render.transform = this.object.transform.matrix;
     render.clip(100, 100, 200, 200);
     render.mask(this.mask);
-    render.texture(this.tex);
+    render.rect(0, 0, 500, 500);
     render.clip();
+    render.texture(this.tex);
 };
 
 function create(render1, render2) {

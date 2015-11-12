@@ -445,6 +445,11 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
     var state = this._state;
     var ctx = this._context;
 
+    if (this._mask.exist()) {
+        this._mask.clip(x, y, width, height);
+        return this;
+    }
+
     if (x === undefined || x === false) {
         if (clip.equal(0, 0, this._width, this._height))
             return this;
@@ -465,10 +470,17 @@ uno.CanvasRender.prototype.clip = function(x, y, width, height) {
     }
 
     clip.set(x, y, width, height);
+
+    state.save();
+    state.transform.reset();
+    state.sync();
+
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.clip();
+
+    state.restore();
 
     return this;
 };
@@ -754,7 +766,7 @@ uno.CanvasRender.prototype._setupSettings = function(settings) {
     var def = uno.Render.DEFAULT;
 
     if (!settings.canvas)
-        return uno.error('Can not create render, settings.canvas is not defined');
+        throw new Error('Can not create render, settings.canvas is not defined');
 
     if (settings.background === false)
         this.background = false;
@@ -797,7 +809,7 @@ uno.CanvasRender.prototype._createContext = function() {
     this._displayContext = this._context = this._canvas.getContext ? this._canvas.getContext('2d', options) : null;
 
     if (!this._context)
-        return uno.error('This browser does not support canvas. Try using another browser');
+        throw new Error('This browser does not support canvas. Try using another browser');
 
     return true;
 };

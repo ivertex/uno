@@ -352,7 +352,7 @@ uno.WebglShader.prototype._createProgram = function(vertex, fragment) {
     ctx.linkProgram(program);
 
     if (!ctx.getProgramParameter(program, consts.LINK_STATUS) && !ctx.isContextLost())
-        return uno.error('Program filed to link:', ctx.getProgramInfoLog(program));
+        throw new Error('Program filed to link:', ctx.getProgramInfoLog(program));
 
     return program;
 };
@@ -373,7 +373,7 @@ uno.WebglShader.prototype._compileShader = function(type, source) {
     ctx.compileShader(shader);
 
     if (!ctx.getShaderParameter(shader, consts.COMPILE_STATUS) && !ctx.isContextLost())
-        return uno.error('Could not compile shader:', ctx.getShaderInfoLog(shader));
+        throw new Error('Could not compile shader:', ctx.getShaderInfoLog(shader));
 
     return shader;
 };

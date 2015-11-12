@@ -1,8 +1,8 @@
 /**
  * UnoJS engine<br>
- * Desktop browser support: IE 9+, FF 4+, Chrome 4+, Opera 11.6+, Safari 5+<br>
- * Mobile browser support: iOS 4 Safari and other browsers (iPhone 4+, iPad 2+),<br>
- *      Android 2.2 Browser (Samsung Galaxy S+), Opera Mobile 11.50, Blackberry browser 7+, IE Mobile 10+<br>
+ * Desktop browser support: IE 9+, FF 4+, Chrome 4+, Opera 11.6+, Safari 6+<br>
+ * Mobile browser support: iOS 6 Safari and other browsers (iPhone 4S+, iPad 3+),<br>
+ *      Android 4+ Browser (Samsung Galaxy S3+), Opera Mobile 11.50, Blackberry browser 7+, IE Mobile 10+<br>
  * Desktop WebGL mode support: IE 11+, FF 4+ (partial), Chrome 8+ (partial) 18+ (full),<br>
  *      Opera 12+ (partial) 15+ (full), Safari 5.1+ (partial) 8+ (full)<br>
  * Mobile WebGL mode support: iOS 8+, Blackberry 10+, Opera Mobile 12+, Chrome for Android 36+, Firefox for Android 31+<br>
@@ -37,9 +37,12 @@ uno.time = function() {
 uno.log = function(message) {
     var args = Array.prototype.slice.call(arguments);
 
-    // TODO: This log should displayed in inspector with line number where it called
     if (uno.Browser.any && window.console) {
-        console.log('%cUno: ' + args.join(' '), 'color: blue');
+        var b = uno.Browser;
+        if (b.firefox || (b.safari && b.version > 7) || (b.chrome && b.version > 24))
+            console.log('%cUno: ' + args.join(' '), 'color: blue');
+        else
+            console.log('Uno: ' + args.join(' '));
     }
 
     return true;
@@ -55,7 +58,11 @@ uno.warn = function(message) {
     var args = Array.prototype.slice.call(arguments);
 
     if (uno.Browser.any && window.console) {
-        console.warn('%cUno: ' + args.join(' '), 'color: orange');
+        var b = uno.Browser;
+        if (b.firefox || (b.safari && b.version > 7) || (b.chrome && b.version > 24))
+            console.warn('%cUno: ' + args.join(' '), 'color: orange');
+        else
+            console.warn('Uno: ' + args.join(' '));
     }
 
     return false;
@@ -63,17 +70,12 @@ uno.warn = function(message) {
 
 /**
  * Print error message
- * @param {Error} [error] - Error object that should throw
  * @param {...String} [message] - Message strings that will be concatenated
  * @returns {Boolean} - <code>false</code> for using with <code>return</code>
  */
 /*jshint unused: false */
-uno.error = function(error, message) {
+uno.error = function(message) {
     var args = Array.prototype.slice.call(arguments);
-
-    // TODO: Need working solution for errors declaration
-    if (args.length && args[0] && args[0] instanceof Error)
-        throw args[0];
 
     if (uno.Browser.any && window.console) {
         console.error('Uno: ' + args.join(' '));

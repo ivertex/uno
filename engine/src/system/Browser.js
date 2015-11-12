@@ -47,6 +47,13 @@ uno.Browser = function() {
 
     /**
      * @memberof uno.Browser
+     * @member {Boolean} edge - Current browser is Edge
+     * @readonly
+     */
+    this.edge = false;
+
+    /**
+     * @memberof uno.Browser
      * @member {Boolean} chrome - Current browser is Chrome
      * @readonly
      */
@@ -124,6 +131,12 @@ uno.Browser.prototype._initialize = function() {
             {
                 name: 'ie',
                 exp: /(trident).+rv[:\s]((\d+)?[\w\.]+).+like\sgecko/i, // IE11
+                version: 3,
+                mobile: false
+            },
+            {
+                name: 'edge',
+                exp: /(edge)\/((\d+)?[\w\.]+)/i, // IE11
                 version: 3,
                 mobile: false
             },

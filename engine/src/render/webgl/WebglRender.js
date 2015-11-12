@@ -924,7 +924,7 @@ uno.WebglRender.prototype._setupSettings = function(settings) {
     var def = uno.Render.DEFAULT;
 
     if (!settings.canvas)
-        return uno.error('Can not create render, settings.canvas is not defined');
+        throw new Error('Can not create render, settings.canvas is not defined');
 
     if (settings.background === false)
         this.background = false;
@@ -1061,15 +1061,19 @@ uno.WebglRender.prototype._createContext = function() {
 
     var error = 'This browser does not support WebGL, use the canvas render';
 
+    // WebGL <= 0.93 does not support attribute pointer UNSIGNED_INT
+    if (uno.Capabilities.webgl < 0.94)
+        throw new Error(error);
+
     try {
         this._context = this._canvas.getContext('experimental-webgl', options) ||
             this._canvas.getContext('webgl', options);
     } catch (e) {
-        return uno.error(error);
+        throw new Error(error);
     }
 
     if (!this._context)
-        return uno.error(error);
+        throw new Error(error);
 
     var ctx = this._context;
     var consts = uno.WebglConsts;

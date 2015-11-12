@@ -21,16 +21,22 @@ function createRenders(render1, render2, type) {
             else
                 settings.height = Math.floor(settings.height * 0.5);
         }
-        window.render1 = uno.Render.create(settings);
+        try {
+            window.render1 = uno.Render.create(settings);
+        } catch (e) {
+            window.render1 = null;
+            uno.error(e);
+        }
     }
 
     if (window.render2) {
+        settings.mode = type || uno.Render.RENDER_WEBGL;
+        settings.ups = 60;
         try {
-            settings.mode = type || uno.Render.RENDER_WEBGL;
-            settings.ups = 60;
             window.render2 = uno.Render.create(settings);
         } catch (e) {
-            console.log(e);
+            window.render2 = null;
+            uno.error(e);
         }
     }
 
@@ -59,10 +65,12 @@ function onClick(e) {
             render.ups = render.ups ? 0 : 60;
             render.fps = render.fps ? 0 : 60;
         }
-        if (render.ups)
-            e.target.classList.remove('active');
-        else
-            e.target.classList.add('active');
+        if (e.target.classList) {
+            if (render.ups)
+                e.target.classList.remove('active');
+            else
+                e.target.classList.add('active');
+        }
         return;
     }
     if (name === 'docs') {
@@ -79,9 +87,9 @@ function createPanel(active) {
         return;
     for (var i = 0, l = panel.children.length; i < l; ++i) {
         var item = panel.children[i];
-        if (item.attributes[0].value === active)
+        if (item.attributes[0].value === active && item.classList)
             item.classList.add('active');
-        item.addEventListener('click', onClick);
-        item.addEventListener('touchend', onClick);
+        item.addEventListener('click', onClick, false, false);
+        item.addEventListener('touchend', onClick, false, false);
     }
 }

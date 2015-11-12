@@ -4,7 +4,7 @@
  *     See uno.Render.DEFAULT<br>
  * @constructor
  */
-uno.Render = function() {
+uno.Render = function(settings) {
 };
 
 /**
@@ -45,12 +45,14 @@ uno.Render.BLEND_ADD = 1;
 
 /**
  * This blend mode multiplies the numbers for each pixel of the top layer with the corresponding pixel for the bottom layer
+ * TODO: This blend mode is not supported in IE and Edge!
  * @const {Number}
  */
 uno.Render.BLEND_MULTIPLY = 2;
 
 /**
  * This blend mode inverts both layers, multiplies them, and then inverts that result
+ * TODO: This blend mode is not supported in IE and Edge!
  * @const {Number}
  */
 uno.Render.BLEND_SCREEN = 3;
@@ -146,5 +148,6 @@ uno.Render.create = function(settings) {
         }
         return new uno.CanvasRender(setts);
     }
-    return uno.error('Only browsers currently supported');
+
+    throw new Error('Only browsers currently supported');
 };

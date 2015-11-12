@@ -125,6 +125,8 @@ uno.CanvasMask.prototype.clip = function(x, y, width, height) {
     var render = this._render;
     var temp = this._texture;
 
+    this.apply();
+
     this._texture = null;
 
     render._setTarget(render._target);

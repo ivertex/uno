@@ -116,3 +116,33 @@ uno.Rect.prototype.contains = function(x, y) {
         return this.x <= x.x && this.y <= x.y && this.x + this.width >= x.x && this.y + this.height >= x.y;
     return this.x <= x && this.y <= y && this.x + this.width >= x && this.y + this.height >= y;
 };
+
+/**
+ * Clamps rect in rect
+ * @param {Number|uno.Rect} x - The x-coordinate of the point<br>
+ *     If x is object it treated as uno.Rect instance
+ * @param {Number} y - The y-coordinate of the point
+ * @param {Number} width - The width of the rect
+ * @param {Number} height - The height of the rect
+ */
+uno.Rect.prototype.clamp = function(x, y, width, height) {
+    if (x.width !== undefined) {
+        if (this.x < x.x)
+            this.x = x.x;
+        if (this.y < x.y)
+            this.y = x.y;
+        if (this.x + this.width > x.x + x.width)
+            this.width = x.x + x.width - this.x;
+        if (this.y + this.height > x.y + x.height)
+            this.height = x.y + x.height - this.y;
+        return;
+    }
+    if (this.x < x)
+        this.x = x;
+    if (this.y < y)
+        this.y = y;
+    if (this.x + this.width > x + width)
+        this.width = x + width - this.x;
+    if (this.y + this.height > y + height)
+        this.height = y + height - this.y;
+};

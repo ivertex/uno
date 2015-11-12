@@ -140,10 +140,10 @@ uno.CanvasTexture.prototype.load = function(url, complete, cache) {
         uno.CanvasTinter.removeCache(self);
         self._patternCache = {};
         complete(url, true, source.width, source.height);
-    });
+    }, false, false);
     source.addEventListener('error', function() {
         complete(url, false);
-    });
+    }, false, false);
     source.src = url;
     return source;
 };

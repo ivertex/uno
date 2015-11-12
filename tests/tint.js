@@ -13,8 +13,9 @@ tinter.prototype.update = function(render, deltaTime) {
         this.tint *= -1;
     sprite.frame.x += this.offset;
     sprite.frame.y += this.offset;
-    if (sprite.frame.y <= 0.05 || sprite.frame.y + sprite.frame.height >= sprite.texture.height - 0.05)
+    if (sprite.frame.y <= 0 || sprite.frame.y + sprite.frame.height >= sprite.texture.height)
         this.offset *= -1;
+    sprite.frame.clamp(0, 0, sprite.texture.width, sprite.texture.height);
 };
 
 var rotator = function(object) {
