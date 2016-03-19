@@ -5,31 +5,45 @@
 uno.Device = function() {
     /**
      * @memberof uno.Device
-     * @member {Boolean} iPhone - Device is iPhone
+     * @member {Boolean} pc - Device is PC
      * @readonly
      */
-    this.iPhone = false;
+    this.pc = false;
 
     /**
      * @memberof uno.Device
-     * @member {Boolean} iPad - Device is iPad
+     * @member {Boolean} mac - Device is Mac
      * @readonly
      */
-    this.iPad = false;
+    this.mac = false;
 
     /**
      * @memberof uno.Device
-     * @member {Boolean} appleTV - Device is Apple TV
+     * @member {Boolean} iphone - Device is iphone
      * @readonly
      */
-    this.appleTV = false;
+    this.iphone = false;
 
     /**
      * @memberof uno.Device
-     * @member {Boolean} windowsPhone - Device is Windows Phone
+     * @member {Boolean} ipad - Device is iPad
      * @readonly
      */
-    this.windowsPhone = false;
+    this.ipad = false;
+
+    /**
+     * @memberof uno.Device
+     * @member {Boolean} appletv - Device is Apple TV
+     * @readonly
+     */
+    this.appletv = false;
+
+    /**
+     * @memberof uno.Device
+     * @member {Boolean} windowsphone - Device is Windows Phone
+     * @readonly
+     */
+    this.windowsphone = false;
 
     /**
      * @memberof uno.Device
@@ -47,10 +61,10 @@ uno.Device = function() {
 
     /**
      * @memberof uno.Device
-     * @member {Boolean} firePhone - Device is Amazon Fire Phone
+     * @member {Boolean} firephone - Device is Amazon Fire Phone
      * @readonly
      */
-    this.firePhone = false;
+    this.firephone = false;
 
     /**
      * @memberof uno.Device
@@ -93,22 +107,22 @@ uno.Device.prototype._initialize = function() {
         var res;
         var regs = [
             {
-                name: 'iPhone',
-                exp: /\((iphone);.+(apple)/i,   // iPhone
+                name: 'iphone',
+                exp: /\((iphone);.+(apple)/i,   // iphone
                 mobile: true
             },
             {
-                name: 'iPad',
+                name: 'ipad',
                 exp: /\((ipad);.+(apple)/i,   // iPad
                 mobile: true
             },
             {
-                name: 'appleTV',
+                name: 'appletv',
                 exp: /(apple\s{0,1}tv)/i,   // Apple TV
                 mobile: true
             },
             {
-                name: 'windowsPhone',
+                name: 'windowsphone',
                 exp: /(windows\sphone)/i,   // Windows Phone
                 mobile: true
             },
@@ -133,7 +147,7 @@ uno.Device.prototype._initialize = function() {
                 mobile: true
             },
             {
-                name: 'firePhone',
+                name: 'firephone',
                 exp: /(sd|kf)[0349hijorstuw]+\sbuild\/[\w\.]+.*silk\//i,   // Amazon Fire Phone
                 mobile: true
             },
@@ -158,14 +172,24 @@ uno.Device.prototype._initialize = function() {
                 mobile: false
             }
         ];
+
+        var found = false;
         for (var i = 0, l = regs.length; i < l; ++i) {
             var info = regs[i];
             res = info.exp.exec(ua);
             if (res) {
                 this[info.name] = true;
                 this.mobile = info.mobile;
-                return;
+                found = true;
+                break;
             }
+        }
+
+        if (!found) {
+            if (uno.Os.mac)
+                this.mac = true;
+            else
+                this.pc = true;
         }
     }
 };

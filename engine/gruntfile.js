@@ -16,8 +16,8 @@ module.exports = function(grunt) {
         'src/math/Rect.js',
         'src/system/Browser.js',
         'src/system/Capabilities.js',
-        'src/system/Device.js',
         'src/system/Os.js',
+        'src/system/Device.js',
         'src/system/Screen.js',
         'src/render/common/Color.js',
         'src/render/common/Texture.js',
@@ -68,7 +68,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 src: src,
-                dest: 'dist/<%= pkg.name %>.dev.js'
+                dest: 'bin/<%= pkg.name %>.dev.js'
             }
         },
         concat_sourcemap: {
@@ -97,7 +97,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 src: '<%= concat.dist.dest %>',
-                dest: 'dist/<%= pkg.name %>.js'
+                dest: 'bin/<%= pkg.name %>.js'
             }
         },
         jsdoc : {

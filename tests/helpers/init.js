@@ -22,7 +22,7 @@ function createRenders(render1, render2, type) {
                 settings.height = Math.floor(settings.height * 0.5);
         }
         try {
-            window.render1 = uno.Render.create(settings);
+            window.render1 = new uno.Render(settings);
         } catch (e) {
             window.render1 = null;
             uno.error(e);
@@ -33,7 +33,7 @@ function createRenders(render1, render2, type) {
         settings.mode = type || uno.Render.RENDER_WEBGL;
         settings.ups = 60;
         try {
-            window.render2 = uno.Render.create(settings);
+            window.render2 = new uno.Render(settings);
         } catch (e) {
             window.render2 = null;
             uno.error(e);
@@ -41,6 +41,11 @@ function createRenders(render1, render2, type) {
     }
 
     create(window.render1, window.render2);
+}
+
+function consoleOpen() {
+    var threshold = 160;
+    return window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold;
 }
 
 function onLoad(name) {
@@ -52,7 +57,7 @@ function onLoad(name) {
     var head = document.getElementsByTagName('head')[0];
     var script = document.createElement('script');
     script.type = 'text/javascript';
-    script.src = 'tests/' + name + '.js?' + Math.random();
+    script.src = 'tests/' + name + '.js' + (consoleOpen() ? '?' + Math.random() : '');
     script.onload = function() { init(); };
     head.appendChild(script);
 }

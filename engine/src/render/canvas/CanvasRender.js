@@ -12,20 +12,13 @@ uno.CanvasRender = function(settings) {
     this.id = 0;
 
     /**
-     * Type of render. See {@link uno.Render} constants
-     * @type {Number}
-     * @default uno.Render.RENDER_CANVAS
-     */
-    this.type = uno.Render.RENDER_CANVAS;
-
-    /**
      * Root scene object
      * @type {uno.Object}
      */
     this.root = null;
 
     /**
-     * Backhground clear color (false if auto clear disabled)
+     * Background clear color (false if auto clear disabled)
      * @type {Boolean|uno.Color}
      * @default uno.Render.DEFAULT.background
      */
@@ -33,7 +26,7 @@ uno.CanvasRender = function(settings) {
 
     /**
      * Required frame per second
-     * @default uno.Render.DEFAULT.ups
+     * @default uno.Render.DEFAULT.fps
      */
     this.fps = 0;
 
@@ -393,7 +386,7 @@ uno.CanvasRender.prototype.destroy = function() {
 
 /**
  * Clear viewport with color
- * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.WebglRender.clearColor} used
+ * @param {uno.Color} [color] - Color to fill viewport. If undefined {@link uno.CanvasRender.background} used
  * @returns {uno.CanvasRender} - <code>this</code>
  */
 uno.CanvasRender.prototype.clear = function(color) {

@@ -1,11 +1,14 @@
 {
   "name": "Uno",
-  "version": "0.3",
+  "version": "0.3.0",
+  "description": "Uno.js is a fast, cross platform and lightweight 2D game engine",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivertex/uno.git"
+  },
   "author": {
     "name": "Ruslan Murashko"
-  },
-  "engines": {
-    "node": ">= 0.10.0"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

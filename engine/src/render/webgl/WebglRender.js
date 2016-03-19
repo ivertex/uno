@@ -12,20 +12,13 @@ uno.WebglRender = function(settings) {
     this.id = 0;
 
     /**
-     * Type of render. See {@link uno.Render} constants
-     * @type {Number}
-     * @default uno.Render.RENDER_WEBGL
-     */
-    this.type = uno.Render.RENDER_WEBGL;
-
-    /**
      * Root scene object
      * @type {uno.Object}
      */
     this.root = null;
 
     /**
-     * Backhground clear color (false if auto clear disabled)
+     * Background clear color (false if auto clear disabled)
      * @type {Boolean|uno.Color}
      * @default uno.Render.DEFAULT.background
      */
@@ -33,7 +26,7 @@ uno.WebglRender = function(settings) {
 
     /**
      * Required frame per second
-     * @default uno.Render.DEFAULT.ups
+     * @default uno.Render.DEFAULT.fps
      */
     this.fps = 0;
 

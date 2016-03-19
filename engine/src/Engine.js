@@ -1,17 +1,17 @@
 /**
- * UnoJS engine<br>
- * Desktop browser support: IE 9+, FF 4+, Chrome 4+, Opera 11.6+, Safari 6+<br>
+ * UnoJS engine<br><br>
+ * Desktop browser support: IE 9+, FF 4+, Chrome 4+, Opera 11.6+, Safari 6+<br><br>
  * Mobile browser support: iOS 6 Safari and other browsers (iPhone 4S+, iPad 3+),<br>
- *      Android 4+ Browser (Samsung Galaxy S3+), Opera Mobile 11.50, Blackberry browser 7+, IE Mobile 10+<br>
+ *      Android 4+ Browser (Samsung Galaxy S3+), Opera Mobile 11.50, Blackberry browser 7+, IE Mobile 10+<br><br>
  * Desktop WebGL mode support: IE 11+, FF 4+ (partial), Chrome 8+ (partial) 18+ (full),<br>
- *      Opera 12+ (partial) 15+ (full), Safari 5.1+ (partial) 8+ (full)<br>
+ *      Opera 12+ (partial) 15+ (full), Safari 5.1+ (partial) 8+ (full)<br><br>
  * Mobile WebGL mode support: iOS 8+, Blackberry 10+, Opera Mobile 12+, Chrome for Android 36+, Firefox for Android 31+<br>
  *      (partial) - Support listed as "partial" refers to the fact that not all users with these browsers have WebGL access.<br>
  *          This is due to the additional requirement for users to have up to date video drivers<br>
- *      (full) - All video cards supported<br>
+ *      (full) - All video cards supported<br><br>
  * Market Share (July 2014, http://caniuse.com/usage_table.php):<br>
  *      Chrome 4+ (33.76%), FF 4+ (13.34%), IE 9+ (12.76%), Safari 5+ (3.33%), Opera 11.6+ (0.95%), iOS Safari (7.08%),<br>
- *      Android Browser (6.74%), Chrome Android (6.35%) FF Android (0.13%) IE Mobile (0.43%), Blackberry Browser (0.01%)<br>
+ *      Android Browser (6.74%), Chrome Android (6.35%) FF Android (0.13%) IE Mobile (0.43%), Blackberry Browser (0.01%)<br><br>
  * Total support include mobile browsers: 84.88% + 6.47% (most of not included browsers) ~= 91.35%
  * @namespace uno
  * @author Ruslan Murashko

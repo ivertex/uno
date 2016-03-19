@@ -47,17 +47,17 @@ uno.Os = function() {
 
     /**
      * @memberof uno.Os
-     * @member {Boolean} macOS - Operation system is MacOS
+     * @member {Boolean} mac - Operation system is MacOS
      * @readonly
      */
-    this.macOS = false;
+    this.mac = false;
 
     /**
      * @memberof uno.Os
-     * @member {Boolean} iOS - Operation system is iOS
+     * @member {Boolean} ios - Operation system is ios
      * @readonly
      */
-    this.iOS = false;
+    this.ios = false;
 
     /**
      * @memberof uno.Os
@@ -75,24 +75,24 @@ uno.Os = function() {
 
     /**
      * @memberof uno.Os
-     * @member {Boolean} sailfishOS - Operation system is Sailfish OS
+     * @member {Boolean} sailfish - Operation system is Sailfish OS
      * @readonly
      */
-    this.sailfishOS = false;
+    this.sailfish = false;
 
     /**
      * @memberof uno.Os
-     * @member {Boolean} firefoxOS - Operation system is Firefox OS
+     * @member {Boolean} firefox - Operation system is Firefox OS
      * @readonly
      */
-    this.firefoxOS = false;
+    this.firefox = false;
 
     /**
      * @memberof uno.Os
-     * @member {Boolean} chromiumOS - Operation system is Chromium OS
+     * @member {Boolean} chromium - Operation system is Chromium OS
      * @readonly
      */
-    this.chromiumOS = false;
+    this.chromium = false;
 
     this._initialize();
 };
@@ -149,19 +149,19 @@ uno.Os.prototype._initialize = function() {
                 mobile: true
             },
             {
-                name: 'sailfishOS',
+                name: 'sailfish',
                 exp: /linux;.+(sailfish);/i,   // Sailfish OS
                 version: 2,
                 mobile: false
             },
             {
-                name: 'firefoxOS',
+                name: 'firefox',
                 exp: /mozilla.+\(mobile;.+gecko.+firefox/i,   // Firefox OS
                 version: 2,
                 mobile: false
             },
             {
-                name: 'chromiumOS',
+                name: 'chromium',
                 exp: /(cros)\s[\w]+\s([\w\.]+\w)/i,   // Chromium OS
                 version: 2,
                 mobile: false
@@ -198,19 +198,19 @@ uno.Os.prototype._initialize = function() {
                 mobile: false
             },
             {
-                name: 'iOS',
-                exp: /(ip[honead]+)(?:.*os\s*([\w]+)*\slike\smac|;\sopera)/i,   // iOS
+                name: 'ios',
+                exp: /(ip[honead]+)(?:.*os\s*([\w]+)*\slike\smac|;\sopera)/i,   // ios
                 version: 2,
                 mobile: true
             },
             {
-                name: 'macOS',
+                name: 'mac',
                 exp: /(mac\sos\sx)\s?([\w\s\.]+\w)*/i,   // Mac OS
                 version: 2,
                 mobile: false
             },
             {
-                name: 'macOS',
+                name: 'mac',
                 exp: /(macintosh|mac(?=_powerpc)\s)/i,   // Mac OS
                 version: false,
                 mobile: false
