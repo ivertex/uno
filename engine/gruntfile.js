@@ -55,11 +55,14 @@ module.exports = function(grunt) {
     grunt.initConfig({
         // Metadata.
         pkg: grunt.file.readJSON('package.json'),
-        banner: '/*! <%= pkg.title || pkg.name %> - v<%= pkg.version %> - ' +
-        '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
-        '<%= pkg.homepage ? "* " + pkg.homepage + "\\n" : "" %>' +
-        '* Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>\n' +
-        ' License <%= pkg.license %> */\n',
+
+        banner: '/**\n' +
+        '* <%= pkg.name %> <%= pkg.version %>\n' +
+        '* Build: <%= grunt.template.today("yyyy-mm-dd") %>\n' +
+        '* Author: <%= pkg.author.name %>\n' +
+        '* License: <%= pkg.license %>\n' +
+        '*/\n',
+
         // Task configuration.
         concat: {
             options: {
@@ -68,7 +71,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 src: src,
-                dest: 'bin/<%= pkg.name %>.dev.js'
+                dest: 'bin/Uno.dev.js'
             }
         },
         concat_sourcemap: {
@@ -77,7 +80,7 @@ module.exports = function(grunt) {
             },
             target: {
                 files: {
-                    'dist/<%= pkg.name %>.dev.js': src
+                    'dist/Uno.dev.js': src
                 }
             }
         },
@@ -97,7 +100,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 src: '<%= concat.dist.dest %>',
-                dest: 'bin/<%= pkg.name %>.js'
+                dest: 'bin/Uno.js'
             }
         },
         jsdoc : {
