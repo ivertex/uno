@@ -9,7 +9,7 @@
 uno.WebglShader.GRAPHICS_MASK = {
     name: 'graphics_mask',
     fragment: [
-        'precision lowp float;',
+        'precision mediump float;',
         'varying vec4 vColor;',
         'varying vec2 vMaskUV;',
         'uniform vec4 uMaskClip;',

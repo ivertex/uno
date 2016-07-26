@@ -9,7 +9,7 @@
 uno.WebglShader.SPRITES_MASK = {
     name: 'sprite_mask',
     fragment: [
-        'precision lowp float;',
+        'precision mediump float;',
         'varying vec2 vUV;',
         'varying vec4 vColor;',
         'varying vec2 vMaskUV;',

@@ -9,7 +9,7 @@
 uno.WebglShader.SPRITES = {
     name: 'sprite',
     fragment: [
-        'precision lowp float;',
+        'precision mediump float;',
         'varying vec2 vUV;',
         'varying vec4 vColor;',
         'uniform sampler2D uTexture;',

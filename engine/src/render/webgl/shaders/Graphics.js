@@ -9,7 +9,7 @@
 uno.WebglShader.GRAPHICS = {
     name: 'graphics',
     fragment: [
-        'precision lowp float;',
+        'precision mediump float;',
         'varying vec4 vColor;',
 
         'void main(void) {',
